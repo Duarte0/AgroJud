@@ -35,6 +35,7 @@ from agrojud.services.retry_policy import (
     is_transient_persistence_error,
     retry_deadline,
 )
+from agrojud.sources.catalog import validate_catalog_snapshot
 from agrojud.sources.contracts import (
     Cursor,
     JSONScalar,
@@ -45,6 +46,7 @@ from agrojud.sources.contracts import (
     SourcePage,
     SourceQuery,
     build_query_by_case_number,
+    copy_json,
 )
 from agrojud.sources.factory import SourceKind, build_source_adapter
 
@@ -77,6 +79,7 @@ def build_collection_request(
     source: str,
     job_type: str,
     query: SourceQuery,
+    catalog_snapshot: Mapping[str, JSONValue] | None = None,
     page_size: int = DEFAULT_PAGE_SIZE,
     hit_budget: int = INITIAL_HIT_BUDGET,
 ) -> EnqueueRequest:
@@ -102,13 +105,39 @@ def build_collection_request(
             SourceErrorCode.VALIDATION,
             "Atualização por número exige a consulta CNJ exata sem filtros adicionais.",
         )
+    if query.preset_id is not None:
+        if catalog_snapshot is None:
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "Consultas de preset precisam salvar a justificativa e a versão do catálogo.",
+            )
+        frozen_catalog_snapshot = validate_catalog_snapshot(
+            catalog_snapshot,
+            environment=cast(Any, mode),
+            query=query,
+        )
+    elif catalog_snapshot is not None:
+        raise SourceError(
+            SourceErrorCode.VALIDATION,
+            "Snapshot de catálogo exige um preset identificado na consulta.",
+        )
+    else:
+        frozen_catalog_snapshot = None
     _validate_limits(page_size, hit_budget)
+    resolved_query = source_query_snapshot(query)
+    if frozen_catalog_snapshot is not None:
+        copied_snapshot = copy_json(frozen_catalog_snapshot)
+        if not isinstance(copied_snapshot, dict):  # pragma: no cover - validator guarantees object
+            raise SourceError(
+                SourceErrorCode.CONTRACT, "O snapshot do catálogo precisa ser objeto."
+            )
+        resolved_query["catalog_snapshot"] = copied_snapshot
     return EnqueueRequest(
         mode=cast(Any, mode),
         job_type=cast(Any, job_type),
         source=source,
         tribunal=query.tribunal,
-        resolved_query=source_query_snapshot(query),
+        resolved_query=resolved_query,
         sort=sort_snapshot(query.sort),
         parameters={"page_size": page_size, "hit_budget": hit_budget},
     )
@@ -123,6 +152,7 @@ def source_query_snapshot(query: SourceQuery) -> dict[str, JSONValue]:
         "filed_to": query.filed_to.isoformat() if query.filed_to is not None else None,
         "class_codes": list(query.class_codes),
         "subject_codes": list(query.subject_codes),
+        "movement_codes": list(query.movement_codes),
         "court_unit_code": query.court_unit_code,
         "preset_id": query.preset_id,
         "preset_version": query.preset_version,
@@ -137,6 +167,8 @@ def sort_snapshot(sort: Sequence[SortTerm]) -> list[JSONValue]:
 def source_query_from_snapshot(
     resolved_query: object,
     sort_value: object,
+    *,
+    environment: Literal["demo", "real"] | None = None,
 ) -> SourceQuery:
     """Rebuild and revalidate the frozen query before any source request."""
 
@@ -148,10 +180,12 @@ def source_query_from_snapshot(
         "filed_to",
         "class_codes",
         "subject_codes",
+        "movement_codes",
         "court_unit_code",
         "preset_id",
         "preset_version",
         "process_number",
+        "catalog_snapshot",
     }
     if set(resolved_query) - allowed:
         raise SourceError(
@@ -161,12 +195,13 @@ def source_query_from_snapshot(
     sort = _sort_from_snapshot(sort_value)
     filed_from = _date_field(resolved_query.get("filed_from"), "filed_from")
     filed_to = _date_field(resolved_query.get("filed_to"), "filed_to")
-    return SourceQuery(
+    query = SourceQuery(
         tribunal=_string_field(resolved_query.get("tribunal", "TJGO"), "tribunal"),
         filed_from=filed_from,
         filed_to=filed_to,
         class_codes=_code_list(resolved_query.get("class_codes", []), "class_codes"),
         subject_codes=_code_list(resolved_query.get("subject_codes", []), "subject_codes"),
+        movement_codes=_code_list(resolved_query.get("movement_codes", []), "movement_codes"),
         court_unit_code=_optional_positive_int(
             resolved_query.get("court_unit_code"), "court_unit_code"
         ),
@@ -175,6 +210,19 @@ def source_query_from_snapshot(
         process_number=_optional_string(resolved_query.get("process_number"), "process_number"),
         sort=sort,
     )
+    snapshot_value = resolved_query.get("catalog_snapshot")
+    if snapshot_value is not None:
+        validate_catalog_snapshot(
+            snapshot_value,
+            environment=environment,
+            query=query,
+        )
+    elif query.preset_id is not None:
+        raise SourceError(
+            SourceErrorCode.CONTRACT,
+            "O snapshot do preset não preserva sua justificativa e versão.",
+        )
+    return query
 
 
 def plan_limit_continuation(
@@ -270,6 +318,7 @@ class CollectionJobHandler:
             query = source_query_from_snapshot(
                 lease.parameters_snapshot.get("query"),
                 lease.parameters_snapshot.get("sort"),
+                environment=lease.mode,
             )
             self._validate_job_query(lease, query)
             page_size, initial_budget = _limits_from_snapshot(lease.parameters_snapshot)

@@ -1,0 +1,418 @@
+{
+  "schema_version": 1,
+  "catalog_version": "1.0.0",
+  "consulted_at": "2026-10-09",
+  "tpu_version": "06/10/2026",
+  "evidence_report": "docs/evidence/catalogo-tematico-tpu-2026-10-09.json",
+  "scope": {
+    "tribunal": "TJGO",
+    "statement": "Código TPU vigente e aplicável ao TJGO não valida filtro DataJud nem presença do tema em amostra real."
+  },
+  "sources": [
+    {
+      "id": "cnj-sgt-public-ws",
+      "name": "WebService público do Sistema de Gestão de Tabelas Processuais Unificadas",
+      "url": "https://www.cnj.jus.br/sgt/infWebService.php",
+      "wsdl": "https://www.cnj.jus.br/sgt/sgt_ws.php?wsdl"
+    },
+    {
+      "id": "cnj-tpu-portal",
+      "name": "Portal das Tabelas Processuais Unificadas do CNJ",
+      "url": "https://www.cnj.jus.br/programas-e-acoes/tabela-processuais-unificadas/"
+    },
+    {
+      "id": "cnj-datajud-api-docs",
+      "name": "Tutorial da API Pública do DataJud",
+      "url": "https://www.cnj.jus.br/wp-content/uploads/2023/05/tutorial-api-publica-datajud-beta.pdf"
+    }
+  ],
+  "default_date_window": {
+    "kind": "relative_calendar_months",
+    "months": 12,
+    "timezone": "America/Sao_Paulo",
+    "end_exclusive": "local execution date"
+  },
+  "combinations": {
+    "within_dimension": "OR",
+    "between_dimensions": "AND"
+  },
+  "include_descendants": false,
+  "families": [
+    {
+      "id": "rural_explicit",
+      "name": "Rural explícito: crédito e contratos rurais",
+      "investigation_state": "investigated",
+      "item_ids": ["rural.credito_contratos"],
+      "pending_reason": null
+    },
+    {
+      "id": "executions_broad",
+      "name": "Execuções amplas",
+      "investigation_state": "investigated",
+      "item_ids": ["execucoes.amplas"],
+      "pending_reason": null
+    },
+    {
+      "id": "recovery_judicial_broad",
+      "name": "Recuperação judicial ampla",
+      "investigation_state": "investigated",
+      "item_ids": [
+        "recuperacao_judicial.por_classe",
+        "recuperacao_judicial.por_assunto"
+      ],
+      "pending_reason": null
+    },
+    {
+      "id": "signal_penhora",
+      "name": "Sinal candidato: penhora, bloqueio ou arresto",
+      "investigation_state": "investigated",
+      "item_ids": ["sinal.penhora"],
+      "pending_reason": null
+    },
+    {
+      "id": "signal_leilao",
+      "name": "Sinal candidato: leilão",
+      "investigation_state": "investigated",
+      "item_ids": ["sinal.leilao"],
+      "pending_reason": null
+    },
+    {
+      "id": "signal_recovery_judicial",
+      "name": "Sinal candidato: recuperação judicial",
+      "investigation_state": "investigated",
+      "item_ids": ["sinal.recuperacao_judicial"],
+      "pending_reason": null
+    }
+  ],
+  "tpu_code_evidence": [
+    {
+      "dimension": "subject",
+      "code": 10501,
+      "name": "Crédito Rural",
+      "parent_code": 9580,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "crédito rural",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "subject",
+      "code": 4964,
+      "name": "Cédula de Crédito Rural",
+      "parent_code": 7717,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "crédito rural",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "subject",
+      "code": 4976,
+      "name": "Nota de Crédito Rural",
+      "parent_code": 7717,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "crédito rural",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "subject",
+      "code": 4993,
+      "name": "Recuperação judicial e Falência",
+      "parent_code": 9616,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "recuperação judicial",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "subject",
+      "code": 13277,
+      "name": "Recuperação Judicial",
+      "parent_code": 8939,
+      "situation": "A",
+      "tjgo_first_grade": false,
+      "tjgo_second_grade": true,
+      "search_term": "recuperação judicial",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "class",
+      "code": 12154,
+      "name": "Execução de Título Extrajudicial",
+      "parent_code": 159,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": false,
+      "search_term": "execução de título extrajudicial",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "class",
+      "code": 159,
+      "name": "Execução de Título Extrajudicial",
+      "parent_code": 158,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": false,
+      "search_term": "execução de título extrajudicial",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "class",
+      "code": 1116,
+      "name": "Execução Fiscal",
+      "parent_code": 158,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": false,
+      "search_term": "execução fiscal",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "class",
+      "code": 155,
+      "name": "Procedimento de Cumprimento de Sentença/Decisão",
+      "parent_code": 1106,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": false,
+      "search_term": "cumprimento de sentença",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "class",
+      "code": 156,
+      "name": "Cumprimento de sentença",
+      "parent_code": 155,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "cumprimento de sentença",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "class",
+      "code": 12078,
+      "name": "Cumprimento de Sentença contra a Fazenda Pública",
+      "parent_code": 155,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "cumprimento de sentença",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "class",
+      "code": 12079,
+      "name": "Execução de Título Extrajudicial contra a Fazenda Pública",
+      "parent_code": 159,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "execução de título extrajudicial",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "class",
+      "code": 129,
+      "name": "Recuperação Judicial",
+      "parent_code": 62,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": false,
+      "search_term": "recuperação judicial",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "class",
+      "code": 108,
+      "name": "Falência de Empresários, Sociedades Empresáriais, Microempresas e Empresas de Pequeno Porte",
+      "parent_code": 62,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": false,
+      "search_term": "falência",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "movement",
+      "code": 11382,
+      "name": "Bloqueio, Penhora ou Arresto",
+      "parent_code": 1013,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "penhora",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "movement",
+      "code": 311,
+      "name": "Leilão ou Praça",
+      "parent_code": 48,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "leilão",
+      "source_id": "cnj-sgt-public-ws"
+    },
+    {
+      "dimension": "movement",
+      "code": 12041,
+      "name": "Recuperação judicial",
+      "parent_code": 210,
+      "situation": "A",
+      "tjgo_first_grade": true,
+      "tjgo_second_grade": true,
+      "search_term": "recuperação judicial",
+      "source_id": "cnj-sgt-public-ws"
+    }
+  ],
+  "items": [
+    {
+      "kind": "preset",
+      "id": "rural.credito_contratos",
+      "version": "1.0.0",
+      "family": "rural_explicit",
+      "name": "Crédito e contratos rurais",
+      "purpose": "Pesquisar assuntos TPU que identificam crédito rural e títulos de crédito rural.",
+      "justification": "O SGT descreve o assunto 10501 como discussões sobre formas do contrato de crédito rural e lista 4964 e 4976 como títulos rurais específicos. Os códigos são filtros de assunto explícitos; não identificam por si só a condição de produtor rural.",
+      "filters": {"classes": [], "subjects": [10501, 4964, 4976], "movements": []},
+      "combinations": {"within_dimension": "OR", "between_dimensions": "AND"},
+      "include_descendants": false,
+      "rural_link_status": "not_confirmed",
+      "capture_explanation": "A consulta inclui registros que correspondam a pelo menos um dos assuntos TPU listados. A condição pessoal de produtor rural permanece não confirmada.",
+      "tpu_status": {"state": "validated", "reason": "Os códigos incluídos estão ativos e aplicáveis ao TJGO segundo a versão SGT consultada.", "evidence_ids": ["subject:10501", "subject:4964", "subject:4976"]},
+      "query_status": {"state": "inconclusive", "reason": "SPEC-003 não observou no TJGO a semântica do filtro por assunto nem a resposta para esses códigos."},
+      "sample_status": {"state": "inconclusive", "reason": "Não há exemplo estruturado real do TJGO com correspondência validada para esses assuntos."},
+      "required_for_real": ["tpu_status", "query_status", "sample_status"],
+      "demo_available": true,
+      "runtime_implemented": true
+    },
+    {
+      "kind": "preset",
+      "id": "execucoes.amplas",
+      "version": "1.0.0",
+      "family": "executions_broad",
+      "name": "Execuções amplas",
+      "purpose": "Pesquisar classes TPU de execução fiscal, execução por título e cumprimento de sentença.",
+      "justification": "A família reúne classes estaduais ativas para execução fiscal, execução de título extrajudicial e cumprimento de sentença, incluindo variantes contra a Fazenda Pública. A amplitude procura execuções em geral e não implica relação com o agronegócio.",
+      "filters": {"classes": [159, 12154, 1116, 155, 156, 12078, 12079], "subjects": [], "movements": []},
+      "combinations": {"within_dimension": "OR", "between_dimensions": "AND"},
+      "include_descendants": false,
+      "rural_link_status": "not_confirmed",
+      "capture_explanation": "A consulta inclui registros que correspondam a pelo menos uma das classes TPU listadas. O resultado deve permanecer com vínculo rural não confirmado.",
+      "tpu_status": {"state": "validated", "reason": "Os códigos incluídos estão ativos e aplicáveis ao TJGO segundo a versão SGT consultada.", "evidence_ids": ["class:159", "class:12154", "class:1116", "class:155", "class:156", "class:12078", "class:12079"]},
+      "query_status": {"state": "inconclusive", "reason": "SPEC-003 não observou no TJGO a semântica do filtro por classe nem a resposta para esses códigos."},
+      "sample_status": {"state": "inconclusive", "reason": "Não há exemplos estruturados reais do TJGO que validem a correspondência dos códigos desta família."},
+      "required_for_real": ["tpu_status", "query_status", "sample_status"],
+      "demo_available": true,
+      "runtime_implemented": true
+    },
+    {
+      "kind": "preset",
+      "id": "recuperacao_judicial.por_classe",
+      "version": "1.0.0",
+      "family": "recovery_judicial_broad",
+      "name": "Recuperação judicial e falência por classe",
+      "purpose": "Pesquisar as classes TPU de recuperação judicial e falência aplicáveis à Justiça Estadual.",
+      "justification": "Os códigos 129 e 108 estão ativos e aplicáveis ao TJGO em primeiro grau. Esta variante usa somente classes; não presume vínculo rural.",
+      "filters": {"classes": [129, 108], "subjects": [], "movements": []},
+      "combinations": {"within_dimension": "OR", "between_dimensions": "AND"},
+      "include_descendants": false,
+      "rural_link_status": "not_confirmed",
+      "capture_explanation": "A consulta inclui registros que correspondam à classe Recuperação Judicial (129) ou Falência (108). O vínculo rural não é confirmado.",
+      "tpu_status": {"state": "validated", "reason": "Os códigos incluídos estão ativos e aplicáveis ao TJGO segundo a versão SGT consultada.", "evidence_ids": ["class:129", "class:108"]},
+      "query_status": {"state": "inconclusive", "reason": "SPEC-003 não observou no TJGO a semântica do filtro por classe nem a resposta para esses códigos."},
+      "sample_status": {"state": "inconclusive", "reason": "Não há exemplos estruturados reais do TJGO que validem a correspondência dos códigos desta variante."},
+      "required_for_real": ["tpu_status", "query_status", "sample_status"],
+      "demo_available": true,
+      "runtime_implemented": true
+    },
+    {
+      "kind": "preset",
+      "id": "recuperacao_judicial.por_assunto",
+      "version": "1.0.0",
+      "family": "recovery_judicial_broad",
+      "name": "Recuperação judicial e falência por assunto",
+      "purpose": "Pesquisar assuntos TPU de recuperação judicial e falência; o código 13277 aplica-se ao TJGO em segundo grau.",
+      "justification": "Os códigos 4993 e 13277 estão ativos; 4993 aplica-se ao TJGO em primeiro e segundo graus, e 13277 em segundo grau. Esta variante usa somente assuntos para não exigir simultaneamente classe e assunto.",
+      "filters": {"classes": [], "subjects": [4993, 13277], "movements": []},
+      "combinations": {"within_dimension": "OR", "between_dimensions": "AND"},
+      "include_descendants": false,
+      "rural_link_status": "not_confirmed",
+      "capture_explanation": "A consulta inclui registros que correspondam a pelo menos um dos assuntos TPU listados. O vínculo rural não é confirmado.",
+      "tpu_status": {"state": "validated", "reason": "Os códigos incluídos estão ativos e aplicáveis ao TJGO segundo a versão SGT consultada.", "evidence_ids": ["subject:4993", "subject:13277"]},
+      "query_status": {"state": "inconclusive", "reason": "SPEC-003 não observou no TJGO a semântica do filtro por assunto nem a resposta para esses códigos."},
+      "sample_status": {"state": "inconclusive", "reason": "Não há exemplos estruturados reais do TJGO que validem a correspondência dos códigos desta variante."},
+      "required_for_real": ["tpu_status", "query_status", "sample_status"],
+      "demo_available": true,
+      "runtime_implemented": true
+    },
+    {
+      "kind": "candidate_signal",
+      "id": "sinal.penhora",
+      "version": "1.0.0",
+      "family": "signal_penhora",
+      "name": "Candidato a sinal de bloqueio, penhora ou arresto",
+      "purpose": "Identificar movimento TPU que pode ser avaliado futuramente como sinal estruturado de constrição patrimonial.",
+      "justification": "O código 11382 combina bloqueio, penhora ou arresto; o catálogo preserva o nome oficial e não o interpreta como penhora confirmada de bem rural.",
+      "filters": {"classes": [], "subjects": [], "movements": [11382]},
+      "combinations": {"within_dimension": "OR", "between_dimensions": "AND"},
+      "include_descendants": false,
+      "rural_link_status": "not_confirmed",
+      "capture_explanation": "Código candidato: movimento 11382, Bloqueio, Penhora ou Arresto. Requer revisão de contexto e amostra estruturada antes de qualquer sinal real.",
+      "tpu_status": {"state": "validated", "reason": "O movimento está ativo e aplicável ao TJGO segundo a versão SGT consultada.", "evidence_ids": ["movement:11382"]},
+      "query_status": {"state": "inconclusive", "reason": "Não aplicável à regra candidata: o motor de sinais não pertence a esta SPEC."},
+      "sample_status": {"state": "inconclusive", "reason": "Não há exemplo estruturado real do TJGO que valide o uso deste movimento como sinal."},
+      "required_for_real": ["tpu_status", "sample_status"],
+      "demo_available": false,
+      "runtime_implemented": false
+    },
+    {
+      "kind": "candidate_signal",
+      "id": "sinal.leilao",
+      "version": "1.0.0",
+      "family": "signal_leilao",
+      "name": "Candidato a sinal de leilão",
+      "purpose": "Identificar movimento TPU de leilão ou praça para revisão futura.",
+      "justification": "O código 311 possui o nome oficial Leilão ou Praça e está ativo e aplicável ao TJGO.",
+      "filters": {"classes": [], "subjects": [], "movements": [311]},
+      "combinations": {"within_dimension": "OR", "between_dimensions": "AND"},
+      "include_descendants": false,
+      "rural_link_status": "not_confirmed",
+      "capture_explanation": "Código candidato: movimento 311, Leilão ou Praça. Requer revisão de contexto e amostra estruturada antes de qualquer sinal real.",
+      "tpu_status": {"state": "validated", "reason": "O movimento está ativo e aplicável ao TJGO segundo a versão SGT consultada.", "evidence_ids": ["movement:311"]},
+      "query_status": {"state": "inconclusive", "reason": "Não aplicável à regra candidata: o motor de sinais não pertence a esta SPEC."},
+      "sample_status": {"state": "inconclusive", "reason": "Não há exemplo estruturado real do TJGO que valide o uso deste movimento como sinal."},
+      "required_for_real": ["tpu_status", "sample_status"],
+      "demo_available": false,
+      "runtime_implemented": false
+    },
+    {
+      "kind": "candidate_signal",
+      "id": "sinal.recuperacao_judicial",
+      "version": "1.0.0",
+      "family": "signal_recovery_judicial",
+      "name": "Candidato a sinal de recuperação judicial",
+      "purpose": "Identificar movimento TPU denominado Recuperação judicial para revisão futura.",
+      "justification": "O código 12041 possui o nome oficial Recuperação judicial e está ativo e aplicável ao TJGO.",
+      "filters": {"classes": [], "subjects": [], "movements": [12041]},
+      "combinations": {"within_dimension": "OR", "between_dimensions": "AND"},
+      "include_descendants": false,
+      "rural_link_status": "not_confirmed",
+      "capture_explanation": "Código candidato: movimento 12041, Recuperação judicial. Requer revisão de contexto e amostra estruturada antes de qualquer sinal real.",
+      "tpu_status": {"state": "validated", "reason": "O movimento está ativo e aplicável ao TJGO segundo a versão SGT consultada.", "evidence_ids": ["movement:12041"]},
+      "query_status": {"state": "inconclusive", "reason": "Não aplicável à regra candidata: o motor de sinais não pertence a esta SPEC."},
+      "sample_status": {"state": "inconclusive", "reason": "Não há exemplo estruturado real do TJGO que valide o uso deste movimento como sinal."},
+      "required_for_real": ["tpu_status", "sample_status"],
+      "demo_available": false,
+      "runtime_implemented": false
+    }
+  ]
+}

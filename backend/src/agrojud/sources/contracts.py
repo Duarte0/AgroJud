@@ -83,6 +83,7 @@ class SourceQuery:
     filed_to: date | None = None
     class_codes: tuple[int, ...] = ()
     subject_codes: tuple[int, ...] = ()
+    movement_codes: tuple[int, ...] = ()
     court_unit_code: int | None = None
     preset_id: str | None = None
     preset_version: str | None = None
@@ -98,6 +99,9 @@ class SourceQuery:
 
         object.__setattr__(self, "class_codes", _normalize_codes(self.class_codes, "classe"))
         object.__setattr__(self, "subject_codes", _normalize_codes(self.subject_codes, "assunto"))
+        object.__setattr__(
+            self, "movement_codes", _normalize_codes(self.movement_codes, "movimento")
+        )
 
         if self.court_unit_code is not None:
             _validate_positive_code(self.court_unit_code, "órgão julgador")
@@ -148,6 +152,7 @@ class SourceQuery:
                 self.filed_from is not None,
                 bool(self.class_codes),
                 bool(self.subject_codes),
+                bool(self.movement_codes),
                 self.court_unit_code is not None,
             )
         )
@@ -286,6 +291,8 @@ def build_datajud_payload(
         filters.append({"terms": {"classe.codigo": list(query.class_codes)}})
     if query.subject_codes:
         filters.append({"terms": {"assuntos.codigo": list(query.subject_codes)}})
+    if query.movement_codes:
+        filters.append({"terms": {"movimentos.codigo": list(query.movement_codes)}})
     if query.court_unit_code is not None:
         filters.append({"match": {"orgaoJulgador.codigo": query.court_unit_code}})
 

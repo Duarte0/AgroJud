@@ -2,7 +2,7 @@
 
 Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial enquanto S1/S2 externos permanecem INCONCLUSIVE. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
 
 ## 1. Estado atual e orientação
 
@@ -25,13 +25,13 @@ Estado após a implementação de SPEC-002, confirmado em 08/10/2026:
 - Contratos Python, compilação allowlisted da consulta TJGO, cliente HTTPX de tentativa única e fonte sintética determinística estão entregues em `backend/src/agrojud/sources/`.
 - Testes HTTP usam MockTransport; fixtures e payload bruto são locais e sintéticos. API e worker ainda não iniciam consultas nem persistem resultados.
 - O ambiente demo seleciona somente fonte sintética; o ambiente real seleciona somente DataJud e exige `DATAJUD_API_KEY`; teste exige transporte simulado. Não há fallback entre fontes.
-- Nenhuma chamada real ao CNJ foi executada. Shape do TJGO, identidade de origem e paginação permanecem sem validação externa em SPEC-003; catálogo e presets seguem com SPEC-010.
+- Nenhuma chamada ao DataJud foi executada. Shape do TJGO, identidade de origem e paginação permanecem sem validação externa em SPEC-003; SPEC-010 concluiu o catálogo local, mas filtros e exemplos reais seguem sem validação.
 
 Estado após a implementação de SPEC-003, confirmado em 08/10/2026:
 
 - `agrojud-datajud-probe` limita cada execução a seis requisições, cem hits por página e nenhuma repetição automática; escreve relatório sanitizado e não acessa o banco de produto.
 - A probe limitada ao endpoint TJGO expirou após 20.187 ms, sem status HTTP. Depois, uma resposta manual `match_all`, `size: 1` confirmou envelope, campos essenciais e `_id == _source.id` em um hit; `dataAjuizamento` veio como `YYYYMMDDHHMMSS`. A evidência sanitizada está em `docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json`.
-- A resposta manual não exercitou filtro de data, busca exata por CNJ, sort nem paginação. SPEC-003 está DONE para ferramenta, testes e relatório; essas capacidades de S1/S2 seguem pendentes e não liberam a fonte real. SPEC-010 ainda entrega catálogo e presets.
+- A resposta manual não exercitou filtro de data, busca exata por CNJ, sort nem paginação. SPEC-003 está DONE para ferramenta, testes e relatório; essas capacidades de S1/S2 seguem pendentes e não liberam a fonte real. SPEC-010 entregou catálogo e presets locais, ainda desabilitados no modo real enquanto a evidência de filtros e amostras seguir INCONCLUSIVE.
 
 Estado após a implementação de SPEC-004/S3, confirmado em 09/10/2026:
 
@@ -186,7 +186,7 @@ Regras para os spikes:
 
 **Dependência:** M0.
 
-**Status em 08/10/2026:** parcial. SPEC-002 está DONE para contratos/adaptadores e SPEC-003 está DONE para probe/testes/relatório. O milestone não está concluído: SPEC-010 ainda entrega o catálogo e os aceites externos S1/S2 da SPEC-003 permanecem INCONCLUSIVE.
+**Status em 09/10/2026:** parcial. SPEC-002 está DONE para contratos/adaptadores, SPEC-003 está DONE para probe/testes/relatório e SPEC-010 está DONE para catálogo/investigação local. O milestone não está concluído: os aceites externos S1/S2 da SPEC-003 permanecem INCONCLUSIVE.
 
 **Implementar:**
 
@@ -194,14 +194,16 @@ Regras para os spikes:
 - Adaptadores HTTP DataJud e sintético determinístico.
 - DTOs tolerantes a campos opcionais, com validação dos campos essenciais.
 - Categorias de erro: consulta inválida, autenticação, limite remoto, rede, indisponibilidade e contrato inesperado.
-- Catálogo versionado de presets; itens não validados permanecem desativados no modo real.
+- Catálogo versionado de presets; entregue localmente na SPEC-010. Itens sem evidência exigida permanecem desativados no modo real.
 - Ferramenta limitada de diagnóstico para S1/S2 (`agrojud-datajud-probe`, entregue na SPEC-003).
 
 **Entregue pela SPEC-002:** consulta imutável TJGO com filtros allowlisted e intervalo semiaberto; busca exata por CNJ; DTOs que preservam hit bruto, metadados, sort e cursor; erros tipados; HTTPX síncrono com timeouts 5/20/20/5 segundos, redirects desativados e sem retry; fixtures sintéticas explícitas e mutáveis entre execuções; isolamento de fonte por ambiente.
 
-**Pendências mantidas nas unidades próprias:** catálogo e estados de habilitação em SPEC-010; filtro por data, busca exata, sort e paginação reais continuam pendentes na SPEC-003. O probe limitado expirou; uma amostra manual posterior confirmou somente envelope, campos essenciais e correspondência de IDs em um hit. Nenhuma capacidade não observada foi habilitada.
+**Pendências mantidas nas unidades próprias:** SPEC-010 registrou códigos TPU e estados de habilitação, sem ativar presets reais. Filtro por data, busca exata, sort e paginação reais continuam pendentes na SPEC-003. O probe limitado expirou; uma amostra manual posterior confirmou somente envelope, campos essenciais e correspondência de IDs em um hit. Nenhuma capacidade não observada foi habilitada.
 
 **Evidência da SPEC-003:** 67 testes passaram, com Ruff, formatação e mypy aprovados. Os testes HTTP usam MockTransport, incluindo o formato compacto observado para `dataAjuizamento`. A probe limitada expirou em 20.187 ms sem status HTTP; a amostra manual validou somente envelope, campos essenciais e relação de IDs para um hit. As evidências estão em `docs/evidence/datajud-tjgo-validacao-2026-10-08.json` e `docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json`. S1/S2 seguem pendentes e não liberam coleta real.
+
+**Evidência da SPEC-010:** o SGT público retornou a versão TPU `06/10/2026`; pesquisa e aplicabilidade por código estão em `docs/evidence/catalogo-tematico-tpu-2026-10-09.json`. Os filtros DataJud e exemplos estruturados do TJGO permanecem INCONCLUSIVE, então os presets reais continuam desabilitados e S5 permanece aberto. Ruff, formatação e mypy passaram; pytest passou com 191 testes PostgreSQL isolados. A imagem de produção carregou o JSON e o wheel incluiu `thematic_catalog.v1.json`. Sem migration e sem chamada ao DataJud.
 
 **Concluir quando:**
 
@@ -501,6 +503,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] SPEC-008 — Paginação e checkpoints localmente concluídos; fonte real permanece bloqueada por S2.
 - [x] S4 — Atomicidade e recuperação comprovadas localmente; integração real permanece bloqueada por S2.
 - [x] M4 — Coleta recuperável demonstrada localmente; consulta real multipágina segue pendente.
+- [x] SPEC-010 — Catálogo versionado e investigação TPU concluídos localmente; gates de evidência real preservados.
 - [ ] M5 — API e OpenAPI estáveis.
 - [ ] M6 — Fluxo visual completo.
 - [ ] S5 — Catálogo temático validado.
@@ -514,7 +517,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-009 estão DONE; SPEC-010 está READY; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-010 estão DONE localmente; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |

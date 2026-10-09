@@ -28,6 +28,7 @@ from agrojud.services.collection import (
 )
 from agrojud.services.job_worker import JobExecutionContext, JobOutcome, LeasedWorker
 from agrojud.services.jobs import JobLease, JobService
+from agrojud.sources.catalog import compile_preset
 from agrojud.sources.contracts import (
     Cursor,
     SourceError,
@@ -218,6 +219,40 @@ def test_empty_single_and_short_pages_continue_until_empty_is_confirmed(
             assert inspection.coverage["rejected_hits"] == 0
         else:
             assert inspection.coverage["has_persisted_data"] is False
+
+
+def test_enqueued_collection_persists_the_compiled_catalog_snapshot(
+    migrated_engine: Engine,
+) -> None:
+    compiled = compile_preset(
+        "rural.credito_contratos",
+        environment="demo",
+        reference_time=datetime(2026, 10, 9, 12, tzinfo=UTC),
+    )
+    request = build_collection_request(
+        mode="demo",
+        source="synthetic",
+        job_type="discovery",
+        query=compiled.query,
+        catalog_snapshot=compiled.snapshot(),
+    )
+    jobs = make_jobs(migrated_engine)
+
+    created = jobs.enqueue(request)
+    saved = jobs.inspect(created.job_id).parameters_snapshot
+    query_snapshot = saved["query"]
+    catalog_snapshot = query_snapshot["catalog_snapshot"]
+
+    assert catalog_snapshot["catalog_version"] == "1.0.0"
+    assert catalog_snapshot["preset_id"] == "rural.credito_contratos"
+    assert catalog_snapshot["preset_version"] == "1.0.0"
+    assert catalog_snapshot["justification"] == compiled.item.justification
+    assert catalog_snapshot["effective_codes"]["subject_codes"] == [4964, 4976, 10501]
+    assert catalog_snapshot["resolved_interval"] == {
+        "filed_from": "2025-10-09",
+        "filed_to_exclusive": "2026-10-09",
+    }
+    assert catalog_snapshot["rural_link_status"] == "not_confirmed"
 
 
 def test_budget_bounds_each_request_and_continuation_keeps_progress(

@@ -1,6 +1,6 @@
 # SPEC-010 — Catálogo temático versionado
 
-Status: READY
+Status: DONE
 
 Milestone/Spike: S5/M1
 
@@ -37,11 +37,24 @@ Uma consulta pode estar tecnicamente disponível e um preset permanecer desabili
 ## Decisões importantes
 Esta entrega pode ser concluída com catálogo parcialmente inconclusivo, desde que todas as famílias tenham investigação e resultado registrado. DONE da ferramenta/catálogo não promove S5 nem habilita itens pendentes.
 
+## Implementação entregue
+- Catálogo JSON `backend/src/agrojud/sources/thematic_catalog.v1.json`, versão `1.0.0`, com presets versionados para crédito rural, execuções amplas e recuperação judicial por classe ou assunto, além dos três sinais candidatos.
+- Evidência TPU por código, com situação atual, hierarquia direta, aplicabilidade TJGO e dimensão. Não há expansão de descendentes. Foram excluídos códigos inativos ou sem aplicação estadual.
+- Pesquisa oficial registrada separadamente em [`docs/evidence/catalogo-tematico-tpu-2026-10-09.json`](../docs/evidence/catalogo-tematico-tpu-2026-10-09.json). O WebService público do SGT retornou a versão `06/10/2026`; links de referência: [WebService público do SGT](https://www.cnj.jus.br/sgt/infWebService.php), [portal TPU do CNJ](https://www.cnj.jus.br/programas-e-acoes/tabela-processuais-unificadas/) e [tutorial da API Pública DataJud](https://www.cnj.jus.br/wp-content/uploads/2023/05/tutorial-api-publica-datajud-beta.pdf).
+- `backend/src/agrojud/sources/catalog.py` valida o catálogo, consulta disponibilidade por ambiente e compila somente dimensões allowlisted. Códigos dentro de uma dimensão viram OR; dimensões distintas viram AND. O compilador também devolve nome/código de cada filtro para explicar a inclusão.
+- Datas finais escolhidas pelo usuário são inclusivas na entrada e viram fim exclusivo no dia seguinte. A janela default usa os 12 meses de calendário anteriores à data local de execução em `America/Sao_Paulo`, com template e intervalo resolvido armazenados separadamente.
+- O snapshot da consulta salva versão do catálogo e do preset, justificativa, evidências, códigos efetivos, explicações, estado do vínculo rural e intervalo resolvido junto ao job. Retomadas revalidam esse snapshot sem recompilar contra o catálogo atual.
+- Presets demonstrativos são rotulados como sintéticos. Todos os presets reais permanecem desabilitados porque `query_status` e `sample_status` seguem INCONCLUSIVE na SPEC-003. Os sinais permanecem candidatos, sem engine, e inativos no real por falta de amostra estruturada.
+
+**Validação local em container Python 3.14.8 e PostgreSQL 18.6 isolado:** Ruff check passou; Ruff format check passou com 59 arquivos formatados; mypy passou em 41 arquivos; pytest passou com **191 testes**. Os 17 testes unitários da SPEC cobrem catálogo, código desconhecido, descendentes, gates demo/real, datas, payload OR/AND e snapshot após alteração simulada do catálogo. Um teste PostgreSQL confirma o snapshot após enqueue.
+
+**Validação de build:** imagem de produção construída e carregou o JSON do catálogo (`1.0.0`, TPU `06/10/2026`); wheel Python construído e conferido com `thematic_catalog.v1.json` incluído. Compose de teste validado. Não houve migration nem chamada ao DataJud.
+
 ## Critérios de aceitação
-- AC1: todas as famílias têm códigos pesquisados ou motivo explícito de pendência.
-- AC2: compilação OR/AND, intervalos e versões são determinísticos.
-- AC3: item não validado não é oferecido como preset real habilitado.
-- AC4: consulta salva conserva versão e justificativa.
+- [x] AC1: todas as seis famílias previstas foram pesquisadas no SGT; códigos inativos/inaplicáveis foram excluídos com motivo.
+- [x] AC2: OR/AND, datas inclusivas/semiabertas, janela de 12 meses, versões e explicações têm compilação determinística.
+- [x] AC3: presets reais não ficam habilitados sem evidência requerida; demo informa que é demonstrativa e não valida o TJGO.
+- [x] AC4: teste PostgreSQL confirma que o job salvo mantém versão, justificativa, códigos, intervalo e vínculo rural não confirmado.
 
 ## Testes necessários
 Fixtures do catálogo, códigos desconhecidos, descendentes, limites de datas, query snapshots, mudanças de versão, ambientes demo/real e erro de validação. Pesquisa externa gera relatório separado dos testes locais.
@@ -53,5 +66,5 @@ Ausência de amostra não prova inexistência do tema. Código substituído não
 Regras de risco jurídico, probabilidades, editor visual de DSL, CRUD genérico de taxonomia e novos tribunais.
 
 ## Evidência e conclusão
-Anexar links oficiais, versões e resultado por família. Capacidades remotas dependem das evidências correspondentes de SPEC-003, mesmo que a implementação deste catálogo esteja pronta.
+Conclusão local: DONE em 09/10/2026 após os critérios e testes acima passarem. A investigação TPU consta no relatório externo por família. A validade taxonômica dos códigos está VALIDATED para os códigos incluídos; filtros DataJud e exemplos estruturados do TJGO permanecem INCONCLUSIVE na SPEC-003. Nenhum preset ou sinal foi habilitado no real, e S5 continua pendente. A conclusão desta ferramenta não promove o milestone M1 nem valida a fonte real.
 

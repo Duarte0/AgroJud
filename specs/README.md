@@ -1,6 +1,6 @@
 # SPECs — AgroJud Radar
 
-Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004 a SPEC-009 foram concluídas localmente em 09/10/2026, incluindo reconciliação, persistência, fila/leases, paginação/checkpoints e retries/recuperação. As evidências usam fixtures/HTTP sintéticos; uma amostra manual confirmou envelope e campos de um hit, enquanto filtro, sort e paginação reais seguem sem validação externa.
+Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004 a SPEC-010 foram concluídas localmente em 09/10/2026, incluindo reconciliação, persistência, fila/leases, paginação/checkpoints, retries/recuperação e catálogo temático com pesquisa TPU. As evidências de coleta usam fixtures/HTTP sintéticos; uma amostra manual confirmou envelope e campos de um hit, enquanto filtros, exemplos, sort e paginação reais seguem sem validação externa.
 
 ## Como executar uma unidade
 
@@ -20,13 +20,13 @@ Uma SPEC contém objetivo, contexto, dependências, escopo, requisitos/contratos
 - **IN_PROGRESS:** execução iniciada.
 - **DONE:** todos os critérios desta unidade foram atendidos e registrados.
 
-SPEC-001 a SPEC-009 estão DONE localmente. SPEC-005/006 comprovam efeitos locais de capas, movimentos e quarentena; SPEC-007/008/009 comprovam fila/posse, paginação/checkpoints e recuperação em PostgreSQL isolado com HTTP simulado e ensaio de interrupção por subprocesso. A fonte DataJud real permanece bloqueada porque S2 segue INCONCLUSIVE. SPEC-010 está READY porque sua dependência direta está entregue; READY autoriza iniciar a unidade, sem validar capacidades externas. SPEC-003 entregou probe/testes/relatório. Uma amostra manual confirmou envelope, campos essenciais e igualdade de `_id`/`_source.id` para um hit; filtros, busca exata, sort e paginação permanecem INCONCLUSIVE. SPEC-004/006 fixam a política técnica local com fixtures sintéticas; não validam movimentos reais nem liberam a fonte DataJud. SPEC-010 continua responsável pelo catálogo versionado.
+SPEC-001 a SPEC-010 estão DONE localmente. SPEC-005/006 comprovam efeitos locais de capas, movimentos e quarentena; SPEC-007/008/009 comprovam fila/posse, paginação/checkpoints e recuperação em PostgreSQL isolado com HTTP simulado e ensaio de interrupção por subprocesso. SPEC-010 registra códigos TPU ativos e aplicáveis ao TJGO, mas os filtros DataJud e exemplos estruturados permanecem INCONCLUSIVE; nenhum preset real foi habilitado e S5 segue aberto. A fonte DataJud real permanece bloqueada porque S2 segue INCONCLUSIVE. SPEC-003 entregou probe/testes/relatório. Uma amostra manual confirmou envelope, campos essenciais e igualdade de `_id`/`_source.id` para um hit; filtros, busca exata, sort e paginação permanecem INCONCLUSIVE. SPEC-004/006 fixam a política técnica local com fixtures sintéticas; não validam movimentos reais nem liberam a fonte DataJud.
 
 ### Dois controles distintos
 
 Status da SPEC mede a entrega da unidade. Capacidades externas têm estado VALIDATED, INCOMPATIBLE ou INCONCLUSIVE, com evidência e data.
 
-SPEC-003 está DONE como unidade de implementação. A probe limitada expirou; uma amostra manual posterior confirmou apenas envelope, campos essenciais e identidade para um hit. Filtro, busca exata, sort e paginação continuam pendentes, portanto S1/S2 não liberam a fonte real. SPEC-010 pode entregar catálogo/investigação com itens inconclusivos sem aprovar S5 por completo. DONE nesses documentos não libera capacidades reais pendentes.
+SPEC-003 está DONE como unidade de implementação. A probe limitada expirou; uma amostra manual posterior confirmou apenas envelope, campos essenciais e identidade para um hit. Filtro, busca exata, sort e paginação continuam pendentes, portanto S1/S2 não liberam a fonte real. SPEC-010 está DONE para catálogo/investigação local com itens inconclusivos; isso não aprova S5 por completo. DONE nesses documentos não libera capacidades reais pendentes.
 
 SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus critérios; isso não encerra os aceites reais. SPEC-020 exige os aceites reais pertinentes para DONE integral e fica BLOCKED_VALIDATION se faltar essa evidência. Nunca substituir erro externo por fonte sintética dentro de uma execução real.
 
@@ -43,7 +43,7 @@ SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus c
 | [SPEC-007 — Jobs, leases e posse](SPEC-007-jobs-leases-e-posse.md) | M3 | [SPEC-006](SPEC-006-movimentos-e-quarentena.md) | DONE |
 | [SPEC-008 — Paginação e checkpoints](SPEC-008-paginacao-e-checkpoints.md) | M4 | [SPEC-007](SPEC-007-jobs-leases-e-posse.md) | DONE |
 | [SPEC-009 — Retries e recuperação](SPEC-009-retries-e-recuperacao.md) | M4/S4 | [SPEC-008](SPEC-008-paginacao-e-checkpoints.md) | DONE |
-| [SPEC-010 — Catálogo temático versionado](SPEC-010-catalogo-tematico-versionado.md) | S5/M1 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | READY |
+| [SPEC-010 — Catálogo temático versionado](SPEC-010-catalogo-tematico-versionado.md) | S5/M1 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | DONE |
 | [SPEC-011 — API operacional e OpenAPI](SPEC-011-api-operacional-e-openapi.md) | M5 | [SPEC-009](SPEC-009-retries-e-recuperacao.md), [SPEC-010](SPEC-010-catalogo-tematico-versionado.md) | BLOCKED_DEPENDENCY |
 | [SPEC-012 — Frontend de coleta e consulta](SPEC-012-frontend-de-coleta-e-consulta.md) | M6 | [SPEC-011](SPEC-011-api-operacional-e-openapi.md) | BLOCKED_DEPENDENCY |
 | [SPEC-013 — Triagem e histórico humano](SPEC-013-triagem-e-historico-humano.md) | M7 | [SPEC-012](SPEC-012-frontend-de-coleta-e-consulta.md) | BLOCKED_DEPENDENCY |
