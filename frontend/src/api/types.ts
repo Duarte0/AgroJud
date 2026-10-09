@@ -21,6 +21,13 @@ export type JobPage = Schemas["PaginationResponse_JobSummaryResponse_"];
 export type ProcessSummary = Schemas["ProcessSummaryResponse"];
 export type ProcessDetail = Schemas["ProcessDetailResponse"];
 export type ProcessPage = Schemas["PaginationResponse_ProcessSummaryResponse_"];
+export type ProcessTriage = Schemas["ProcessTriageStateResponse"];
+export type ProcessTriagePatch = Schemas["ProcessTriagePatchRequest"];
+export type ProcessTriageHistoryEntry = Schemas["ProcessTriageHistoryEntryResponse"];
+export type ProcessTriageHistoryPage =
+  Schemas["PaginationResponse_ProcessTriageHistoryEntryResponse_"];
+export type TriageDecision = ProcessTriage["decision"];
+export type RuralLink = ProcessTriage["rural_link"];
 export type LatestCollection = Schemas["LatestCollectionResponse"];
 export type Representation = Schemas["ProcessRepresentationResponse"];
 export type RepresentationPage = Schemas["PaginationResponse_ProcessRepresentationResponse_"];

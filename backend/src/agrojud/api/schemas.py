@@ -12,6 +12,8 @@ JobStatus = Literal[
     "queued", "running", "retry_wait", "completed", "partial", "failed", "cancelled"
 ]
 EnvironmentName = Literal["demo", "real", "test"]
+TriageDecision = Literal["pending", "relevant", "discarded"]
+RuralLink = Literal["unconfirmed", "confirmed"]
 
 
 class APIModel(BaseModel):
@@ -161,6 +163,44 @@ class LatestCollectionResponse(APIModel):
     job_status: JobStatus | None
 
 
+class ProcessTriageStateResponse(APIModel):
+    decision: TriageDecision
+    rural_link: RuralLink
+    note: str = Field(max_length=5000)
+    version: int = Field(ge=0)
+    updated_at: datetime | None
+
+
+class ProcessTriageSnapshotResponse(APIModel):
+    decision: TriageDecision
+    rural_link: RuralLink
+    note: str = Field(max_length=5000)
+    version: int = Field(ge=0)
+
+
+class ProcessTriagePatchRequest(APIModel):
+    expected_version: int = Field(ge=0)
+    decision: TriageDecision | None = None
+    rural_link: RuralLink | None = None
+    note: str | None = Field(default=None, max_length=5000)
+
+    @model_validator(mode="after")
+    def reject_null_changes(self) -> ProcessTriagePatchRequest:
+        for field in ("decision", "rural_link", "note"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} não pode ser nulo quando informado.")
+        return self
+
+
+class ProcessTriageHistoryEntryResponse(APIModel):
+    id: UUID
+    version: int = Field(ge=1)
+    previous_state: ProcessTriageSnapshotResponse
+    new_state: ProcessTriageSnapshotResponse
+    origin: Literal["manual"]
+    created_at: datetime
+
+
 class ProcessSummaryResponse(APIModel):
     id: UUID
     numero_cnj: str = Field(pattern=r"^\d{20}$")
@@ -168,6 +208,7 @@ class ProcessSummaryResponse(APIModel):
     representation_count: int = Field(ge=0)
     latest_observed_at: datetime | None
     latest_collection: LatestCollectionResponse | None
+    triage: ProcessTriageStateResponse
 
 
 class MovementDiagnosticResponse(APIModel):

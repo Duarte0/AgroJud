@@ -13,7 +13,9 @@ import type {
   JobCommand,
   JobCommandResult,
   JobListQuery,
+  ProcessDetail,
   ProcessListQuery,
+  ProcessTriagePatch,
 } from "@/api/types";
 import { useCurrentEnvironment } from "@/app/environment-context";
 import { jobListPollInterval, jobPollInterval } from "@/lib/job-progress";
@@ -39,6 +41,10 @@ export const queryKeys = {
   processList: (env: EnvironmentName, query: ProcessListQuery) =>
     [env, "processes", "list", query] as const,
   process: (env: EnvironmentName, id: string) => [env, "processes", "detail", id] as const,
+  triageHistory: (env: EnvironmentName, id: string, page?: number) =>
+    page === undefined
+      ? ([env, "processes", "detail", id, "triage-history"] as const)
+      : ([env, "processes", "detail", id, "triage-history", page] as const),
   representations: (env: EnvironmentName, id: string, page: number) =>
     [env, "processes", "detail", id, "representations", page] as const,
   movements: (env: EnvironmentName, id: string, page: number) =>
@@ -106,6 +112,44 @@ export function useProcess(processId: string) {
           signal,
         }),
       ),
+  });
+}
+
+export function useProcessTriageHistory(processId: string, page: number) {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.triageHistory(environment, processId, page),
+    queryFn: ({ signal }) =>
+      request(() =>
+        api.GET("/api/v1/processes/{process_id}/triage-history", {
+          params: { path: { process_id: processId }, query: { page, page_size: 20 } },
+          signal,
+        }),
+      ),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useUpdateProcessTriage(processId: string) {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ProcessTriagePatch) =>
+      request(() =>
+        api.PATCH("/api/v1/processes/{process_id}/triage", {
+          params: { path: { process_id: processId } },
+          body,
+        }),
+      ),
+    onSuccess: async (triage) => {
+      client.setQueryData<ProcessDetail>(queryKeys.process(environment, processId), (current) =>
+        current ? { ...current, triage } : current,
+      );
+      await Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.processes(environment) }),
+        client.invalidateQueries({ queryKey: queryKeys.triageHistory(environment, processId) }),
+      ]);
+    },
   });
 }
 

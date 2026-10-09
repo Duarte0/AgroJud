@@ -29,6 +29,7 @@ from agrojud.api.jobs import SourceCapabilityUnavailable
 from agrojud.api.jobs import router as jobs_router
 from agrojud.api.metadata import router as metadata_router
 from agrojud.api.processes import router as processes_router
+from agrojud.api.triage import router as triage_router
 from agrojud.config import Settings, get_settings
 from agrojud.db.engine import make_engine
 from agrojud.db.migrations_runner import make_alembic_config
@@ -76,7 +77,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[runtime_settings.frontend_origin],
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "PATCH"],
         allow_headers=["Content-Type"],
         expose_headers=["Location", "X-Request-ID"],
     )
@@ -229,6 +230,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
 
     app.include_router(jobs_router)
     app.include_router(processes_router)
+    app.include_router(triage_router)
     app.include_router(metadata_router)
 
     return app

@@ -2,7 +2,7 @@
 
 Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. Uma amostra manual confirmou acesso e envelope; M1 segue parcial enquanto S1/S2 externos permanecem INCONCLUSIVE. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada por migration em PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. M7 permanece em andamento enquanto regras, sinais e reprocessamento da SPEC-014 não forem entregues. Uma amostra manual confirmou acesso e envelope; M1 segue parcial enquanto S1/S2 externos permanecem INCONCLUSIVE. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
 
 ## 1. Estado atual e orientação
 
@@ -375,8 +375,8 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 
 **Implementar em duas entregas:**
 
-1. Triagem, vínculo rural, notas e histórico.
-2. Regras versionadas, sinais e reprocessamento local.
+1. [x] Triagem, vínculo rural, notas e histórico — SPEC-013 concluída localmente em 09/10/2026 (222 testes backend, 42 frontend, 9 cenários Playwright).
+2. [ ] Regras versionadas, sinais e reprocessamento local — SPEC-014, ainda não implementada.
 
 **Interfaces adicionais:**
 
@@ -392,7 +392,7 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 - Reprocessar não consulta DataJud nem multiplica sinais equivalentes.
 - Regras substituídas preservam histórico, distinguindo resultados atuais.
 
-**Demonstração:** revisar candidato, recoletar e comprovar preservação da decisão.
+**Demonstração:** a SPEC-013 comprovou revisão, reversão, histórico e preservação da decisão após recoleta. M7 só será concluído após também atender aos critérios da SPEC-014.
 
 ### M8 — Acompanhamento, novidades e atualização diária
 
@@ -474,7 +474,7 @@ Usar índices direcionados às consultas e à fila ativa, com restrições de un
 
 **Adiado até o núcleo estar validado, mas pertencente ao MVP:**
 
-- Triagem e regras: M7.
+- Regras versionadas, sinais e reprocessamento local: M7 / SPEC-014.
 - Atualização diária: M8.
 - Indicadores e CSV: M9.
 - Acabamento visual final: M9.

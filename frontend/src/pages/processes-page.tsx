@@ -3,7 +3,12 @@ import { useState, type SubmitEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { useProcessList } from "@/api/queries";
-import type { ProcessListQuery, ProcessSummary } from "@/api/types";
+import type {
+  ProcessListQuery,
+  ProcessSummary,
+  RuralLink,
+  TriageDecision,
+} from "@/api/types";
 import { PageHeader } from "@/components/page-header";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Pagination } from "@/components/pagination";
@@ -17,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Table,
   TableBody,
@@ -33,10 +39,12 @@ import {
   formatDateTime,
   jobStatusLabel,
 } from "@/lib/format";
-import { readPage, readText, withFilters, withPage } from "@/lib/search-params";
+import { readEnum, readPage, readText, withFilters, withPage } from "@/lib/search-params";
 
 const PAGE_SIZE = 25;
 const UUID_PATTERN = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
+const DECISIONS = ["pending", "relevant", "discarded"] as const satisfies readonly TriageDecision[];
+const RURAL_LINKS = ["unconfirmed", "confirmed"] as const satisfies readonly RuralLink[];
 
 const FILTER_FIELDS = [
   { key: "process_number", label: "Número CNJ", placeholder: "0000000-00.0000.0.00.0000" },
@@ -48,12 +56,20 @@ const FILTER_FIELDS = [
 ] as const;
 
 type FilterKey = (typeof FILTER_FIELDS)[number]["key"];
-type FilterValues = Record<FilterKey, string>;
+type FilterValues = Record<FilterKey, string> & {
+  decision: TriageDecision | "";
+  rural_link: RuralLink | "";
+};
 
 function readFilters(params: URLSearchParams): FilterValues {
-  return Object.fromEntries(
+  const textFilters = Object.fromEntries(
     FILTER_FIELDS.map((field) => [field.key, readText(params, field.key) ?? ""]),
-  ) as FilterValues;
+  ) as Record<FilterKey, string>;
+  return {
+    ...textFilters,
+    decision: readEnum(params, "decision", DECISIONS) ?? "",
+    rural_link: readEnum(params, "rural_link", RURAL_LINKS) ?? "",
+  };
 }
 
 function FilterForm({
@@ -94,6 +110,43 @@ function FilterForm({
           </div>
         ))}
       </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="filter-decision">Decisão da triagem</Label>
+          <NativeSelect
+            id="filter-decision"
+            value={values.decision}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                decision: event.target.value as FilterValues["decision"],
+              }))
+            }
+          >
+            <option value="">Todas as decisões</option>
+            <option value="pending">Pendente</option>
+            <option value="relevant">Relevante</option>
+            <option value="discarded">Descartado</option>
+          </NativeSelect>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="filter-rural-link">Vínculo rural</Label>
+          <NativeSelect
+            id="filter-rural-link"
+            value={values.rural_link}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                rural_link: event.target.value as FilterValues["rural_link"],
+              }))
+            }
+          >
+            <option value="">Todos os vínculos</option>
+            <option value="unconfirmed">Não confirmado</option>
+            <option value="confirmed">Confirmado manualmente</option>
+          </NativeSelect>
+        </div>
+      </div>
       <div className="flex flex-wrap gap-2">
         <Button type="submit">
           <Search aria-hidden="true" />
@@ -114,6 +167,7 @@ function ProcessesTable({ processes }: { processes: ProcessSummary[] }) {
       <TableHeader>
         <TableRow>
           <TableHead>Número CNJ</TableHead>
+          <TableHead>Triagem</TableHead>
           <TableHead className="text-right">Capas</TableHead>
           <TableHead>Última observação local</TableHead>
           <TableHead>Última coleta</TableHead>
@@ -131,6 +185,12 @@ function ProcessesTable({ processes }: { processes: ProcessSummary[] }) {
                 >
                   {formatCnj(process.numero_cnj)}
                 </Link>
+              </TableCell>
+              <TableCell className="whitespace-nowrap text-sm">
+                <div>{triageDecisionLabel(process.triage.decision)}</div>
+                <div className="text-muted-foreground">
+                  {ruralLinkLabel(process.triage.rural_link)}
+                </div>
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {formatCount(process.representation_count)}
@@ -169,6 +229,14 @@ function ProcessesTable({ processes }: { processes: ProcessSummary[] }) {
   );
 }
 
+function triageDecisionLabel(value: TriageDecision): string {
+  return { pending: "Pendente", relevant: "Relevante", discarded: "Descartado" }[value];
+}
+
+function ruralLinkLabel(value: RuralLink): string {
+  return { unconfirmed: "Vínculo não confirmado", confirmed: "Vínculo confirmado" }[value];
+}
+
 export function ProcessesPage() {
   usePageTitle("Processos");
   const [searchParams, setSearchParams] = useSearchParams();
@@ -179,6 +247,8 @@ export function ProcessesPage() {
     const value = filters[field.key];
     if (value) query[field.key] = value;
   }
+  if (filters.decision) query.decision = filters.decision;
+  if (filters.rural_link) query.rural_link = filters.rural_link;
   const processes = useProcessList(query);
   const filtered = Object.values(filters).some(Boolean);
 

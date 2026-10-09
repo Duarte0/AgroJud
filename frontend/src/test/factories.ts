@@ -73,6 +73,13 @@ export function buildProcess(overrides: Partial<ProcessSummary> = {}): ProcessSu
     representation_count: 1,
     latest_observed_at: "2026-10-09T10:00:00Z",
     latest_collection: null,
+    triage: {
+      decision: "pending",
+      rural_link: "unconfirmed",
+      note: "",
+      version: 0,
+      updated_at: null,
+    },
     ...overrides,
   };
 }

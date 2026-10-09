@@ -243,6 +243,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/processes/{process_id}/triage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Atualiza a triagem humana com controle de versão */
+        patch: operations["patch_process_triage_api_v1_processes__process_id__triage_patch"];
+        trace?: never;
+    };
+    "/api/v1/processes/{process_id}/triage-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consulta o histórico humano de triagem */
+        get: operations["get_process_triage_history_api_v1_processes__process_id__triage_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -654,6 +688,17 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** PaginationResponse[ProcessTriageHistoryEntryResponse] */
+        PaginationResponse_ProcessTriageHistoryEntryResponse_: {
+            /** Items */
+            items: components["schemas"]["ProcessTriageHistoryEntryResponse"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
         /** PresetAvailabilityResponse */
         PresetAvailabilityResponse: {
             /** Enabled */
@@ -729,6 +774,7 @@ export interface components {
             numero_cnj: string;
             /** Representation Count */
             representation_count: number;
+            triage: components["schemas"]["ProcessTriageStateResponse"];
         };
         /** ProcessMovementResponse */
         ProcessMovementResponse: {
@@ -850,6 +896,76 @@ export interface components {
             numero_cnj: string;
             /** Representation Count */
             representation_count: number;
+            triage: components["schemas"]["ProcessTriageStateResponse"];
+        };
+        /** ProcessTriageHistoryEntryResponse */
+        ProcessTriageHistoryEntryResponse: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            new_state: components["schemas"]["ProcessTriageSnapshotResponse"];
+            /**
+             * Origin
+             * @constant
+             */
+            origin: "manual";
+            previous_state: components["schemas"]["ProcessTriageSnapshotResponse"];
+            /** Version */
+            version: number;
+        };
+        /** ProcessTriagePatchRequest */
+        ProcessTriagePatchRequest: {
+            /** Decision */
+            decision?: ("pending" | "relevant" | "discarded") | null;
+            /** Expected Version */
+            expected_version: number;
+            /** Note */
+            note?: string | null;
+            /** Rural Link */
+            rural_link?: ("unconfirmed" | "confirmed") | null;
+        };
+        /** ProcessTriageSnapshotResponse */
+        ProcessTriageSnapshotResponse: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "pending" | "relevant" | "discarded";
+            /** Note */
+            note: string;
+            /**
+             * Rural Link
+             * @enum {string}
+             */
+            rural_link: "unconfirmed" | "confirmed";
+            /** Version */
+            version: number;
+        };
+        /** ProcessTriageStateResponse */
+        ProcessTriageStateResponse: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "pending" | "relevant" | "discarded";
+            /** Note */
+            note: string;
+            /**
+             * Rural Link
+             * @enum {string}
+             */
+            rural_link: "unconfirmed" | "confirmed";
+            /** Updated At */
+            updated_at: string | null;
+            /** Version */
+            version: number;
         };
         /** ReadyResponse */
         ReadyResponse: {
@@ -1477,6 +1593,8 @@ export interface operations {
                 court_unit?: string | null;
                 collection_id?: string | null;
                 preset_id?: string | null;
+                decision?: ("pending" | "relevant" | "discarded") | null;
+                rural_link?: ("unconfirmed" | "confirmed") | null;
             };
             header?: never;
             path?: never;
@@ -1671,6 +1789,129 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginationResponse_ProcessRepresentationResponse_"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    patch_process_triage_api_v1_processes__process_id__triage_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                process_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessTriagePatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessTriageStateResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_process_triage_history_api_v1_processes__process_id__triage_history_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                process_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginationResponse_ProcessTriageHistoryEntryResponse_"];
                 };
             };
             /** @description Recurso não encontrado. */

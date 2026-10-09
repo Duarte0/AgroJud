@@ -22,6 +22,9 @@ from agrojud.api.schemas import (
     ProcessMovementsResponse,
     ProcessRepresentationResponse,
     ProcessSummaryResponse,
+    ProcessTriageStateResponse,
+    RuralLink,
+    TriageDecision,
 )
 from agrojud.db.models import (
     Collection,
@@ -31,9 +34,11 @@ from agrojud.db.models import (
     MovementSnapshot,
     MovementSnapshotOccurrence,
     Process,
+    ProcessTriage,
     Representation,
     RepresentationSubject,
 )
+from agrojud.services.triage import state_from_record
 from agrojud.sources.contracts import build_query_by_case_number
 
 router = APIRouter(prefix="/api/v1/processes", tags=["processes"])
@@ -55,6 +60,8 @@ def list_processes(
     court_unit: str | None = Query(default=None, min_length=1, max_length=160),
     collection_id: UUID | None = None,
     preset_id: str | None = Query(default=None, min_length=1, max_length=120),
+    decision: TriageDecision | None = None,
+    rural_link: RuralLink | None = None,
 ) -> PaginationResponse[ProcessSummaryResponse]:
     predicates = _process_predicates(
         process_number=process_number,
@@ -63,11 +70,22 @@ def list_processes(
         court_unit=court_unit,
         collection_id=collection_id,
         preset_id=preset_id,
+        decision=decision,
+        rural_link=rural_link,
     )
     with request.app.state.session_factory() as session:
-        total = session.scalar(select(func.count()).select_from(Process).where(*predicates)) or 0
+        total = (
+            session.scalar(
+                select(func.count(Process.id))
+                .select_from(Process)
+                .outerjoin(ProcessTriage, ProcessTriage.process_id == Process.id)
+                .where(*predicates)
+            )
+            or 0
+        )
         processes = session.scalars(
             select(Process)
+            .outerjoin(ProcessTriage, ProcessTriage.process_id == Process.id)
             .where(*predicates)
             .order_by(Process.numero_cnj.asc(), Process.id.asc())
             .offset((page - 1) * page_size)
@@ -207,11 +225,17 @@ def _process_predicates(
     court_unit: str | None,
     collection_id: UUID | None,
     preset_id: str | None,
+    decision: TriageDecision | None,
+    rural_link: RuralLink | None,
 ) -> list[Any]:
     predicates: list[Any] = []
     if process_number is not None:
         normalized = build_query_by_case_number(process_number).process_number
         predicates.append(Process.numero_cnj == normalized)
+    if decision is not None:
+        predicates.append(func.coalesce(ProcessTriage.decision, "pending") == decision)
+    if rural_link is not None:
+        predicates.append(func.coalesce(ProcessTriage.rural_link, "unconfirmed") == rural_link)
 
     representation_filters: list[Any] = []
     if subject is not None:
@@ -283,6 +307,10 @@ def _load_process_summaries(
         .where(Representation.process_id.in_(process_ids))
         .order_by(Representation.process_id.asc(), Representation.id.asc())
     ).all()
+    triage_records = session.scalars(
+        select(ProcessTriage).where(ProcessTriage.process_id.in_(process_ids))
+    ).all()
+    triage_by_process = {triage.process_id: triage for triage in triage_records}
     by_process: dict[UUID, list[Representation]] = defaultdict(list)
     for representation in representations:
         by_process[representation.process_id].append(representation)
@@ -303,6 +331,7 @@ def _load_process_summaries(
             key=lambda value: value.included_at,
             default=None,
         )
+        triage_state = state_from_record(triage_by_process.get(process.id))
         responses.append(
             ProcessSummaryResponse(
                 id=process.id,
@@ -311,6 +340,13 @@ def _load_process_summaries(
                 representation_count=len(process_representations),
                 latest_observed_at=latest_observed_at,
                 latest_collection=latest_collection,
+                triage=ProcessTriageStateResponse(
+                    decision=triage_state.decision,
+                    rural_link=triage_state.rural_link,
+                    note=triage_state.note,
+                    version=triage_state.version,
+                    updated_at=triage_state.updated_at,
+                ),
             )
         )
     return responses

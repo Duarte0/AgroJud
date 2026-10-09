@@ -78,10 +78,15 @@ describe("ProcessesPage", () => {
     await screen.findByText("0000001-00.2026.8.09.0001");
 
     await userEvent.type(screen.getByLabelText("Classe"), "Execução");
-    await userEvent.keyboard("{Enter}");
-    await waitFor(() =>
-      expect(screen.getByTestId("location")).toHaveTextContent("/processes?class=Execu%C3%A7%C3%A3o"),
-    );
+    await userEvent.selectOptions(screen.getByLabelText("Decisão da triagem"), "relevant");
+    await userEvent.selectOptions(screen.getByLabelText("Vínculo rural"), "confirmed");
+    await userEvent.click(screen.getByRole("button", { name: "Pesquisar" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("location")).toHaveTextContent("class=Execu%C3%A7%C3%A3o");
+      expect(screen.getByTestId("location")).toHaveTextContent("decision=relevant");
+      expect(screen.getByTestId("location")).toHaveTextContent("rural_link=confirmed");
+      expect(screen.getByTestId("location")).not.toHaveTextContent("page=3");
+    });
   });
 });
 
@@ -260,6 +265,7 @@ describe("ProcessDetailPage", () => {
   it("keeps origin, three dates, ambiguity and absent values explicit", async () => {
     mockApi({
       [`GET /api/v1/processes/${processId}`]: () => json(buildProcess()),
+      [`GET /api/v1/processes/${processId}/triage-history`]: () => json(page([])),
       [`GET /api/v1/processes/${processId}/representations`]: () =>
         json(
           page([

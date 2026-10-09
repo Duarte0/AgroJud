@@ -13,7 +13,7 @@ from agrojud.db.engine import make_engine
 FRONTEND_ORIGIN = "http://127.0.0.1:4173"
 
 
-def preflight(app: FastAPI, origin: str) -> Response:
+def preflight(app: FastAPI, origin: str, method: str = "POST") -> Response:
     async def request() -> Response:
         async with AsyncClient(
             transport=ASGITransport(app=app),
@@ -23,7 +23,7 @@ def preflight(app: FastAPI, origin: str) -> Response:
                 "/api/v1/jobs",
                 headers={
                     "Origin": origin,
-                    "Access-Control-Request-Method": "POST",
+                    "Access-Control-Request-Method": method,
                     "Access-Control-Request-Headers": "content-type",
                 },
             )
@@ -56,13 +56,16 @@ def test_configured_origin_receives_cors_headers() -> None:
     app, engine = offline_app()
     try:
         allowed = preflight(app, FRONTEND_ORIGIN)
+        allowed_patch = preflight(app, FRONTEND_ORIGIN, method="PATCH")
         simple = live(app, FRONTEND_ORIGIN)
     finally:
         engine.dispose()
 
     assert allowed.status_code == 200
+    assert allowed_patch.status_code == 200
     assert allowed.headers["access-control-allow-origin"] == FRONTEND_ORIGIN
     assert "POST" in allowed.headers["access-control-allow-methods"]
+    assert "PATCH" in allowed_patch.headers["access-control-allow-methods"]
     assert simple.headers["access-control-allow-origin"] == FRONTEND_ORIGIN
     exposed = simple.headers["access-control-expose-headers"].lower()
     assert "location" in exposed

@@ -43,6 +43,63 @@ class Process(Base):
     )
 
 
+class ProcessTriage(Base):
+    """Latest human review state, stored separately from imported process data."""
+
+    __tablename__ = "process_triage"
+    __table_args__ = (
+        CheckConstraint(
+            "decision in ('pending', 'relevant', 'discarded')", name="ck_process_triage_decision"
+        ),
+        CheckConstraint(
+            "rural_link in ('unconfirmed', 'confirmed')", name="ck_process_triage_rural_link"
+        ),
+        CheckConstraint("length(note) <= 5000", name="ck_process_triage_note_length"),
+        CheckConstraint(
+            "rural_link <> 'confirmed' or length(btrim(note)) > 0",
+            name="ck_process_triage_confirmation_note",
+        ),
+        CheckConstraint("version >= 1", name="ck_process_triage_version_positive"),
+        Index("ix_process_triage_decision", "decision", "process_id"),
+        Index("ix_process_triage_rural_link", "rural_link", "process_id"),
+    )
+
+    process_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey("processes.id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    decision: Mapped[str] = mapped_column(String(12), nullable=False)
+    rural_link: Mapped[str] = mapped_column(String(12), nullable=False)
+    note: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProcessTriageHistory(Base):
+    """Append-only record of every effective human triage transition."""
+
+    __tablename__ = "process_triage_history"
+    __table_args__ = (
+        UniqueConstraint("process_id", "version", name="uq_process_triage_history_version"),
+        CheckConstraint("version >= 1", name="ck_process_triage_history_version_positive"),
+        CheckConstraint("origin = 'manual'", name="ck_process_triage_history_origin_manual"),
+        ForeignKeyConstraint(
+            ["process_id"], ["processes.id"], ondelete="RESTRICT", name="fk_triage_history_process"
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    previous_state: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    new_state: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    origin: Mapped[str] = mapped_column(String(12), nullable=False, default="manual")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class Representation(Base):
     """A source-specific record for one tribunal and source identifier."""
 

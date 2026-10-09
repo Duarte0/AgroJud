@@ -43,6 +43,8 @@ EXPECTED_JOB_TABLES = {
     "movement_snapshot_occurrences",
     "movement_snapshots",
     "processes",
+    "process_triage",
+    "process_triage_history",
     "quarantine_rejections",
     "quarantine_resolutions",
     "representation_subjects",

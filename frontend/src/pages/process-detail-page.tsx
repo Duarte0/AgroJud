@@ -9,6 +9,7 @@ import type {
   Representation,
 } from "@/api/types";
 import { DescriptionList } from "@/components/description-list";
+import { ProcessTriagePanel } from "@/components/process-triage-panel";
 import { PageHeader } from "@/components/page-header";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Pagination } from "@/components/pagination";
@@ -395,6 +396,8 @@ function ProcessView({ process }: { process: ProcessDetail }) {
           />
         </CardContent>
       </Card>
+
+      <ProcessTriagePanel processId={process.id} initialTriage={process.triage} />
 
       <section aria-labelledby="capas-title" className="space-y-3">
         <h2 id="capas-title" className="text-lg font-semibold">

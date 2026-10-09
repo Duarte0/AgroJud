@@ -1064,6 +1064,42 @@
         "title": "PaginationResponse[ProcessSummaryResponse]",
         "type": "object"
       },
+      "PaginationResponse_ProcessTriageHistoryEntryResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessTriageHistoryEntryResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "PaginationResponse[ProcessTriageHistoryEntryResponse]",
+        "type": "object"
+      },
       "PresetAvailabilityResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1255,6 +1291,9 @@
             "minimum": 0.0,
             "title": "Representation Count",
             "type": "integer"
+          },
+          "triage": {
+            "$ref": "#/components/schemas/ProcessTriageStateResponse"
           }
         },
         "required": [
@@ -1263,7 +1302,8 @@
           "created_at",
           "representation_count",
           "latest_observed_at",
-          "latest_collection"
+          "latest_collection",
+          "triage"
         ],
         "title": "ProcessDetailResponse",
         "type": "object"
@@ -1638,6 +1678,9 @@
             "minimum": 0.0,
             "title": "Representation Count",
             "type": "integer"
+          },
+          "triage": {
+            "$ref": "#/components/schemas/ProcessTriageStateResponse"
           }
         },
         "required": [
@@ -1646,9 +1689,202 @@
           "created_at",
           "representation_count",
           "latest_observed_at",
-          "latest_collection"
+          "latest_collection",
+          "triage"
         ],
         "title": "ProcessSummaryResponse",
+        "type": "object"
+      },
+      "ProcessTriageHistoryEntryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "new_state": {
+            "$ref": "#/components/schemas/ProcessTriageSnapshotResponse"
+          },
+          "origin": {
+            "const": "manual",
+            "title": "Origin",
+            "type": "string"
+          },
+          "previous_state": {
+            "$ref": "#/components/schemas/ProcessTriageSnapshotResponse"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "previous_state",
+          "new_state",
+          "origin",
+          "created_at"
+        ],
+        "title": "ProcessTriageHistoryEntryResponse",
+        "type": "object"
+      },
+      "ProcessTriagePatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pending",
+                  "relevant",
+                  "discarded"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision"
+          },
+          "expected_version": {
+            "minimum": 0.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "rural_link": {
+            "anyOf": [
+              {
+                "enum": [
+                  "unconfirmed",
+                  "confirmed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rural Link"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "ProcessTriagePatchRequest",
+        "type": "object"
+      },
+      "ProcessTriageSnapshotResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "pending",
+              "relevant",
+              "discarded"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "note": {
+            "maxLength": 5000,
+            "title": "Note",
+            "type": "string"
+          },
+          "rural_link": {
+            "enum": [
+              "unconfirmed",
+              "confirmed"
+            ],
+            "title": "Rural Link",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "decision",
+          "rural_link",
+          "note",
+          "version"
+        ],
+        "title": "ProcessTriageSnapshotResponse",
+        "type": "object"
+      },
+      "ProcessTriageStateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "pending",
+              "relevant",
+              "discarded"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "note": {
+            "maxLength": 5000,
+            "title": "Note",
+            "type": "string"
+          },
+          "rural_link": {
+            "enum": [
+              "unconfirmed",
+              "confirmed"
+            ],
+            "title": "Rural Link",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "version": {
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "decision",
+          "rural_link",
+          "note",
+          "version",
+          "updated_at"
+        ],
+        "title": "ProcessTriageStateResponse",
         "type": "object"
       },
       "ReadyResponse": {
@@ -2609,6 +2845,47 @@
               ],
               "title": "Preset Id"
             }
+          },
+          {
+            "in": "query",
+            "name": "decision",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "relevant",
+                    "discarded"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Decision"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rural_link",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "unconfirmed",
+                    "confirmed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rural Link"
+            }
           }
         ],
         "responses": {
@@ -2931,6 +3208,185 @@
         "summary": "Lista representações e seus diagnósticos",
         "tags": [
           "processes"
+        ]
+      }
+    },
+    "/api/v1/processes/{process_id}/triage": {
+      "patch": {
+        "operationId": "patch_process_triage_api_v1_processes__process_id__triage_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "process_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Process Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessTriagePatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessTriageStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Atualiza a triagem humana com controle de versão",
+        "tags": [
+          "triage"
+        ]
+      }
+    },
+    "/api/v1/processes/{process_id}/triage-history": {
+      "get": {
+        "operationId": "get_process_triage_history_api_v1_processes__process_id__triage_history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "process_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Process Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginationResponse_ProcessTriageHistoryEntryResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Consulta o histórico humano de triagem",
+        "tags": [
+          "triage"
         ]
       }
     }
