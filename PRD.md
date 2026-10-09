@@ -240,7 +240,7 @@ Não declarar cobertura total quando houver limite, falha, cursor inválido ou m
 
 Não assumir identificador global de movimentação. A identidade técnica deve considerar representação, conteúdo normalizado e multiplicidade de ocorrências indistinguíveis. Deduplicar apenas por código e data pode apagar eventos legítimos; unir movimentos de capas diferentes pode produzir falsas equivalências.
 
-Preservar versões permite auditar correções da fonte. Uma mudança de descrição não será automaticamente tratada como novo ato jurídico. A política de reconciliação deverá ser documentada e testada contra reordenação, repetição, correção e ausência de identificadores, mantendo incertezas visíveis.
+Preservar versões permite auditar correções da fonte. Uma mudança de descrição não será automaticamente tratada como novo ato jurídico. A política técnica local de reconciliação foi documentada e testada com fixtures sintéticas na SPEC-004, cobrindo reordenação, repetição, correção e ausência de identificadores, mantendo incertezas visíveis. Isso não valida a forma ou estabilidade de movimentos reais do DataJud.
 
 Valores ausentes serão distintos de zero ou string vazia. Horários serão armazenados com tratamento explícito de fuso e exibidos em `America/Sao_Paulo`; preservar o valor original quando houver ambiguidade de origem.
 
@@ -360,4 +360,4 @@ Fontes consultadas durante o planejamento em 08/10/2026:
 5. [DataJud Wiki — Endpoints](https://datajud-wiki.cnj.jus.br/api-publica/endpoints/).
 6. [DataJud Wiki — Pesquisa por número processual](https://datajud-wiki.cnj.jus.br/api-publica/exemplos/exemplo1/).
 
-Permanecem pendências técnicas de implementação: comportamento real do TJGO, desempate aceito na paginação, política de reconciliação validada em amostras e catálogo TPU versionado. Nenhum endpoint real foi validado como parte da redação deste PRD. Indisponibilidade dessas verificações deve ser registrada como limitação, sem transformar hipótese em requisito comprovado.
+Permanecem pendências técnicas de implementação: comportamento real do TJGO, desempate aceito na paginação, evidência de reconciliação em amostras reais e catálogo TPU versionado. Nenhum endpoint real foi validado como parte da redação deste PRD. Indisponibilidade dessas verificações deve ser registrada como limitação, sem transformar hipótese em requisito comprovado.

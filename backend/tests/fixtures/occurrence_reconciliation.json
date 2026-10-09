@@ -1,0 +1,111 @@
+{
+  "reordered_snapshots": {
+    "representation": "fixture:reorder:degree-1:organ-a",
+    "first": [
+      {
+        "codigo": "SYN-001",
+        "dataHora": "2026-10-01T10:00:00-03:00",
+        "nome": "Movimento sintético A",
+        "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+        "complementosTabelados": [
+          {"codigo": "COMP-02", "nome": "Complemento B"},
+          {"codigo": "COMP-01", "nome": "Complemento A"},
+          {"codigo": "COMP-01", "nome": "Complemento A"}
+        ],
+        "campoExtra": {"origem": "fixture"}
+      },
+      {
+        "codigo": "SYN-002",
+        "dataHora": "2026-10-02T11:30:00Z",
+        "nome": "Movimento sintético B",
+        "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+        "complementosTabelados": []
+      }
+    ],
+    "reordered": [
+      {
+        "codigo": "SYN-002",
+        "dataHora": "2026-10-02T11:30:00Z",
+        "nome": "Movimento sintético B",
+        "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+        "complementosTabelados": []
+      },
+      {
+        "codigo": "SYN-001",
+        "dataHora": "2026-10-01T10:00:00-03:00",
+        "nome": "Movimento sintético A",
+        "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+        "complementosTabelados": [
+          {"codigo": "COMP-01", "nome": "Complemento A"},
+          {"codigo": "COMP-02", "nome": "Complemento B"},
+          {"codigo": "COMP-01", "nome": "Complemento A"}
+        ],
+        "campoExtra": {"origem": "fixture"}
+      }
+    ]
+  },
+  "duplicates": {
+    "representation": "fixture:duplicates:degree-1:organ-a",
+    "movement": {
+      "codigo": "SYN-DUP",
+      "dataHora": "2026-10-03T09:15:00-03:00",
+      "nome": "Movimento duplicado sintético",
+      "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+      "complementosTabelados": []
+    },
+    "multiplicities": [1, 2, 1, 2]
+  },
+  "descriptive_changes": {
+    "representation": "fixture:changes:degree-1:organ-a",
+    "same_case_reference": "case-synthetic-001",
+    "original": {
+      "codigo": "SYN-CHANGE",
+      "dataHora": "2026-10-04T14:00:00-03:00",
+      "nome": "Descrição sintética original",
+      "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+      "complementosTabelados": [{"codigo": "COMP-10", "nome": "Complemento estável"}],
+      "campoExtra": {"descricaoFonte": "versão original"}
+    },
+    "name_changed": {
+      "codigo": "SYN-CHANGE",
+      "dataHora": "2026-10-04T14:00:00-03:00",
+      "nome": "Descrição sintética corrigida",
+      "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+      "complementosTabelados": [{"codigo": "COMP-10", "nome": "Complemento estável"}],
+      "campoExtra": {"descricaoFonte": "versão original"}
+    },
+    "extra_changed": {
+      "codigo": "SYN-CHANGE",
+      "dataHora": "2026-10-04T14:00:00-03:00",
+      "nome": "Descrição sintética original",
+      "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+      "complementosTabelados": [{"codigo": "COMP-10", "nome": "Complemento estável"}],
+      "campoExtra": {"descricaoFonte": "versão corrigida"}
+    },
+    "complement_changed": {
+      "codigo": "SYN-CHANGE",
+      "dataHora": "2026-10-04T14:00:00-03:00",
+      "nome": "Descrição sintética original",
+      "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+      "complementosTabelados": [{"codigo": "COMP-11", "nome": "Complemento alterado"}],
+      "campoExtra": {"descricaoFonte": "versão original"}
+    },
+    "ambiguous_changed": {
+      "codigo": "SYN-CHANGE",
+      "dataHora": "2026-10-04T14:00:00-03:00",
+      "nome": "Descrição sintética terceira versão",
+      "orgaoJulgador": {"codigo": "ORG-A", "nome": "Unidade sintética A"},
+      "complementosTabelados": [{"codigo": "COMP-10", "nome": "Complemento estável"}],
+      "campoExtra": {"descricaoFonte": "terceira versão"}
+    }
+  },
+  "distinct_representations": {
+    "same_case_reference": "case-synthetic-001",
+    "representations": [
+      "fixture:case-synthetic-001:degree-1:organ-a",
+      "fixture:case-synthetic-001:degree-1:organ-b",
+      "fixture:case-synthetic-001:degree-2:organ-a",
+      "fixture:case-synthetic-001:degree-2:organ-b"
+    ]
+  }
+}

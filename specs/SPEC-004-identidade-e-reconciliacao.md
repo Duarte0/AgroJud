@@ -1,6 +1,6 @@
 # SPEC-004 — Identidade e reconciliação
 
-Status: READY
+Status: DONE
 
 Milestone/Spike: S3
 
@@ -44,6 +44,34 @@ Versão do algoritmo faz parte dos metadados da normalização. Mudança futura 
 
 ## Testes necessários
 AC1: tabela de casos e estabilidade entre execuções. AC2: permutações e duplicatas 1→2→1→2. AC3: nome alterado, campo extra, complemento alterado e pares ambíguos. AC4: dois graus e dois órgãos do mesmo CNJ.
+
+## Implementação entregue
+- `agrojud.domain.canonical_json` implementa JSON UTF-8 canônico, chaves ordenadas, sem espaços estruturais e com preservação de tipos, `null`, campos ausentes e ordem dos arrays; rejeita valores não JSON e números não finitos.
+- `agrojud.domain.occurrence_identity` implementa normalização versionada, ordinal determinístico por multiconjunto, histórico cumulativo por representação, estados técnicos e grupos de alteração com ambiguidade explícita.
+- Datas com fuso são normalizadas para UTC; datas sem fuso mantêm o valor original como chave de comparação e recebem metadado de ambiguidade. Campos extras e valores originais permanecem no conteúdo normalizado.
+- Fixtures exclusivamente sintéticas estão em [`occurrence_reconciliation.json`](../backend/tests/fixtures/occurrence_reconciliation.json). A decisão detalhada está em [`S3-identidade-e-reconciliacao.md`](../docs/decisions/S3-identidade-e-reconciliacao.md).
+- Não foram criados schema, migration, persistência, chamadas HTTP ou adaptação da fonte.
+
+## Critérios de aceitação e evidência
+- **AC1 — PASSOU:** canonicalização é repetível; casos cobrem chaves ausentes versus `null`, inteiro versus texto, inteiro versus decimal, booleano versus número, Unicode e arrays ordenados.
+- **AC2 — PASSOU:** reordenação de movimentos/complementos mantém identidades, o hash bruto continua sensível à ordem de arrays e duplicatas preservam ordinais em `1→2→1→2`.
+- **AC3 — PASSOU:** mudança de nome e de campo extra gera `ALTERATION_OBSERVED`; complemento alterado não é associado pela chave auxiliar; retorno exato é `KNOWN`; múltiplas versões candidatas ficam ambíguas; ausências permanecem históricas.
+- **AC4 — PASSOU:** o mesmo caso sintético em dois graus e dois órgãos mantém quatro referências e identidades distintas.
+- Datas sem fuso são comparadas pelo original; datas com fuso mantêm o original e também recebem normalização UTC.
+
+Validação executada em container Python 3.14.8 com PostgreSQL de teste isolado:
+
+```text
+TEST_DB_HOST_PORT=55491 docker compose --project-name agrojud-spec004 --env-file .env.test -f compose.test.yaml --profile test run --rm --build tests sh -lc 'uv run --no-sync ruff check src tests && uv run --no-sync ruff format --check src tests && uv run --no-sync mypy src && uv run --no-sync pytest'
+Ruff: All checks passed.
+Ruff format: 34 files already formatted.
+mypy: Success: no issues found in 23 source files.
+pytest: 92 passed.
+```
+
+`docker compose --project-name agrojud-spec004-prod --env-file .env.demo -f compose.yaml build api worker` concluiu, e os módulos foram importados pela imagem de produção via `uv run --no-sync`.
+
+O banco isolado ficou disponível e saudável durante a suíte; esta SPEC não fez alterações nele. Não houve acesso ao DataJud. Os critérios demonstram o algoritmo local e não validam a identidade ou estabilidade de movimentos reais.
 
 ## Erros e edge cases
 Código/data ausentes impossibilitam classificação jurídica, mas bruto continua preservável. Colisão de hash com conteúdo divergente deve ser detectada na persistência e tratada como integridade, não deduplicação.

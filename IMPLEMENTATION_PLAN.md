@@ -2,7 +2,7 @@
 
 Data: 08/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 foi concluída localmente em 09/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
 
 ## 1. Estado atual e orientação
 
@@ -32,6 +32,14 @@ Estado após a implementação de SPEC-003, confirmado em 08/10/2026:
 - `agrojud-datajud-probe` limita cada execução a seis requisições, cem hits por página e nenhuma repetição automática; escreve relatório sanitizado e não acessa o banco de produto.
 - A probe limitada ao endpoint TJGO expirou após 20.187 ms, sem status HTTP. Depois, uma resposta manual `match_all`, `size: 1` confirmou envelope, campos essenciais e `_id == _source.id` em um hit; `dataAjuizamento` veio como `YYYYMMDDHHMMSS`. A evidência sanitizada está em `docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json`.
 - A resposta manual não exercitou filtro de data, busca exata por CNJ, sort nem paginação. SPEC-003 está DONE para ferramenta, testes e relatório; essas capacidades de S1/S2 seguem pendentes e não liberam a fonte real. SPEC-010 ainda entrega catálogo e presets.
+
+Estado após a implementação de SPEC-004/S3, confirmado em 09/10/2026:
+
+- `agrojud.domain.canonical_json` define hash SHA-256 de JSON compacto UTF-8 com chaves ordenadas, preservação de tipos/null/ordem dos arrays e rejeição de valores não JSON.
+- `agrojud.domain.occurrence_identity` define identidade por representação, hash do movimento normalizado e ordinal; complementos são ordenados para comparação sem perder multiplicidade. O histórico é cumulativo e as correspondências auxiliares alteradas preservam referências e ambiguidade.
+- Horário com fuso é normalizado para UTC e mantém o original; horário sem fuso é marcado ambíguo e comparado pelo valor original. A versão do normalizador é metadado explícito.
+- Fixtures sintéticas e decisão estão em `backend/tests/fixtures/occurrence_reconciliation.json` e `docs/decisions/S3-identidade-e-reconciliacao.md`. Não houve schema, migration, persistência nem chamada ao DataJud.
+- Ruff, formatação, mypy e 92 testes passaram em container Python 3.14.8. A imagem de produção API/worker foi construída e importou os novos módulos; evidência integral em [SPEC-004](specs/SPEC-004-identidade-e-reconciliacao.md). Isso comprova o algoritmo local, não a forma ou estabilidade de movimentos reais.
 
 A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 prova a base local e persistência; as próximas etapas introduzirão adaptadores e processamento conforme suas SPECs.
 
@@ -184,6 +192,7 @@ Regras para os spikes:
 - Ordem dos movimentos no array não define identidade.
 - Alteração textual mantém evidências anteriores e é classificada como alteração observada, sem declarar novo ato jurídico.
 - Correspondência ambígua não será resolvida por aproximação silenciosa.
+- A política técnica local de S3 está documentada e testada em [`SPEC-004`](specs/SPEC-004-identidade-e-reconciliacao.md); persistência e evidência de fonte real continuam em unidades próprias.
 
 **Concluir quando:**
 
@@ -439,7 +448,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] M0 — Fundação e PostgreSQL executáveis (SPEC-001 DONE).
 - [ ] S1 — Contrato real TJGO verificado.
 - [ ] S2 — Paginação real verificada.
-- [ ] S3 — Reconciliação documentada e testada.
+- [x] S3 — Reconciliação documentada e testada (SPEC-004 DONE; fixtures sintéticas, sem validação da fonte real).
 - [ ] M1 — Adaptadores e erros tipados.
 - [ ] M2 — Persistência de página idempotente.
 - [ ] M3 — Fila, lease e posse.
@@ -458,7 +467,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis, sem implementação de código nesta entrega. Somente SPEC-001 está READY; as demais começam BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001, SPEC-002, SPEC-003 e SPEC-004 estão DONE; SPEC-005 e SPEC-010 estão READY; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |
