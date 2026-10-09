@@ -18,6 +18,7 @@ from agrojud.api.schemas import (
     ProcessRefreshResultResponse,
     ProcessWatchHistoryResponse,
     ProcessWatchResponse,
+    RepresentationBaselineResponse,
     WatchlistItemResponse,
 )
 from agrojud.config import Settings
@@ -28,6 +29,7 @@ from agrojud.db.models import (
     ProcessWatchlistHistory,
 )
 from agrojud.services.collection import build_collection_request
+from agrojud.services.news import watch_baselines
 from agrojud.services.watchlist import lock_process_watch, set_process_watch
 from agrojud.sources.contracts import build_query_by_case_number
 
@@ -197,6 +199,21 @@ def _watch_response(
             )
             for event in events
         ],
+        baselines=(
+            [
+                RepresentationBaselineResponse(
+                    representation_id=baseline.representation_id,
+                    source=representation.source,
+                    tribunal=representation.tribunal,
+                    state=cast(Literal["pending", "established"], baseline.state),
+                    version_id=baseline.version_id,
+                    established_at=baseline.established_at,
+                )
+                for baseline, representation in watch_baselines(session, process_id=process.id)
+            ]
+            if entry is not None and entry.active
+            else []
+        ),
         last_refresh=refreshes.get(process.numero_cnj),
     )
 

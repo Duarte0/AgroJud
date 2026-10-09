@@ -14,6 +14,9 @@ JobStatus = Literal[
 EnvironmentName = Literal["demo", "real", "test"]
 TriageDecision = Literal["pending", "relevant", "discarded"]
 RuralLink = Literal["unconfirmed", "confirmed"]
+NewsCategory = Literal["NEW_OBSERVATION", "ALTERATION_OBSERVED", "NEW_REPRESENTATION"]
+NewsStatus = Literal["pending", "reviewed"]
+NewsProvenance = Literal["ingestion", "quarantine_reprocess"]
 
 
 class APIModel(BaseModel):
@@ -207,6 +210,15 @@ class ProcessWatchHistoryResponse(APIModel):
     created_at: datetime
 
 
+class RepresentationBaselineResponse(APIModel):
+    representation_id: UUID
+    source: str
+    tribunal: str
+    state: Literal["pending", "established"]
+    version_id: UUID | None
+    established_at: datetime | None
+
+
 class ProcessRefreshResultResponse(APIModel):
     job_id: UUID
     state: Literal["pending", "found", "absent_in_query", "partial", "failed", "cancelled"]
@@ -221,7 +233,31 @@ class ProcessWatchResponse(APIModel):
     included_at: datetime | None
     removed_at: datetime | None
     history: list[ProcessWatchHistoryResponse]
+    baselines: list[RepresentationBaselineResponse]
     last_refresh: ProcessRefreshResultResponse | None
+
+
+class ProcessNewsResponse(APIModel):
+    id: UUID
+    process_id: UUID
+    numero_cnj: str = Field(pattern=r"^\d{20}$")
+    representation_id: UUID
+    source: str
+    tribunal: str
+    source_id: str
+    category: NewsCategory
+    status: NewsStatus
+    event_date: datetime | None
+    event_date_original: Any
+    event_date_status: str
+    first_observed_at: datetime
+    evidence: dict[str, Any]
+    provenance: NewsProvenance
+    created_at: datetime
+
+
+class ProcessNewsStatusPatchRequest(APIModel):
+    status: NewsStatus
 
 
 class WatchlistItemResponse(APIModel):

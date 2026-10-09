@@ -158,6 +158,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/news": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista novidades observadas nos processos acompanhados */
+        get: operations["list_news_api_v1_news_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/news/{news_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Altera a situação de revisão de uma novidade */
+        patch: operations["update_news_status_api_v1_news__news_id__patch"];
+        trace?: never;
+    };
     "/api/v1/presets": {
         parameters: {
             query?: never;
@@ -787,6 +821,17 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** PaginationResponse[ProcessNewsResponse] */
+        PaginationResponse_ProcessNewsResponse_: {
+            /** Items */
+            items: components["schemas"]["ProcessNewsResponse"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
         /** PaginationResponse[ProcessRepresentationResponse] */
         PaginationResponse_ProcessRepresentationResponse_: {
             /** Items */
@@ -961,6 +1006,75 @@ export interface components {
             process_id: string;
             /** Total */
             total: number;
+        };
+        /** ProcessNewsResponse */
+        ProcessNewsResponse: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "NEW_OBSERVATION" | "ALTERATION_OBSERVED" | "NEW_REPRESENTATION";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Event Date */
+            event_date: string | null;
+            /** Event Date Original */
+            event_date_original: unknown;
+            /** Event Date Status */
+            event_date_status: string;
+            /** Evidence */
+            evidence: {
+                [key: string]: unknown;
+            };
+            /**
+             * First Observed At
+             * Format: date-time
+             */
+            first_observed_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Numero Cnj */
+            numero_cnj: string;
+            /**
+             * Process Id
+             * Format: uuid
+             */
+            process_id: string;
+            /**
+             * Provenance
+             * @enum {string}
+             */
+            provenance: "ingestion" | "quarantine_reprocess";
+            /**
+             * Representation Id
+             * Format: uuid
+             */
+            representation_id: string;
+            /** Source */
+            source: string;
+            /** Source Id */
+            source_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "reviewed";
+            /** Tribunal */
+            tribunal: string;
+        };
+        /** ProcessNewsStatusPatchRequest */
+        ProcessNewsStatusPatchRequest: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "reviewed";
         };
         /** ProcessRefreshResultResponse */
         ProcessRefreshResultResponse: {
@@ -1216,6 +1330,8 @@ export interface components {
         ProcessWatchResponse: {
             /** Active */
             active: boolean;
+            /** Baselines */
+            baselines: components["schemas"]["RepresentationBaselineResponse"][];
             /** History */
             history: components["schemas"]["ProcessWatchHistoryResponse"][];
             /** Included At */
@@ -1264,6 +1380,27 @@ export interface components {
              * @enum {string}
              */
             kind: "refresh_number";
+        };
+        /** RepresentationBaselineResponse */
+        RepresentationBaselineResponse: {
+            /** Established At */
+            established_at: string | null;
+            /**
+             * Representation Id
+             * Format: uuid
+             */
+            representation_id: string;
+            /** Source */
+            source: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "established";
+            /** Tribunal */
+            tribunal: string;
+            /** Version Id */
+            version_id: string | null;
         };
         /** SignalRuleEnablementResponse */
         SignalRuleEnablementResponse: {
@@ -1847,6 +1984,131 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobCommandResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_news_api_v1_news_get: {
+        parameters: {
+            query?: {
+                process_id?: string | null;
+                process_number?: string | null;
+                status?: ("pending" | "reviewed") | null;
+                category?: ("NEW_OBSERVATION" | "ALTERATION_OBSERVED" | "NEW_REPRESENTATION") | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginationResponse_ProcessNewsResponse_"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_news_status_api_v1_news__news_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                news_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessNewsStatusPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessNewsResponse"];
                 };
             };
             /** @description Recurso não encontrado. */

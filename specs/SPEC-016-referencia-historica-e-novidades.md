@@ -1,6 +1,6 @@
 # SPEC-016 — Referência histórica e novidades
 
-Status: BLOCKED_DEPENDENCY
+Status: DONE
 
 Milestone/Spike: M8
 
@@ -54,5 +54,19 @@ Sem data interpretável, ordenar observação local e mostrar data desconhecida.
 Prazos, urgência, detecção semântica de atos, deduplicação entre graus e notificações externas.
 
 ## Evidência e conclusão
-Demonstrar sequência de snapshots com contagens e revisão preservada; registrar explicitamente o limite entre completude técnica e jurídica.
+
+A migration `20261009_0009` cria ciclos de acompanhamento, baselines por representação e novidades com chaves técnicas, evidência local, datas separadas, proveniência e revisão. Ciclos ativos existentes são preservados no upgrade; snapshots completos estabelecem baseline com o corte no momento em que o snapshot foi processado, e representações sem snapshot completo permanecem pending. Inclusão, remoção, ingestão e reprocessamento atualizam essas estruturas sob as transações e locks locais correspondentes. A API oferece `GET /api/v1/news` com filtros/paginação e `PATCH /api/v1/news/{id}` para revisão; a interface `/news` expõe evidências e datas sem chamar observação de novo ato jurídico.
+
+Critérios e evidência de teste:
+
+- **AC1:** `test_partial_version_stays_pending_until_first_complete_snapshot_is_baseline` e `test_quarantine_reprocessing_can_establish_baseline_and_publish_local_alteration` comprovam que parcial não estabelece referência nem publica diferenças e que a primeira versão completa é incorporada sem inundação histórica.
+- **AC2:** `test_new_representation_emits_one_event_and_its_incomplete_history_is_baselined` comprova uma novidade por nova representação e baseline do seu histórico inicial.
+- **AC3:** `test_alterations_multiplicity_reordering_and_review_survive_replay_and_reinclude`, `test_duplicate_multiplicity_and_reordering_do_not_duplicate_news` e `test_removal_disables_news_and_reinclusion_does_not_create_gap_backlog` cobrem alteração, multiplicidade, reordenação, replay e intervalo sem acompanhamento.
+- **AC4:** os testes de replay/reinclusão e reprocessamento de quarentena comprovam que a revisão permanece `reviewed` e que o reprocessamento não multiplica a novidade.
+- **AC5:** `test_news_page_rollback_and_lost_lease_leave_no_orphan_rows` comprova rollback conjunto da página e das novidades e rejeição após perda de posse.
+- `test_migration_backfills_active_watch_baselines_without_losing_process` valida upgrade de `20261009_0008` com representações preexistentes completas e pendentes; o runtime dos testes também migra banco isolado vazio até `20261009_0009`.
+
+Validações executadas em ambiente isolado: `pytest` backend (**245 passed**, 1 aviso de depreciação Starlette/HTTPX), Ruff check e format, mypy (60 arquivos), frontend lint, typecheck, Vitest (**49 passed**), build e Playwright (**12 passed**, incluindo baseline pendente, revisão/reabertura, datas e responsividade). Comandos frontend: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (em `frontend/`) e `./scripts/e2e.sh` (na raiz). No backend, esses checks rodaram pelo serviço `tests` de `compose.test.yaml`, com `uv run --no-sync pytest`, `ruff check src tests`, `ruff format --check src tests` e `mypy src`, montando `backend/src` e `backend/tests` atuais e usando `.env.test`/PostgreSQL isolado. O OpenAPI foi exportado com `python -m agrojud.api.export_openapi --stdout` no container, os tipos gerados com `npm exec -- openapi-typescript`, e ambos comparados byte a byte com `frontend/openapi.json` e `frontend/src/api-schema.ts`. `npm run openapi:check` no host não é executável porque `uv` não está instalado nele.
+
+Toda a evidência usa PostgreSQL e fixtures/HTTP sintéticos locais. Baseline completa significa apenas que a lista de movimentos foi normalizada sem rejeição; não prova cobertura jurídica nem valida DataJud/TJGO, filtros, sort ou paginação reais. Esta unidade está concluída localmente; capacidades reais continuam sujeitas aos gates S1/S2/S5.
 

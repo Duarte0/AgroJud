@@ -267,6 +267,7 @@ describe("ProcessDetailPage", () => {
     included_at: null,
     removed_at: null,
     history: [],
+    baselines: [],
     last_refresh: null,
   };
 

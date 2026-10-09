@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: "/jobs", label: "Coletas" },
   { to: "/processes", label: "Processos" },
   { to: "/watchlist", label: "Acompanhados" },
+  { to: "/news", label: "Novidades" },
 ] as const;
 
 function EnvironmentBar({ environment }: { environment: Environment }) {
@@ -53,8 +54,8 @@ function Header() {
           <Radar className="size-5 text-primary" aria-hidden="true" />
           AgroJud Radar
         </NavLink>
-        <nav aria-label="Principal">
-          <ul className="flex gap-1">
+        <nav aria-label="Principal" className="w-full sm:w-auto">
+          <ul className="flex flex-wrap gap-1">
             {NAV_ITEMS.map((item) => (
               <li key={item.to}>
                 <NavLink

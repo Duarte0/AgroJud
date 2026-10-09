@@ -91,6 +91,7 @@ describe("WatchlistPage", () => {
           included_at: "2026-10-09T10:00:00Z",
           removed_at: "2026-10-09T12:00:00Z",
           history: [],
+          baselines: [],
           last_refresh: {
             job_id: jobId,
             state: "pending",
@@ -129,6 +130,7 @@ describe("ProcessWatchPanel", () => {
             },
           ]
         : [],
+      baselines: [],
       last_refresh: null,
     });
     mockApi({

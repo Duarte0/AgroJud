@@ -90,6 +90,42 @@ export function ProcessWatchPanel({ processId }: { processId: string }) {
               <ProcessRefreshStatus result={watch.data.last_refresh} />
             </div>
 
+            {watch.data.active ? (
+              <section className="space-y-2" aria-labelledby="watch-baselines-title">
+                <h3 id="watch-baselines-title" className="text-sm font-semibold">
+                  Referência histórica por representação
+                </h3>
+                {watch.data.baselines.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma representação local ainda. A primeira captura completa estabelecerá a referência.
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {watch.data.baselines.map((baseline) => (
+                      <li
+                        key={baseline.representation_id}
+                        data-testid="watch-baseline"
+                        className="rounded-md border px-3 py-2 text-sm"
+                      >
+                        <div className="font-medium">
+                          {baseline.tribunal} · {baseline.source}
+                        </div>
+                        {baseline.state === "pending" ? (
+                          <p className="text-muted-foreground">
+                            Baseline pendente. A primeira lista de movimentos completa será incorporada sem gerar novidades históricas.
+                          </p>
+                        ) : (
+                          <p className="text-muted-foreground">
+                            Referência estabelecida em {formatDateTime(baseline.established_at)}.
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            ) : null}
+
             <div className="space-y-2">
               <h3 className="text-sm font-semibold">Histórico de acompanhamento</h3>
               {watch.data.history.length === 0 ? (

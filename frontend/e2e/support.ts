@@ -79,6 +79,89 @@ export function setProcessMovementCode(processId: string, code: number): string 
   return occurrenceId;
 }
 
+/** Seeds a disposable pending baseline and dated novelty for browser acceptance. */
+export function seedPendingNews(processId: string): string {
+  if (!/^[0-9a-f-]{36}$/i.test(processId)) {
+    throw new Error("Process ID inválido para fixture E2E de novidades.");
+  }
+  const sql = `WITH target AS MATERIALIZED (
+    SELECT cycle.id AS watch_cycle_id, process.id AS process_id,
+           representation.id AS representation_id, representation.latest_version_id AS version_id,
+           snapshot.id AS snapshot_id, occurrence.id AS occurrence_id,
+           occurrence.normalized_content
+    FROM process_watch_cycles AS cycle
+    JOIN process_watchlist_entries AS entry ON entry.process_id = cycle.process_id AND entry.active
+    JOIN processes AS process ON process.id = cycle.process_id
+    JOIN representation_watch_baselines AS baseline ON baseline.watch_cycle_id = cycle.id
+    JOIN representations AS representation ON representation.id = baseline.representation_id
+    JOIN movement_snapshots AS snapshot ON snapshot.id = baseline.snapshot_id
+    JOIN movement_snapshot_occurrences AS present
+      ON present.snapshot_id = snapshot.id AND present.present
+    JOIN movement_occurrences AS occurrence ON occurrence.id = present.occurrence_id
+    WHERE process.id = '${processId}'::uuid AND cycle.ended_at IS NULL
+    ORDER BY representation.id, occurrence.id
+    LIMIT 1
+  ), reset AS (
+    UPDATE representation_watch_baselines AS baseline
+    SET state = 'pending', version_id = NULL, snapshot_id = NULL,
+        normalizer_version = NULL, established_at = NULL
+    FROM target
+    WHERE baseline.watch_cycle_id = target.watch_cycle_id
+      AND baseline.representation_id = target.representation_id
+    RETURNING baseline.id
+  )
+  INSERT INTO process_news (
+    id, process_id, representation_id, watch_cycle_id, category, status, identity_key,
+    occurrence_id, origin_version_id, origin_snapshot_id, source_date,
+    source_date_original, source_date_status, first_observed_at, evidence, provenance
+  )
+  SELECT gen_random_uuid(), target.process_id, target.representation_id,
+         target.watch_cycle_id, 'NEW_OBSERVATION', 'pending',
+         'e2e-news:' || target.occurrence_id::text, target.occurrence_id,
+         target.version_id, target.snapshot_id, '2020-04-01T03:04:05Z'::timestamptz,
+         to_jsonb('2020-04-01T03:04:05Z'::text), 'timezone_aware',
+         '2026-10-09T12:00:00Z'::timestamptz,
+         jsonb_build_object('content', target.normalized_content, 'evidence', 'synthetic E2E'),
+         'ingestion'
+  FROM target CROSS JOIN reset
+  ON CONFLICT DO NOTHING
+  RETURNING id`;
+  const newsId = compose(
+    "exec",
+    "-T",
+    "--env",
+    `NEWS_SEED_SQL=${sql}`,
+    "db",
+    "sh",
+    "-lc",
+    'psql --quiet --tuples-only --no-align --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --command "$NEWS_SEED_SQL"',
+  ).trim();
+  if (!/^[0-9a-f-]{36}$/i.test(newsId)) {
+    throw new Error("A fixture E2E não conseguiu preparar baseline e novidade.");
+  }
+  return newsId;
+}
+
+/** Isolates this browser scenario from the shared demo CNJ used by other suites. */
+export function setProcessNumber(processId: string, processNumber: string): void {
+  if (!/^[0-9a-f-]{36}$/i.test(processId) || !/^\d{20}$/.test(processNumber)) {
+    throw new Error("Process ID ou número CNJ inválido para isolamento E2E.");
+  }
+  const updatedId = compose(
+    "exec",
+    "-T",
+    "--env",
+    `PROCESS_NUMBER_SQL=UPDATE processes SET numero_cnj = '${processNumber}' WHERE id = '${processId}'::uuid RETURNING id`,
+    "db",
+    "sh",
+    "-lc",
+    'psql --quiet --tuples-only --no-align --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --command "$PROCESS_NUMBER_SQL"',
+  ).trim();
+  if (updatedId.toLowerCase() !== processId.toLowerCase()) {
+    throw new Error("A fixture E2E não conseguiu isolar o processo.");
+  }
+}
+
 /** A filing window no other test uses, so each collection is a distinct query. */
 export function uniqueWindow(): { from: string; through: string } {
   const start = Date.UTC(2001, 0, 1) + Math.floor(Math.random() * 7_000) * 86_400_000;

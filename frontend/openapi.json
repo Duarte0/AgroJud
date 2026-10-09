@@ -992,6 +992,42 @@
         "title": "PaginationResponse[JobSummaryResponse]",
         "type": "object"
       },
+      "PaginationResponse_ProcessNewsResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessNewsResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "PaginationResponse[ProcessNewsResponse]",
+        "type": "object"
+      },
       "PaginationResponse_ProcessRepresentationResponse_": {
         "additionalProperties": false,
         "properties": {
@@ -1471,6 +1507,140 @@
           "diagnostics"
         ],
         "title": "ProcessMovementsResponse",
+        "type": "object"
+      },
+      "ProcessNewsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "NEW_OBSERVATION",
+              "ALTERATION_OBSERVED",
+              "NEW_REPRESENTATION"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "event_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Date"
+          },
+          "event_date_original": {
+            "title": "Event Date Original"
+          },
+          "event_date_status": {
+            "title": "Event Date Status",
+            "type": "string"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "title": "Evidence",
+            "type": "object"
+          },
+          "first_observed_at": {
+            "format": "date-time",
+            "title": "First Observed At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "numero_cnj": {
+            "pattern": "^\\d{20}$",
+            "title": "Numero Cnj",
+            "type": "string"
+          },
+          "process_id": {
+            "format": "uuid",
+            "title": "Process Id",
+            "type": "string"
+          },
+          "provenance": {
+            "enum": [
+              "ingestion",
+              "quarantine_reprocess"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
+          "representation_id": {
+            "format": "uuid",
+            "title": "Representation Id",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "reviewed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tribunal": {
+            "title": "Tribunal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "process_id",
+          "numero_cnj",
+          "representation_id",
+          "source",
+          "tribunal",
+          "source_id",
+          "category",
+          "status",
+          "event_date",
+          "event_date_original",
+          "event_date_status",
+          "first_observed_at",
+          "evidence",
+          "provenance",
+          "created_at"
+        ],
+        "title": "ProcessNewsResponse",
+        "type": "object"
+      },
+      "ProcessNewsStatusPatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "pending",
+              "reviewed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "ProcessNewsStatusPatchRequest",
         "type": "object"
       },
       "ProcessRefreshResultResponse": {
@@ -2188,6 +2358,13 @@
             "title": "Active",
             "type": "boolean"
           },
+          "baselines": {
+            "items": {
+              "$ref": "#/components/schemas/RepresentationBaselineResponse"
+            },
+            "title": "Baselines",
+            "type": "array"
+          },
           "history": {
             "items": {
               "$ref": "#/components/schemas/ProcessWatchHistoryResponse"
@@ -2241,6 +2418,7 @@
           "included_at",
           "removed_at",
           "history",
+          "baselines",
           "last_refresh"
         ],
         "title": "ProcessWatchResponse",
@@ -2324,6 +2502,66 @@
           "criteria"
         ],
         "title": "RefreshNumberJobRequest",
+        "type": "object"
+      },
+      "RepresentationBaselineResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "established_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Established At"
+          },
+          "representation_id": {
+            "format": "uuid",
+            "title": "Representation Id",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "established"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "tribunal": {
+            "title": "Tribunal",
+            "type": "string"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          }
+        },
+        "required": [
+          "representation_id",
+          "source",
+          "tribunal",
+          "state",
+          "version_id",
+          "established_at"
+        ],
+        "title": "RepresentationBaselineResponse",
         "type": "object"
       },
       "SignalRuleEnablementResponse": {
@@ -2624,7 +2862,7 @@
     }
   },
   "info": {
-    "description": "API local de jobs, processos, representações, movimentos, triagem, acompanhamento manual e sinais explicáveis.",
+    "description": "API local de jobs, processos, representações, movimentos, triagem, acompanhamento manual, novidades históricas e sinais explicáveis.",
     "title": "AgroJud Radar API",
     "version": "0.1.0"
   },
@@ -3302,6 +3540,251 @@
         "summary": "Retoma um job falho ou cancelado",
         "tags": [
           "jobs"
+        ]
+      }
+    },
+    "/api/v1/news": {
+      "get": {
+        "operationId": "list_news_api_v1_news_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "process_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Process Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "process_number",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 30,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Process Number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "reviewed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "NEW_OBSERVATION",
+                    "ALTERATION_OBSERVED",
+                    "NEW_REPRESENTATION"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginationResponse_ProcessNewsResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Lista novidades observadas nos processos acompanhados",
+        "tags": [
+          "news"
+        ]
+      }
+    },
+    "/api/v1/news/{news_id}": {
+      "patch": {
+        "operationId": "update_news_status_api_v1_news__news_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "news_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "News Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessNewsStatusPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessNewsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Altera a situação de revisão de uma novidade",
+        "tags": [
+          "news"
         ]
       }
     },

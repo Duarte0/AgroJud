@@ -1,0 +1,261 @@
+import { useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router";
+
+import { describeError } from "@/api/client";
+import { useNewsList, useUpdateNewsStatus } from "@/api/queries";
+import type { NewsCategory, NewsListQuery, NewsStatus, ProcessNews } from "@/api/types";
+import { PageHeader } from "@/components/page-header";
+import { Pagination } from "@/components/pagination";
+import { EmptyState, ErrorState, LoadingState, StaleNotice } from "@/components/query-feedback";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { usePageTitle } from "@/hooks/use-page-title";
+import { formatCnj, formatDateTime } from "@/lib/format";
+import { readPage, withPage } from "@/lib/search-params";
+
+const PAGE_SIZE = 25;
+
+const CATEGORY_LABELS: Record<NewsCategory, string> = {
+  NEW_OBSERVATION: "Conteúdo recém-observado",
+  ALTERATION_OBSERVED: "Alteração observada",
+  NEW_REPRESENTATION: "Nova representação",
+};
+
+function textValue(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value;
+  if (typeof value === "number") return String(value);
+  return null;
+}
+
+function eventDate(item: ProcessNews): string {
+  if (item.event_date) return formatDateTime(item.event_date);
+  const original = textValue(item.event_date_original);
+  if (original) return `Data sem normalização: ${original}`;
+  if (item.event_date_status === "missing") return "Data do evento não informada pela fonte";
+  return "Data do evento desconhecida";
+}
+
+function evidenceSummary(item: ProcessNews): string {
+  const content = item.evidence.content;
+  if (content && typeof content === "object" && !Array.isArray(content)) {
+    const record = content as Record<string, unknown>;
+    const name = textValue(record.nome);
+    const code = textValue(record.codigo);
+    return [name, code ? `código ${code}` : null].filter(Boolean).join(" · ") || "Movimento observado";
+  }
+  return `${item.tribunal} · origem ${item.source} · identificador ${item.source_id}`;
+}
+
+function NewsCard({ item }: { item: ProcessNews }) {
+  const updateStatus = useUpdateNewsStatus();
+  const nextStatus: NewsStatus = item.status === "pending" ? "reviewed" : "pending";
+
+  return (
+    <Card data-testid="news-item">
+      <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <CardTitle className="text-base">
+            <Link
+              to={`/processes/${item.process_id}`}
+              className="text-primary underline-offset-4 hover:underline"
+            >
+              {formatCnj(item.numero_cnj)}
+            </Link>
+          </CardTitle>
+          <CardDescription>
+            {item.tribunal} · origem {item.source} · representação {item.source_id}
+          </CardDescription>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={item.category === "ALTERATION_OBSERVED" ? "warning" : "secondary"}>
+            {CATEGORY_LABELS[item.category]}
+          </Badge>
+          <Badge variant={item.status === "pending" ? "outline" : "success"}>
+            {item.status === "pending" ? "Pendente" : "Revisada"}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="font-medium">{evidenceSummary(item)}</p>
+        {item.category === "NEW_OBSERVATION" ? (
+          <p className="text-sm text-muted-foreground">
+            Conteúdo que passou a ser conhecido localmente; isso não afirma que seja um novo ato jurídico.
+          </p>
+        ) : null}
+        <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-xs text-muted-foreground">Data original do evento</dt>
+            <dd>{eventDate(item)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">Primeira observação local</dt>
+            <dd>{formatDateTime(item.first_observed_at)}</dd>
+          </div>
+        </dl>
+        {item.category === "ALTERATION_OBSERVED" ? (
+          <details className="rounded-md border px-3 py-2 text-sm">
+            <summary className="cursor-pointer font-medium">Ver evidência da alteração</summary>
+            <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap text-xs text-muted-foreground">
+              {JSON.stringify(item.evidence.alteration ?? item.evidence, null, 2)}
+            </pre>
+          </details>
+        ) : null}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+          <span className="text-xs text-muted-foreground">
+            Proveniência local: {item.provenance === "ingestion" ? "ingestão" : "reprocessamento de quarentena"}
+          </span>
+          <Button
+            variant={item.status === "pending" ? "default" : "outline"}
+            disabled={updateStatus.isPending}
+            onClick={() => updateStatus.mutate({ id: item.id, status: nextStatus })}
+          >
+            {item.status === "pending" ? "Marcar como revisada" : "Reabrir revisão"}
+          </Button>
+        </div>
+        {updateStatus.error ? (
+          <Alert variant="destructive" role="alert">
+            <AlertTitle>A revisão não foi atualizada</AlertTitle>
+            <AlertDescription>{describeError(updateStatus.error)}</AlertDescription>
+          </Alert>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function queryStatus(value: string | null): NewsStatus | undefined {
+  return value === "pending" || value === "reviewed" ? value : undefined;
+}
+
+function queryCategory(value: string | null): NewsCategory | undefined {
+  return value === "NEW_OBSERVATION" ||
+    value === "ALTERATION_OBSERVED" ||
+    value === "NEW_REPRESENTATION"
+    ? value
+    : undefined;
+}
+
+export function NewsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [processNumberDraft, setProcessNumberDraft] = useState(
+    searchParams.get("process_number") ?? "",
+  );
+  const page = readPage(searchParams);
+  const processNumber = searchParams.get("process_number")?.trim() || undefined;
+  const status = queryStatus(searchParams.get("status"));
+  const category = queryCategory(searchParams.get("category"));
+  const query: NewsListQuery = {
+    page,
+    page_size: PAGE_SIZE,
+    ...(processNumber ? { process_number: processNumber } : {}),
+    ...(status ? { status } : {}),
+    ...(category ? { category } : {}),
+  };
+  const news = useNewsList(query);
+  usePageTitle("Novidades");
+
+  function setFilter(key: string, value: string) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    next.delete("page");
+    setSearchParams(next);
+  }
+
+  function submitProcessFilter(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFilter("process_number", processNumberDraft.trim());
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Novidades"
+        description="Conteúdo observado depois da referência local de cada representação. As datas do evento e da observação ficam separadas."
+      />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-[2fr_1fr_1fr]">
+          <form className="space-y-2" onSubmit={submitProcessFilter}>
+            <label htmlFor="news-process-number" className="text-sm font-medium">
+              Processo por número CNJ
+            </label>
+            <div className="flex gap-2">
+              <Input
+                id="news-process-number"
+                value={processNumberDraft}
+                onChange={(event) => setProcessNumberDraft(event.target.value)}
+                placeholder="0000000-00.0000.0.00.0000"
+              />
+              <Button type="submit" variant="outline">Filtrar</Button>
+            </div>
+          </form>
+          <div className="space-y-2">
+            <label htmlFor="news-status" className="text-sm font-medium">Situação</label>
+            <NativeSelect
+              id="news-status"
+              value={status ?? ""}
+              onChange={(event) => setFilter("status", event.target.value)}
+            >
+              <option value="">Todas</option>
+              <option value="pending">Pendentes</option>
+              <option value="reviewed">Revisadas</option>
+            </NativeSelect>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="news-category" className="text-sm font-medium">Categoria</label>
+            <NativeSelect
+              id="news-category"
+              value={category ?? ""}
+              onChange={(event) => setFilter("category", event.target.value)}
+            >
+              <option value="">Todas</option>
+              {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </NativeSelect>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="space-y-4 pt-6">
+          {news.isPending ? (
+            <LoadingState label="Carregando novidades…" />
+          ) : !news.data ? (
+            <ErrorState
+              title="Não foi possível carregar as novidades"
+              error={news.error}
+              onRetry={() => void news.refetch()}
+              retrying={news.isFetching}
+            />
+          ) : (
+            <div className="space-y-4" aria-busy={news.isPlaceholderData}>
+              <StaleNotice query={news} />
+              {news.data.items.length === 0 ? (
+                <EmptyState title="Nenhuma novidade neste recorte">
+                  Baselines pendentes aguardam uma lista de movimentos completa. Uma falha ou resposta parcial não é tratada como ausência de novidade.
+                </EmptyState>
+              ) : (
+                news.data.items.map((item) => <NewsCard key={item.id} item={item} />)
+              )}
+              <Pagination
+                label="Paginação das novidades"
+                page={page}
+                pageSize={PAGE_SIZE}
+                total={news.data.total}
+                disabled={news.isPlaceholderData}
+                onPageChange={(next) => setSearchParams(withPage(searchParams, next))}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -35,6 +35,7 @@ from agrojud.domain.persistence import (
     SourceIdentityConflict,
 )
 from agrojud.services.movement_ingestion import persist_movement_snapshot
+from agrojud.services.news import register_watched_snapshot
 from agrojud.sources.contracts import (
     SourceError,
     SourceErrorCode,
@@ -388,6 +389,15 @@ def ingest_page(
                 version_id=version.id,
                 raw_source=prepared.raw_payload,
                 observed_at=observed_at,
+            )
+            register_watched_snapshot(
+                session,
+                process_id=process.id,
+                representation=representation,
+                version=version,
+                snapshot=movement_snapshot.snapshot,
+                provenance="ingestion",
+                first_observed_at=version.first_observed_at,
             )
             for issue in movement_snapshot.issues:
                 rejection = quarantine_repository.create_or_get(

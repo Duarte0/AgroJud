@@ -99,6 +99,187 @@ class ProcessWatchlistHistory(Base):
     )
 
 
+class ProcessWatchCycle(Base):
+    """One active interval during which local observations may create news."""
+
+    __tablename__ = "process_watch_cycles"
+    __table_args__ = (
+        UniqueConstraint("process_id", "cycle_number", name="uq_process_watch_cycles_number"),
+        UniqueConstraint("id", "process_id", name="uq_process_watch_cycles_id_process"),
+        CheckConstraint("cycle_number >= 1", name="ck_process_watch_cycles_number_positive"),
+        CheckConstraint(
+            "ended_at is null or ended_at >= started_at",
+            name="ck_process_watch_cycles_end_after_start",
+        ),
+        ForeignKeyConstraint(
+            ["process_id"],
+            ["process_watchlist_entries.process_id"],
+            name="fk_process_watch_cycles_watch_entry",
+            ondelete="RESTRICT",
+        ),
+        Index(
+            "uq_process_watch_cycles_active_process",
+            "process_id",
+            unique=True,
+            postgresql_where=text("ended_at is null"),
+        ),
+        Index("ix_process_watch_cycles_process_number", "process_id", "cycle_number"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    cycle_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RepresentationWatchBaseline(Base):
+    """Complete movement version chosen as the reference in one watch cycle."""
+
+    __tablename__ = "representation_watch_baselines"
+    __table_args__ = (
+        UniqueConstraint(
+            "watch_cycle_id",
+            "representation_id",
+            name="uq_representation_watch_baselines_cycle_representation",
+        ),
+        CheckConstraint(
+            "state in ('pending', 'established')", name="ck_representation_watch_baselines_state"
+        ),
+        CheckConstraint(
+            "(state = 'pending' and version_id is null and snapshot_id is null "
+            "and normalizer_version is null and established_at is null) or "
+            "(state = 'established' and version_id is not null and snapshot_id is not null "
+            "and normalizer_version is not null and established_at is not null)",
+            name="ck_representation_watch_baselines_state_fields",
+        ),
+        ForeignKeyConstraint(
+            ["watch_cycle_id", "process_id"],
+            ["process_watch_cycles.id", "process_watch_cycles.process_id"],
+            name="fk_representation_watch_baselines_cycle_process",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["representation_id", "process_id"],
+            ["representations.id", "representations.process_id"],
+            name="fk_representation_watch_baselines_representation_process",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["representation_id", "version_id"],
+            ["representation_versions.representation_id", "representation_versions.id"],
+            name="fk_representation_watch_baselines_version",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["snapshot_id", "representation_id"],
+            ["movement_snapshots.id", "movement_snapshots.representation_id"],
+            name="fk_representation_watch_baselines_snapshot",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_representation_watch_baselines_cycle_state", "watch_cycle_id", "state"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    watch_cycle_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    representation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    state: Mapped[str] = mapped_column(String(12), nullable=False, default="pending")
+    version_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    snapshot_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    normalizer_version: Mapped[str | None] = mapped_column(String(80))
+    established_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class ProcessNews(Base):
+    """Idempotent, reviewable evidence observed during a watch cycle."""
+
+    __tablename__ = "process_news"
+    __table_args__ = (
+        UniqueConstraint(
+            "process_id",
+            "representation_id",
+            "identity_key",
+            "category",
+            name="uq_process_news_identity_category",
+        ),
+        CheckConstraint(
+            "category in ('NEW_OBSERVATION', 'ALTERATION_OBSERVED', 'NEW_REPRESENTATION')",
+            name="ck_process_news_category",
+        ),
+        CheckConstraint("status in ('pending', 'reviewed')", name="ck_process_news_status"),
+        CheckConstraint(
+            "source_date_status in "
+            "('unknown', 'missing', 'null', 'timezone_aware', 'timezone_ambiguous', 'unparseable')",
+            name="ck_process_news_date_status",
+        ),
+        CheckConstraint(
+            "provenance in ('ingestion', 'quarantine_reprocess')",
+            name="ck_process_news_provenance",
+        ),
+        CheckConstraint(
+            "length(btrim(identity_key)) > 0", name="ck_process_news_identity_nonempty"
+        ),
+        ForeignKeyConstraint(
+            ["representation_id", "process_id"],
+            ["representations.id", "representations.process_id"],
+            name="fk_process_news_representation_process",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["watch_cycle_id", "process_id"],
+            ["process_watch_cycles.id", "process_watch_cycles.process_id"],
+            name="fk_process_news_cycle_process",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["occurrence_id", "representation_id"],
+            ["movement_occurrences.id", "movement_occurrences.representation_id"],
+            name="fk_process_news_occurrence",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["representation_id", "origin_version_id"],
+            ["representation_versions.representation_id", "representation_versions.id"],
+            name="fk_process_news_version",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["origin_snapshot_id", "representation_id"],
+            ["movement_snapshots.id", "movement_snapshots.representation_id"],
+            name="fk_process_news_snapshot",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_process_news_feed", "first_observed_at", "id"),
+        Index("ix_process_news_status_feed", "status", "first_observed_at", "id"),
+        Index("ix_process_news_category_feed", "category", "first_observed_at", "id"),
+        Index("ix_process_news_process_feed", "process_id", "first_observed_at", "id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    representation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    watch_cycle_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(12), nullable=False, default="pending")
+    identity_key: Mapped[str] = mapped_column(Text, nullable=False)
+    occurrence_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    origin_version_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    origin_snapshot_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    source_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source_date_original: Mapped[Any | None] = mapped_column(JSONB)
+    source_date_status: Mapped[str] = mapped_column(String(24), nullable=False, default="unknown")
+    first_observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    evidence: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    provenance: Mapped[str] = mapped_column(String(24), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class ProcessTriage(Base):
     """Latest human review state, stored separately from imported process data."""
 
@@ -161,6 +342,7 @@ class Representation(Base):
 
     __tablename__ = "representations"
     __table_args__ = (
+        UniqueConstraint("id", "process_id", name="uq_representations_id_process"),
         UniqueConstraint(
             "source",
             "tribunal",

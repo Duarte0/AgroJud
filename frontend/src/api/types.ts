@@ -31,6 +31,14 @@ export type ProcessWatchHistory = Schemas["ProcessWatchHistoryResponse"];
 export type ProcessRefreshResult = Schemas["ProcessRefreshResultResponse"];
 export type WatchlistItem = Schemas["WatchlistItemResponse"];
 export type WatchlistPage = Schemas["PaginationResponse_WatchlistItemResponse_"];
+export type ProcessNews = Schemas["ProcessNewsResponse"];
+export type ProcessNewsPage = Schemas["PaginationResponse_ProcessNewsResponse_"];
+export type NewsCategory = ProcessNews["category"];
+export type NewsStatus = ProcessNews["status"];
+export type ProcessNewsStatusPatch = Schemas["ProcessNewsStatusPatchRequest"];
+export type NewsListQuery = NonNullable<
+  paths["/api/v1/news"]["get"]["parameters"]["query"]
+>;
 export type SignalRunRequest = Schemas["SignalRunRequest"];
 export type SignalRunAccepted = Schemas["SignalRunAcceptedResponse"];
 export type SignalRunStatus = Schemas["SignalRunStatusResponse"];

@@ -41,6 +41,7 @@ from agrojud.services.ingestion import (
     _RejectedHit,
 )
 from agrojud.services.movement_ingestion import persist_movement_snapshot
+from agrojud.services.news import register_watched_snapshot
 from agrojud.sources.contracts import Cursor, SourceHit
 
 
@@ -204,6 +205,15 @@ def reprocess_quarantine_hit(
         observed_at=reprocessed_at,
         first_observed_at=rejection.first_observed_at,
         normalizer_version=normalizer_version,
+    )
+    register_watched_snapshot(
+        session,
+        process_id=process.id,
+        representation=representation,
+        version=version,
+        snapshot=movement_snapshot.snapshot,
+        provenance="quarantine_reprocess",
+        first_observed_at=rejection.first_observed_at,
     )
     new_rejections = tuple(
         quarantine_repository.create_or_get(

@@ -4,6 +4,7 @@ import { AppShell } from "@/app/app-shell";
 import { JobDetailPage } from "@/pages/job-detail-page";
 import { JobsPage } from "@/pages/jobs-page";
 import { NotFoundPage } from "@/pages/not-found-page";
+import { NewsPage } from "@/pages/news-page";
 import { ProcessDetailPage } from "@/pages/process-detail-page";
 import { ProcessesPage } from "@/pages/processes-page";
 import { RadarPage } from "@/pages/radar-page";
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
       { path: "processes", element: <ProcessesPage /> },
       { path: "processes/:processId", element: <ProcessDetailPage /> },
       { path: "watchlist", element: <WatchlistPage /> },
+      { path: "news", element: <NewsPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

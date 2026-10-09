@@ -28,6 +28,7 @@ from agrojud.api.errors import (
 from agrojud.api.jobs import SourceCapabilityUnavailable
 from agrojud.api.jobs import router as jobs_router
 from agrojud.api.metadata import router as metadata_router
+from agrojud.api.news import router as news_router
 from agrojud.api.processes import router as processes_router
 from agrojud.api.signals import router as signals_router
 from agrojud.api.triage import router as triage_router
@@ -64,7 +65,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         version="0.1.0",
         description=(
             "API local de jobs, processos, representações, movimentos, triagem, "
-            "acompanhamento manual e sinais explicáveis."
+            "acompanhamento manual, novidades históricas e sinais explicáveis."
         ),
         docs_url="/api/v1/docs",
         openapi_url="/api/v1/openapi.json",
@@ -239,6 +240,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
 
     app.include_router(jobs_router)
     app.include_router(processes_router)
+    app.include_router(news_router)
     app.include_router(signals_router)
     app.include_router(triage_router)
     app.include_router(watchlist_router)

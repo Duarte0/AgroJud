@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from agrojud.db.models import Process, ProcessWatchlistEntry, ProcessWatchlistHistory
+from agrojud.services.news import end_watch_cycle, start_watch_cycle
 
 
 def set_process_watch(
@@ -59,6 +60,10 @@ def set_process_watch(
         )
     )
     session.flush()
+    if active:
+        start_watch_cycle(session, process_id=process_id, started_at=now)
+    else:
+        end_watch_cycle(session, process_id=process_id, ended_at=now)
     return process, entry
 
 

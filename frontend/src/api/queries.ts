@@ -13,7 +13,9 @@ import type {
   JobCommand,
   JobCommandResult,
   JobListQuery,
+  NewsListQuery,
   ProcessDetail,
+  ProcessNewsStatusPatch,
   ProcessListQuery,
   ProcessWatch,
   ProcessTriagePatch,
@@ -48,6 +50,8 @@ export const queryKeys = {
     [env, "processes", "detail", id, "watch"] as const,
   watchlist: (env: EnvironmentName, query?: WatchlistQuery) =>
     query ? ([env, "watchlist", query] as const) : ([env, "watchlist"] as const),
+  news: (env: EnvironmentName, query?: NewsListQuery) =>
+    query ? ([env, "news", query] as const) : ([env, "news"] as const),
   triageHistory: (env: EnvironmentName, id: string, page?: number) =>
     page === undefined
       ? ([env, "processes", "detail", id, "triage-history"] as const)
@@ -152,6 +156,33 @@ export function useWatchlist(query: WatchlistQuery) {
       current.state.data?.items.some((item) => item.last_refresh?.state === "pending")
         ? 3_000
         : false,
+  });
+}
+
+export function useNewsList(query: NewsListQuery) {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.news(environment, query),
+    queryFn: ({ signal }) =>
+      request(() => api.GET("/api/v1/news", { params: { query }, signal })),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useUpdateNewsStatus() {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: ProcessNewsStatusPatch["status"] }) =>
+      request(() =>
+        api.PATCH("/api/v1/news/{news_id}", {
+          params: { path: { news_id: id } },
+          body: { status },
+        }),
+      ),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.news(environment) });
+    },
   });
 }
 
