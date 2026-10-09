@@ -48,6 +48,13 @@ class Settings(BaseSettings):
         repr=False,
         validation_alias="DATAJUD_API_KEY",
     )
+    job_lease_seconds: int = Field(
+        default=120, ge=2, le=86_400, validation_alias="JOB_LEASE_SECONDS"
+    )
+    job_heartbeat_seconds: int = Field(
+        default=20, ge=1, le=86_399, validation_alias="JOB_HEARTBEAT_SECONDS"
+    )
+    job_poll_seconds: float = Field(default=2, gt=0, le=300, validation_alias="JOB_POLL_SECONDS")
 
     @field_validator("database_url")
     @classmethod
@@ -75,6 +82,9 @@ class Settings(BaseSettings):
                 raise ValueError("TEST_DATABASE_URL must differ from DATABASE_URL.")
         elif database_url is None:
             raise ValueError("DATABASE_URL is required for demo and real environments.")
+
+        if self.job_heartbeat_seconds >= self.job_lease_seconds:
+            raise ValueError("JOB_HEARTBEAT_SECONDS must be less than JOB_LEASE_SECONDS.")
 
         return self
 

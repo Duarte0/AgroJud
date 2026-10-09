@@ -81,5 +81,5 @@ pytest: 126 passaram.
 
 A suíte aplicou migrations em banco vazio e a partir de `20261009_0002`; os testes anteriores de persistência também aplicaram a partir de `20261008_0001`. Configurações Compose demo/real/test passaram; a imagem de produção API/worker foi construída. `uv run --no-sync agrojud-quarantine-reprocess --help` confirmou a interface local do comando.
 
-Não houve acesso ao banco operacional ou ao DataJud. Os testes demonstram somente persistência e reprocessamento locais com dados sintéticos; não aprovam identidade ou estabilidade de movimentos reais. A SPEC-007 permanece bloqueada até esta dependência ser entregue.
+Não houve acesso ao banco operacional ou ao DataJud. Os testes demonstram somente persistência e reprocessamento locais com dados sintéticos; não aprovam identidade ou estabilidade de movimentos reais. No fechamento da SPEC-006, a SPEC-007 aguardava esta dependência; a unidade foi concluída depois conforme [sua evidência](SPEC-007-jobs-leases-e-posse.md).
 

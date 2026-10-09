@@ -1,6 +1,6 @@
 # AgroJud Radar
 
-Fundação local do monitor de contencioso do produtor rural. A SPEC-001 entrega API e worker mínimos, PostgreSQL real, migrations, saúde e CI. A SPEC-002 acrescenta os contratos e adaptadores de fonte; a API e o worker ainda não iniciam coleta de produto.
+Fundação local do monitor de contencioso do produtor rural. A SPEC-001 entrega API e worker mínimos, PostgreSQL real, migrations, saúde e CI. A SPEC-002 acrescenta os contratos e adaptadores de fonte; a SPEC-007 acrescenta fila persistente, posse, recuperação e cancelamento cooperativo. A coleta de produção continua fora do escopo.
 
 ## Requisitos locais
 
@@ -30,13 +30,13 @@ curl --fail http://127.0.0.1:8000/api/v1/health/ready
 
 API publica apenas em `127.0.0.1:8000`; o banco não publica porta no host por padrão. `API_PORT` permite escolher outra porta quando 8000 estiver ocupada. Migrações são explícitas e devem ser aplicadas após subir o banco. A imagem API e o comando worker usam o mesmo Dockerfile e pacote.
 
-Para validar também o comando inicial do worker:
+O worker executa um loop persistente, mas ainda não registra handlers de coleta; fica ocioso até uma unidade posterior introduzir esses handlers. Para validar configuração e encerrar sem iniciar o loop:
 
 ```sh
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml run --rm worker
+docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml run --rm worker uv run --no-sync agrojud-worker --check
 ```
 
-O worker valida ambiente e credenciais e encerra; não consulta fonte nem fica em loop.
+O worker lê as opções `JOB_LEASE_SECONDS` (120), `JOB_HEARTBEAT_SECONDS` (20) e `JOB_POLL_SECONDS` (2) do ambiente. Heartbeats usam uma sessão PostgreSQL própria. O modo `--check` valida configuração sem acessar o banco. Nenhum coletor DataJud ou sintético de produção está registrado nesta SPEC.
 
 ## Contratos de fonte (SPEC-002)
 

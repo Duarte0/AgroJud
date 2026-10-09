@@ -34,7 +34,7 @@ compose() {
 compose up --build --detach db api
 compose run --rm api uv run --no-sync alembic upgrade head
 compose up --detach --wait api
-compose run --rm worker
+compose run --rm worker uv run --no-sync agrojud-worker --check
 curl --fail --silent --show-error "http://127.0.0.1:$API_PORT/api/v1/health/live"
 curl --fail --silent --show-error "http://127.0.0.1:$API_PORT/api/v1/health/ready"
 compose ps

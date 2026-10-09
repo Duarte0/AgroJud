@@ -1,8 +1,8 @@
 # IMPLEMENTATION_PLAN — AgroJud Radar
 
-Data: 08/10/2026.
+Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3 foi concluída localmente em 09/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
 
 ## 1. Estado atual e orientação
 
@@ -54,9 +54,17 @@ Estado após a implementação de SPEC-006, confirmado em 09/10/2026:
 - `ingest_page` grava capas, ocorrências e rejeições na mesma transação de página. Listas ausentes, `null`, inválidas ou parcialmente rejeitadas ficam incompletas; lista vazia explícita é válida. Reordenação não muda identidades e ausência em snapshot incompleto não é registrada como desaparecimento.
 - `agrojud-quarantine-reprocess` exige IDs explícitos, abre uma transação por hit e usa apenas conteúdo local. Resolução é auditada sem reescrever a observação nem o resultado original da coleta; ocorrências derivadas preservam a primeira observação original e snapshots guardam o horário do reprocessamento.
 - Ruff, formatação, mypy e 126 testes passaram em PostgreSQL 18.6 isolado. As migrations foram aplicadas em banco vazio e sobre revisões anteriores; Compose demo/real/test e build da imagem API/worker passaram. Evidência completa em [SPEC-006](specs/SPEC-006-movimentos-e-quarentena.md).
-- A validação usa somente fixtures sintéticas; nenhuma chamada ao DataJud ou acesso ao banco operacional ocorreu. SPEC-007, API, frontend, checkpoint e baseline não foram antecipados.
+- A validação usa somente fixtures sintéticas; nenhuma chamada ao DataJud ou acesso ao banco operacional ocorreu. Jobs, API, frontend e baseline não foram antecipados.
 
-A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 estabelece a fundação local; SPEC-005 e SPEC-006 completam M2; as próximas etapas introduzirão processamento conforme suas SPECs.
+Estado após a implementação de SPEC-007, confirmado em 09/10/2026:
+
+- A migration `20261009_0004` acrescenta jobs vinculados a collections, tentativas, eventos append-only e checkpoint inicial. Índices parciais garantem uma operação ativa equivalente e permitem reserva eficiente; constraints e triggers protegem estados, posse e snapshot imutável.
+- `JobService` implementa enqueue concorrente idempotente, claim com `FOR UPDATE SKIP LOCKED`, token UUID, lease verificada com `clock_timestamp()`, heartbeat, cancelamento, finish, inspect e checkpoint CAS. Gravações protegidas bloqueiam primeiro o job e revalidam lease/cancelamento antes do commit.
+- `LeasedWorker` mantém o heartbeat em sessão/thread separada, não mantém transação durante handler bloqueado e suspende gravação após falha do heartbeat. Erros inesperados são registrados com código/resumo sanitizados. Nenhum handler de coleta de produção foi registrado.
+- PostgreSQL 18.6 isolado validou migration em banco vazio e sobre SPEC-006 com collection preexistente; 142 testes passaram incluindo disputa em duas sessões, lease vencida durante gravação, cancelamento concorrente, heartbeat independente, CAS e recuperação após nova instância. Ruff check/format, mypy, Compose demo/real/test, build de produção API/worker e `agrojud-worker --check` passaram. Evidência detalhada em [SPEC-007](specs/SPEC-007-jobs-leases-e-posse.md).
+- A evidência é local e sintética. SPEC-008/009 ainda precisam implementar paginação, retries e coleta recuperável; nenhuma chamada ao DataJud ocorreu.
+
+A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 estabelece a fundação local; SPEC-005/006 completam M2; SPEC-007 entrega a infraestrutura de M3; as próximas etapas introduzirão processamento conforme suas SPECs.
 
 Cada etapa deverá registrar comandos executados, resultados, limitações e evidências. Implementação local, integração real e prontidão para uso profissional são conclusões distintas. Nenhuma etapa de aplicação deve ser considerada concluída pela existência deste documento.
 
@@ -226,6 +234,8 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 
 **Dependência:** M2.
 
+**Status:** concluído localmente em 09/10/2026; ver [SPEC-007](specs/SPEC-007-jobs-leases-e-posse.md).
+
 **Implementar:**
 
 - Job, tentativas, eventos de execução e checkpoint.
@@ -251,6 +261,8 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 - Cancelamento mantém páginas confirmadas e impede avanço posterior.
 
 **Demonstração:** encerrar um consumidor e recuperar o trabalho com outro.
+
+**Evidência:** migration `20261009_0004` aplicada em banco vazio e após SPEC-006 com collection preexistente. Ruff check, Ruff format check, mypy e 142 testes PostgreSQL passaram. Testes concorrentes comprovaram enqueue/claim únicos, token antigo rejeitado, rollback quando a lease vence durante gravação, heartbeat em sessão independente, ordem entre cancelamento e commit e persistência de tentativas/eventos/checkpoint após nova instância. Compose demo/real/test, imagem de produção API/worker e `agrojud-worker --check` passaram; em projeto e volume isolados, API/DB aplicaram migrations e `/health/live` e `/health/ready` responderam com sucesso. Nenhuma fonte real foi consultada; nenhum handler de coleta de produção foi antecipado.
 
 ### M4 — Coleta paginada recuperável
 
@@ -468,7 +480,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] S3 — Reconciliação documentada e testada (SPEC-004 DONE; fixtures sintéticas, sem validação da fonte real).
 - [ ] M1 — Adaptadores e erros tipados.
 - [x] M2 — Persistência de página idempotente (SPEC-005 e SPEC-006 concluídas localmente).
-- [ ] M3 — Fila, lease e posse.
+- [x] M3 — Fila, lease e posse (SPEC-007 DONE localmente; handlers de produção e coleta pertencem às unidades seguintes).
 - [ ] S4 — Atomicidade e recuperação comprovadas.
 - [ ] M4 — Coleta recuperável demonstrada.
 - [ ] M5 — API e OpenAPI estáveis.
@@ -484,7 +496,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001, SPEC-002, SPEC-003 e SPEC-004 estão DONE; SPEC-005 e SPEC-010 estão READY; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-007 estão DONE; SPEC-008 e SPEC-010 estão READY; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |

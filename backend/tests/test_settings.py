@@ -51,3 +51,29 @@ def test_demo_requires_database_url(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TEST_DATABASE_URL", raising=False)
     with pytest.raises(ValidationError, match="DATABASE_URL is required"):
         Settings()
+
+
+def test_job_lease_and_heartbeat_defaults_are_configurable() -> None:
+    settings = Settings(database_url=OPERATIONAL_URL)
+    assert settings.job_lease_seconds == 120
+    assert settings.job_heartbeat_seconds == 20
+    assert settings.job_poll_seconds == 2
+
+    configured = Settings(
+        database_url=OPERATIONAL_URL,
+        job_lease_seconds=30,
+        job_heartbeat_seconds=5,
+        job_poll_seconds=0.5,
+    )
+    assert configured.job_lease_seconds == 30
+    assert configured.job_heartbeat_seconds == 5
+    assert configured.job_poll_seconds == 0.5
+
+
+def test_job_heartbeat_must_be_shorter_than_lease() -> None:
+    with pytest.raises(ValidationError, match="JOB_HEARTBEAT_SECONDS must be less"):
+        Settings(
+            database_url=OPERATIONAL_URL,
+            job_lease_seconds=20,
+            job_heartbeat_seconds=20,
+        )

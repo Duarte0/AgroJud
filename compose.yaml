@@ -27,6 +27,9 @@ services:
       AGROJUD_ENV: ${AGROJUD_ENV:-demo}
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the selected environment file}
       DATAJUD_API_KEY: ${DATAJUD_API_KEY:-}
+      JOB_LEASE_SECONDS: ${JOB_LEASE_SECONDS:-120}
+      JOB_HEARTBEAT_SECONDS: ${JOB_HEARTBEAT_SECONDS:-20}
+      JOB_POLL_SECONDS: ${JOB_POLL_SECONDS:-2}
     depends_on:
       db:
         condition: service_healthy
@@ -50,6 +53,9 @@ services:
       AGROJUD_ENV: ${AGROJUD_ENV:-demo}
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the selected environment file}
       DATAJUD_API_KEY: ${DATAJUD_API_KEY:-}
+      JOB_LEASE_SECONDS: ${JOB_LEASE_SECONDS:-120}
+      JOB_HEARTBEAT_SECONDS: ${JOB_HEARTBEAT_SECONDS:-20}
+      JOB_POLL_SECONDS: ${JOB_POLL_SECONDS:-2}
     depends_on:
       db:
         condition: service_healthy

@@ -1,22 +1,82 @@
-"""Initial worker command: validate configuration and exit without polling."""
+"""Persistent worker process; production collectors are registered by later SPECs."""
 
+from __future__ import annotations
+
+import argparse
 import json
+import os
+import signal
+import socket
+from datetime import timedelta
+from threading import Event
+
+from sqlalchemy import text
+from sqlalchemy.orm import sessionmaker
 
 from agrojud.config import get_settings
+from agrojud.db.engine import make_engine
+from agrojud.services.job_worker import LeasedWorker
+from agrojud.services.jobs import JobService
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Processador persistente do AgroJud Radar.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="validar a configuração e encerrar sem iniciar o loop do worker",
+    )
+    args = parser.parse_args(argv)
     settings = get_settings()
+
+    if args.check:
+        print(
+            json.dumps(
+                {
+                    "event": "worker_configuration_validated",
+                    "environment": settings.environment,
+                    "processing_enabled": False,
+                },
+                sort_keys=True,
+            )
+        )
+        return
+
+    engine = make_engine(settings.effective_database_url)
+    with engine.connect() as connection:
+        connection.execute(text("select 1"))
+    sessions = sessionmaker(engine, expire_on_commit=False)
+    jobs = JobService(
+        sessions,
+        lease_duration=timedelta(seconds=settings.job_lease_seconds),
+    )
+    worker_id = os.getenv("JOB_WORKER_ID") or f"{socket.gethostname()}:{os.getpid()}"
+    worker = LeasedWorker(
+        jobs,
+        worker_id=worker_id,
+        handlers={},
+        heartbeat_interval=settings.job_heartbeat_seconds,
+    )
+    stop = Event()
+    signal.signal(signal.SIGINT, lambda _signum, _frame: stop.set())
+    signal.signal(signal.SIGTERM, lambda _signum, _frame: stop.set())
     print(
         json.dumps(
             {
-                "event": "worker_configuration_validated",
+                "event": "worker_started",
                 "environment": settings.environment,
-                "processing_enabled": False,
+                "registered_handlers": sorted(worker.handlers),
             },
             sort_keys=True,
-        )
+        ),
+        flush=True,
     )
+    try:
+        while not stop.is_set():
+            if not worker.run_once():
+                stop.wait(settings.job_poll_seconds)
+    finally:
+        engine.dispose()
 
 
 if __name__ == "__main__":

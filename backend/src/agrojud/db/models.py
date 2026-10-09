@@ -16,6 +16,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
@@ -516,3 +517,189 @@ class QuarantineResolution(Base):
     representation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
     version_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
     resolution_detail: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+
+
+class Job(Base):
+    """Persisted work item with an expiring, token-guarded worker lease."""
+
+    __tablename__ = "jobs"
+    __table_args__ = (
+        CheckConstraint("job_type in ('discovery', 'refresh_number')", name="ck_jobs_type"),
+        CheckConstraint("mode in ('demo', 'real')", name="ck_jobs_mode"),
+        CheckConstraint(
+            "status in ('queued', 'running', 'retry_wait', 'completed', 'partial', "
+            "'failed', 'cancelled')",
+            name="ck_jobs_status",
+        ),
+        CheckConstraint("length(btrim(source)) > 0", name="ck_jobs_source_nonempty"),
+        CheckConstraint("length(btrim(tribunal)) > 0", name="ck_jobs_tribunal_nonempty"),
+        CheckConstraint("operation_key ~ '^[0-9a-f]{64}$'", name="ck_jobs_operation_key_hex"),
+        CheckConstraint("attempt_count >= 0", name="ck_jobs_attempt_count_nonnegative"),
+        CheckConstraint("event_count >= 0", name="ck_jobs_event_count_nonnegative"),
+        CheckConstraint(
+            "(status = 'running' and lease_token is not null and lease_owner is not null "
+            "and lease_expires_at is not null and heartbeat_at is not null) or "
+            "(status <> 'running' and lease_token is null and lease_owner is null "
+            "and lease_expires_at is null and heartbeat_at is null)",
+            name="ck_jobs_lease_matches_status",
+        ),
+        CheckConstraint(
+            "status = 'running' or not cancel_requested", name="ck_jobs_cancel_only_running"
+        ),
+        ForeignKeyConstraint(
+            ["collection_id"],
+            ["collections.id"],
+            name="fk_jobs_collection_id_collections",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("collection_id", name="uq_jobs_collection_id"),
+        Index(
+            "uq_jobs_active_operation_key",
+            "operation_key",
+            unique=True,
+            postgresql_where=text("status in ('queued', 'running', 'retry_wait')"),
+        ),
+        Index(
+            "ix_jobs_available_claim",
+            "status",
+            "available_at",
+            "created_at",
+            postgresql_where=text("status in ('queued', 'retry_wait')"),
+        ),
+        Index(
+            "ix_jobs_expired_claim",
+            "lease_expires_at",
+            "created_at",
+            postgresql_where=text("status = 'running'"),
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    collection_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    job_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    mode: Mapped[str] = mapped_column(String(8), nullable=False)
+    source: Mapped[str] = mapped_column(String(80), nullable=False)
+    tribunal: Mapped[str] = mapped_column(String(40), nullable=False)
+    operation_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    parameters_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(12), nullable=False, default="queued", server_default="queued"
+    )
+    coverage: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    reason: Mapped[str | None] = mapped_column(Text)
+    cancel_requested: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    available_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    lease_token: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    lease_owner: Mapped[str | None] = mapped_column(String(120))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempt_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    event_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class JobAttempt(Base):
+    """One durable ownership period, including abandoned and recovered runs."""
+
+    __tablename__ = "job_attempts"
+    __table_args__ = (
+        UniqueConstraint("job_id", "attempt_number", name="uq_job_attempts_number"),
+        CheckConstraint("attempt_number >= 1", name="ck_job_attempts_number_positive"),
+        CheckConstraint(
+            "(finished_at is null and outcome is null) or "
+            "(finished_at is not null and outcome in "
+            "('completed', 'partial', 'failed', 'cancelled', 'retry_wait', 'lease_expired'))",
+            name="ck_job_attempts_outcome_consistent",
+        ),
+        CheckConstraint(
+            "error_code is null or length(btrim(error_code)) > 0",
+            name="ck_job_attempts_error_code_nonempty",
+        ),
+        CheckConstraint(
+            "error_summary is null or length(btrim(error_summary)) > 0",
+            name="ck_job_attempts_error_summary_nonempty",
+        ),
+        ForeignKeyConstraint(
+            ["job_id"], ["jobs.id"], name="fk_job_attempts_job_id_jobs", ondelete="RESTRICT"
+        ),
+        Index(
+            "uq_job_attempts_active_job",
+            "job_id",
+            unique=True,
+            postgresql_where=text("finished_at is null"),
+        ),
+        Index("ix_job_attempts_job_started", "job_id", "started_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    job_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    attempt_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    worker_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    outcome: Mapped[str | None] = mapped_column(String(16))
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    error_summary: Mapped[str | None] = mapped_column(String(240))
+
+
+class JobEvent(Base):
+    """Append-only, sanitized lifecycle event for a persisted job."""
+
+    __tablename__ = "job_events"
+    __table_args__ = (
+        UniqueConstraint("job_id", "event_number", name="uq_job_events_number"),
+        CheckConstraint("length(btrim(event_type)) > 0", name="ck_job_events_type_nonempty"),
+        CheckConstraint("event_number >= 1", name="ck_job_events_number_positive"),
+        ForeignKeyConstraint(
+            ["job_id"], ["jobs.id"], name="fk_job_events_job_id_jobs", ondelete="RESTRICT"
+        ),
+        Index("ix_job_events_job_created", "job_id", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    job_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    event_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class JobCheckpoint(Base):
+    """Initial and compare-and-swap progress checkpoint owned by one job."""
+
+    __tablename__ = "job_checkpoints"
+    __table_args__ = (
+        UniqueConstraint("job_id", name="uq_job_checkpoints_job_id"),
+        CheckConstraint("next_page >= 1", name="ck_job_checkpoints_next_page_positive"),
+        CheckConstraint("revision >= 0", name="ck_job_checkpoints_revision_nonnegative"),
+        ForeignKeyConstraint(
+            ["job_id"],
+            ["jobs.id"],
+            name="fk_job_checkpoints_job_id_jobs",
+            ondelete="RESTRICT",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    job_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    cursor: Mapped[Any | None] = mapped_column(JSONB)
+    next_page: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

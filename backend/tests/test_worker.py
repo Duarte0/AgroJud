@@ -22,7 +22,7 @@ def test_worker_validates_configuration_without_logging_secrets(
     )
     monkeypatch.setenv("DATAJUD_API_KEY", "do-not-log-api-key")
 
-    main()
+    main(["--check"])
 
     output = capsys.readouterr().out
     assert json.loads(output) == {

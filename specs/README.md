@@ -1,6 +1,6 @@
 # SPECs — AgroJud Radar
 
-Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004 foi concluída em 09/10/2026 com reconciliação local por fixtures sintéticas; SPEC-005 e SPEC-006 foram concluídas em 09/10/2026 com persistência local de capas, movimentos e quarentena. Uma amostra manual posterior confirmou envelope e campos de um hit; filtro, sort e paginação seguem sem validação externa.
+Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004, SPEC-005, SPEC-006 e SPEC-007 foram concluídas em 09/10/2026 com reconciliação, persistência de capas/movimentos/quarentena e fila local com leases. As evidências usam fixtures sintéticas; uma amostra manual confirmou envelope e campos de um hit, enquanto filtro, sort e paginação seguem sem validação externa.
 
 ## Como executar uma unidade
 
@@ -20,7 +20,7 @@ Uma SPEC contém objetivo, contexto, dependências, escopo, requisitos/contratos
 - **IN_PROGRESS:** execução iniciada.
 - **DONE:** todos os critérios desta unidade foram atendidos e registrados.
 
-SPEC-001 a SPEC-006 estão DONE. SPEC-005/006 comprovam efeitos locais de capas, movimentos e quarentena com fixtures; jobs seguem fora desta entrega. SPEC-010 está READY porque sua dependência direta está entregue; READY autoriza iniciar a unidade, sem validar capacidades externas. As outras unidades mantêm seus status próprios até reavaliação; concluir uma predecessora não promove sucessoras automaticamente. SPEC-003 entregou probe/testes/relatório. Uma amostra manual confirmou envelope, campos essenciais e igualdade de `_id`/`_source.id` para um hit; filtros, busca exata, sort e paginação permanecem INCONCLUSIVE. SPEC-004/006 fixam a política técnica local com fixtures sintéticas; não validam movimentos reais nem liberam a fonte DataJud. SPEC-010 continua responsável pelo catálogo versionado.
+SPEC-001 a SPEC-007 estão DONE. SPEC-005/006 comprovam efeitos locais de capas, movimentos e quarentena; SPEC-007 comprova fila, posse, recuperação e cancelamento em PostgreSQL isolado. Essas evidências usam fixtures/handlers de teste e não ativam uma coleta de produção. SPEC-008 está READY porque sua dependência direta foi entregue; isso atualiza elegibilidade sem iniciar seu escopo. SPEC-009 e demais sucessoras mantêm seus status até reavaliação. SPEC-010 está READY porque sua dependência direta está entregue; READY autoriza iniciar a unidade, sem validar capacidades externas. SPEC-003 entregou probe/testes/relatório. Uma amostra manual confirmou envelope, campos essenciais e igualdade de `_id`/`_source.id` para um hit; filtros, busca exata, sort e paginação permanecem INCONCLUSIVE. SPEC-004/006 fixam a política técnica local com fixtures sintéticas; não validam movimentos reais nem liberam a fonte DataJud. SPEC-010 continua responsável pelo catálogo versionado.
 
 ### Dois controles distintos
 
@@ -40,8 +40,8 @@ SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus c
 | [SPEC-004 — Identidade e reconciliação](SPEC-004-identidade-e-reconciliacao.md) | S3 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | DONE |
 | [SPEC-005 — Persistência de capas e payloads](SPEC-005-persistencia-de-capas-e-payloads.md) | M2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | DONE |
 | [SPEC-006 — Movimentos e quarentena](SPEC-006-movimentos-e-quarentena.md) | M2 | [SPEC-004](SPEC-004-identidade-e-reconciliacao.md), [SPEC-005](SPEC-005-persistencia-de-capas-e-payloads.md) | DONE |
-| [SPEC-007 — Jobs, leases e posse](SPEC-007-jobs-leases-e-posse.md) | M3 | [SPEC-006](SPEC-006-movimentos-e-quarentena.md) | BLOCKED_DEPENDENCY |
-| [SPEC-008 — Paginação e checkpoints](SPEC-008-paginacao-e-checkpoints.md) | M4 | [SPEC-007](SPEC-007-jobs-leases-e-posse.md) | BLOCKED_DEPENDENCY |
+| [SPEC-007 — Jobs, leases e posse](SPEC-007-jobs-leases-e-posse.md) | M3 | [SPEC-006](SPEC-006-movimentos-e-quarentena.md) | DONE |
+| [SPEC-008 — Paginação e checkpoints](SPEC-008-paginacao-e-checkpoints.md) | M4 | [SPEC-007](SPEC-007-jobs-leases-e-posse.md) | READY |
 | [SPEC-009 — Retries e recuperação](SPEC-009-retries-e-recuperacao.md) | M4/S4 | [SPEC-008](SPEC-008-paginacao-e-checkpoints.md) | BLOCKED_DEPENDENCY |
 | [SPEC-010 — Catálogo temático versionado](SPEC-010-catalogo-tematico-versionado.md) | S5/M1 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | READY |
 | [SPEC-011 — API operacional e OpenAPI](SPEC-011-api-operacional-e-openapi.md) | M5 | [SPEC-009](SPEC-009-retries-e-recuperacao.md), [SPEC-010](SPEC-010-catalogo-tematico-versionado.md) | BLOCKED_DEPENDENCY |

@@ -1,6 +1,6 @@
 # SPEC-008 — Paginação e checkpoints
 
-Status: BLOCKED_DEPENDENCY
+Status: READY
 
 Milestone/Spike: M4
 
