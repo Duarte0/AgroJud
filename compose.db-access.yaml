@@ -1,0 +1,4 @@
+services:
+  db:
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:?Set POSTGRES_HOST_PORT in the selected environment file}:5432"

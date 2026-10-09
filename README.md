@@ -28,7 +28,7 @@ curl --fail http://127.0.0.1:8000/api/v1/health/live
 curl --fail http://127.0.0.1:8000/api/v1/health/ready
 ```
 
-API publica apenas em `127.0.0.1:8000`; o banco não publica porta no host. `API_PORT` permite escolher outra porta quando 8000 estiver ocupada. Migrações são explícitas e devem ser aplicadas após subir o banco. A imagem API e o comando worker usam o mesmo Dockerfile e pacote.
+API publica apenas em `127.0.0.1:8000`; o banco não publica porta no host por padrão. `API_PORT` permite escolher outra porta quando 8000 estiver ocupada. Migrações são explícitas e devem ser aplicadas após subir o banco. A imagem API e o comando worker usam o mesmo Dockerfile e pacote.
 
 Para validar também o comando inicial do worker:
 
@@ -68,6 +68,15 @@ cp .env.real.example .env.real
 docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml up --build --detach db api
 docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm api uv run --no-sync alembic upgrade head
 ```
+
+Para acessar o PostgreSQL `agrojud_real` por um cliente no host, mantenha `POSTGRES_HOST_PORT=55433` em `.env.real` e use o override que publica a porta somente em `127.0.0.1`:
+
+```sh
+docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml -f compose.db-access.yaml up --build --detach db api
+docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml -f compose.db-access.yaml run --rm api uv run --no-sync alembic upgrade head
+```
+
+No cliente PostgreSQL, use host `127.0.0.1`, porta `55433`, banco `agrojud_real` e o usuário/senha definidos em `.env.real`. A porta local deve ser exclusiva; não use `5432` quando outro serviço já a ocupa. O override não expõe o banco em outras interfaces de rede.
 
 O projeto `agrojud-demo` usa o banco `agrojud_demo` e o projeto `agrojud-real` usa `agrojud_real`; os nomes Compose distintos isolam rede e volume. Os arquivos locais `.env.*` não são versionados. `DATAJUD_API_KEY` é lida somente no backend e usada pelo adaptador DataJud no ambiente `real`; não é exposta ao frontend nem registrada nos logs.
 
