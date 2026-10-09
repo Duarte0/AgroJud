@@ -16,6 +16,7 @@ import type {
   ProcessDetail,
   ProcessListQuery,
   ProcessTriagePatch,
+  SignalRunRequest,
 } from "@/api/types";
 import { useCurrentEnvironment } from "@/app/environment-context";
 import { jobListPollInterval, jobPollInterval } from "@/lib/job-progress";
@@ -47,8 +48,11 @@ export const queryKeys = {
       : ([env, "processes", "detail", id, "triage-history", page] as const),
   representations: (env: EnvironmentName, id: string, page: number) =>
     [env, "processes", "detail", id, "representations", page] as const,
-  movements: (env: EnvironmentName, id: string, page: number) =>
-    [env, "processes", "detail", id, "movements", page] as const,
+  movements: (env: EnvironmentName, id: string, page: number, occurrenceId?: string) =>
+    [env, "processes", "detail", id, "movements", page, occurrenceId] as const,
+  signals: (env: EnvironmentName) => [env, "processes", "signals"] as const,
+  processSignals: (env: EnvironmentName, id: string) =>
+    [env, "processes", "detail", id, "signals"] as const,
 };
 
 export function useEnvironmentQuery() {
@@ -168,18 +172,69 @@ export function useRepresentations(processId: string, page: number) {
   });
 }
 
-export function useMovements(processId: string, page: number) {
+export function useMovements(processId: string, page: number, occurrenceId?: string) {
   const { environment } = useCurrentEnvironment();
   return useQuery({
-    queryKey: queryKeys.movements(environment, processId, page),
+    queryKey: queryKeys.movements(environment, processId, page, occurrenceId),
     queryFn: ({ signal }) =>
       request(() =>
         api.GET("/api/v1/processes/{process_id}/movements", {
-          params: { path: { process_id: processId }, query: { page, page_size: 25 } },
+          params: {
+            path: { process_id: processId },
+            query: { page, page_size: 25, occurrence_id: occurrenceId },
+          },
           signal,
         }),
       ),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useProcessSignals(processId: string) {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.processSignals(environment, processId),
+    queryFn: ({ signal }) =>
+      request(() =>
+        api.GET("/api/v1/processes/{process_id}/signals", {
+          params: { path: { process_id: processId }, query: { include_history: true } },
+          signal,
+        }),
+      ),
+    refetchInterval: (current) => {
+      const status = current.state.data?.latest_run?.status;
+      return status === "queued" || status === "running" || status === "retry_wait" ? 3_000 : false;
+    },
+  });
+}
+
+export function useCreateSignalRun(processId: string) {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      request(() =>
+        api.POST("/api/v1/rule-runs", { body: { process_ids: [processId] } satisfies SignalRunRequest }),
+      ),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.processSignals(environment, processId) });
+    },
+  });
+}
+
+export function useResumeSignalRun(processId: string) {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (jobId: string) =>
+      request(() =>
+        api.POST("/api/v1/rule-runs/{job_id}/resume", {
+          params: { path: { job_id: jobId } },
+        }),
+      ),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.processSignals(environment, processId) });
+    },
   });
 }
 

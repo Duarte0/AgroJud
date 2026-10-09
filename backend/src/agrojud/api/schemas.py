@@ -201,6 +201,82 @@ class ProcessTriageHistoryEntryResponse(APIModel):
     created_at: datetime
 
 
+class SignalRunFilter(APIModel):
+    process_number: str = Field(min_length=1, max_length=30)
+
+
+class SignalRunRequest(APIModel):
+    process_ids: list[UUID] | None = Field(default=None, max_length=2_000)
+    filters: SignalRunFilter | None = None
+    rule_ids: list[str] | None = Field(default=None, min_length=1, max_length=20)
+
+    @model_validator(mode="after")
+    def require_one_explicit_selection(self) -> SignalRunRequest:
+        if (self.process_ids is None) == (self.filters is None):
+            raise ValueError("Informe process_ids ou um filtro local.")
+        if self.rule_ids is not None and len(set(self.rule_ids)) != len(self.rule_ids):
+            raise ValueError("rule_ids não pode conter valores repetidos.")
+        return self
+
+
+class SignalRunAcceptedResponse(APIModel):
+    job_id: UUID
+    status: JobStatus
+    process_count: int = Field(ge=0)
+    input_count: int = Field(ge=0)
+    reused: bool
+
+
+class SignalRunStatusResponse(APIModel):
+    job_id: UUID
+    status: JobStatus
+    reason: str | None
+    coverage: dict[str, Any] | None
+    process_count: int = Field(ge=0)
+    input_count: int = Field(ge=0)
+    processed_input_count: int = Field(ge=0)
+    completed_process_count: int = Field(ge=0)
+    stale_process_count: int = Field(ge=0)
+    not_evaluated_process_count: int = Field(ge=0)
+    resumable: bool
+    created_at: datetime
+    finished_at: datetime | None
+
+
+class SignalRuleEnablementResponse(APIModel):
+    enabled: bool
+    state: str
+    reason: str
+    evidence_ids: list[str]
+
+
+class ProcessSignalResponse(APIModel):
+    id: UUID
+    state: Literal["current", "historical"]
+    evidence_stale: bool
+    category: str
+    rule_id: str
+    rule_version: str
+    rule_name: str
+    explanation: str
+    environment: Literal["demo", "real"]
+    rule_enablement: SignalRuleEnablementResponse
+    representation_id: UUID
+    evidence_kind: str
+    evidence_id: UUID
+    movement_occurrence_id: UUID | None
+    evidence_version_id: UUID | None
+    evidence_snapshot_id: UUID | None
+    run_id: UUID
+    evaluated_at: datetime
+
+
+class ProcessSignalsResponse(APIModel):
+    process_id: UUID
+    items: list[ProcessSignalResponse]
+    latest_run: SignalRunStatusResponse | None = None
+
+
 class ProcessSummaryResponse(APIModel):
     id: UUID
     numero_cnj: str = Field(pattern=r"^\d{20}$")

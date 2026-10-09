@@ -26,6 +26,11 @@ export type ProcessTriagePatch = Schemas["ProcessTriagePatchRequest"];
 export type ProcessTriageHistoryEntry = Schemas["ProcessTriageHistoryEntryResponse"];
 export type ProcessTriageHistoryPage =
   Schemas["PaginationResponse_ProcessTriageHistoryEntryResponse_"];
+export type SignalRunRequest = Schemas["SignalRunRequest"];
+export type SignalRunAccepted = Schemas["SignalRunAcceptedResponse"];
+export type SignalRunStatus = Schemas["SignalRunStatusResponse"];
+export type ProcessSignal = Schemas["ProcessSignalResponse"];
+export type ProcessSignals = Schemas["ProcessSignalsResponse"];
 export type TriageDecision = ProcessTriage["decision"];
 export type RuralLink = ProcessTriage["rural_link"];
 export type LatestCollection = Schemas["LatestCollectionResponse"];

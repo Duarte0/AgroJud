@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 
 import { ApiError, isNotFound } from "@/api/client";
@@ -10,6 +11,7 @@ import type {
 } from "@/api/types";
 import { DescriptionList } from "@/components/description-list";
 import { ProcessTriagePanel } from "@/components/process-triage-panel";
+import { ProcessSignalsPanel } from "@/components/process-signals-panel";
 import { PageHeader } from "@/components/page-header";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Pagination } from "@/components/pagination";
@@ -239,7 +241,12 @@ function TimelineItem({
   const name = asText(content.nome);
   const complements = complementTexts(content);
   return (
-    <li className="relative border-l-2 border-border pb-6 pl-5 last:pb-0" data-testid="movement">
+    <li
+      id={`movement-${movement.occurrence_id}`}
+      tabIndex={-1}
+      className="relative border-l-2 border-border pb-6 pl-5 last:pb-0 focus-visible:outline-2 focus-visible:outline-ring"
+      data-testid="movement"
+    >
       <span
         className="absolute top-1.5 -left-1.75 size-3 rounded-full border-2 border-card bg-primary"
         aria-hidden="true"
@@ -305,10 +312,16 @@ function Timeline({
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = readPage(searchParams, "mov_page");
-  const movements = useMovements(processId, page);
+  const evidenceId = searchParams.get("evidence");
+  const movements = useMovements(processId, page, evidenceId ?? undefined);
+
+  useEffect(() => {
+    if (!evidenceId || !movements.data) return;
+    document.getElementById(`movement-${evidenceId}`)?.scrollIntoView?.({ block: "center" });
+  }, [evidenceId, movements.data]);
 
   return (
-    <Card>
+    <Card id="timeline">
       <CardHeader>
         <CardTitle>Linha do tempo</CardTitle>
         <CardDescription>
@@ -398,6 +411,7 @@ function ProcessView({ process }: { process: ProcessDetail }) {
       </Card>
 
       <ProcessTriagePanel processId={process.id} initialTriage={process.triage} />
+      <ProcessSignalsPanel processId={process.id} />
 
       <section aria-labelledby="capas-title" className="space-y-3">
         <h2 id="capas-title" className="text-lg font-semibold">

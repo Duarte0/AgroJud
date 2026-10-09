@@ -29,6 +29,7 @@ from agrojud.api.jobs import SourceCapabilityUnavailable
 from agrojud.api.jobs import router as jobs_router
 from agrojud.api.metadata import router as metadata_router
 from agrojud.api.processes import router as processes_router
+from agrojud.api.signals import router as signals_router
 from agrojud.api.triage import router as triage_router
 from agrojud.config import Settings, get_settings
 from agrojud.db.engine import make_engine
@@ -39,6 +40,7 @@ from agrojud.services.jobs import (
     JobNotFoundError,
     JobService,
 )
+from agrojud.services.signal_reprocessing import SignalReprocessingService
 from agrojud.sources.contracts import SourceError, SourceErrorCode
 
 CheckState = Literal["ok", "pending", "unavailable", "unknown"]
@@ -59,7 +61,10 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app = FastAPI(
         title="AgroJud Radar API",
         version="0.1.0",
-        description="API local de jobs, processos, representações, movimentos e presets.",
+        description=(
+            "API local de jobs, processos, representações, movimentos, triagem "
+            "e sinais explicáveis."
+        ),
         docs_url="/api/v1/docs",
         openapi_url="/api/v1/openapi.json",
         redoc_url=None,
@@ -72,6 +77,9 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.state.jobs = JobService(
         app.state.session_factory,
         lease_duration=timedelta(seconds=runtime_settings.job_lease_seconds),
+    )
+    app.state.signal_reprocessing = SignalReprocessingService(
+        app.state.session_factory, app.state.jobs
     )
 
     app.add_middleware(
@@ -230,6 +238,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
 
     app.include_router(jobs_router)
     app.include_router(processes_router)
+    app.include_router(signals_router)
     app.include_router(triage_router)
     app.include_router(metadata_router)
 

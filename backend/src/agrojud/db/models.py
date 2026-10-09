@@ -581,7 +581,10 @@ class Job(Base):
 
     __tablename__ = "jobs"
     __table_args__ = (
-        CheckConstraint("job_type in ('discovery', 'refresh_number')", name="ck_jobs_type"),
+        CheckConstraint(
+            "job_type in ('discovery', 'refresh_number', 'reprocess_rules')",
+            name="ck_jobs_type",
+        ),
         CheckConstraint("mode in ('demo', 'real')", name="ck_jobs_mode"),
         CheckConstraint(
             "status in ('queued', 'running', 'retry_wait', 'completed', 'partial', "
@@ -649,7 +652,7 @@ class Job(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
-    collection_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    collection_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
     job_type: Mapped[str] = mapped_column(String(24), nullable=False)
     mode: Mapped[str] = mapped_column(String(8), nullable=False)
     source: Mapped[str] = mapped_column(String(80), nullable=False)
@@ -807,3 +810,239 @@ class JobCheckpoint(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class SignalRunProcess(Base):
+    """Publication boundary and progress for one process in a local rule run."""
+
+    __tablename__ = "signal_run_processes"
+    __table_args__ = (
+        UniqueConstraint("job_id", "process_id", name="uq_signal_run_processes_pair"),
+        CheckConstraint(
+            "status in ('pending', 'completed', 'stale', 'not_evaluated')",
+            name="ck_signal_run_processes_status",
+        ),
+        CheckConstraint("input_count >= 0", name="ck_signal_run_processes_input_count"),
+        CheckConstraint(
+            "processed_input_count between 0 and input_count",
+            name="ck_signal_run_processes_processed_count",
+        ),
+        ForeignKeyConstraint(
+            ["job_id"], ["jobs.id"], name="fk_signal_run_processes_job", ondelete="RESTRICT"
+        ),
+        ForeignKeyConstraint(
+            ["process_id"],
+            ["processes.id"],
+            name="fk_signal_run_processes_process",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_signal_run_processes_process", "process_id", "job_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    job_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    input_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    processed_input_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SignalRunInput(Base):
+    """Immutable representation/version snapshot plus its local processing state."""
+
+    __tablename__ = "signal_run_inputs"
+    __table_args__ = (
+        UniqueConstraint("job_id", "representation_id", name="uq_signal_run_inputs_representation"),
+        CheckConstraint(
+            "status in ('pending', 'completed', 'not_evaluated')",
+            name="ck_signal_run_inputs_status",
+        ),
+        ForeignKeyConstraint(
+            ["job_id"], ["jobs.id"], name="fk_signal_run_inputs_job", ondelete="RESTRICT"
+        ),
+        ForeignKeyConstraint(
+            ["process_id"],
+            ["processes.id"],
+            name="fk_signal_run_inputs_process",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["representation_id"],
+            ["representations.id"],
+            name="fk_signal_run_inputs_representation",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["representation_id", "latest_version_id"],
+            ["representation_versions.representation_id", "representation_versions.id"],
+            name="fk_signal_run_inputs_latest_version",
+        ),
+        ForeignKeyConstraint(
+            ["representation_id", "input_version_id"],
+            ["representation_versions.representation_id", "representation_versions.id"],
+            name="fk_signal_run_inputs_input_version",
+        ),
+        ForeignKeyConstraint(
+            ["movement_snapshot_id", "representation_id"],
+            ["movement_snapshots.id", "movement_snapshots.representation_id"],
+            name="fk_signal_run_inputs_snapshot_representation",
+        ),
+        Index("ix_signal_run_inputs_job_cursor", "job_id", "id"),
+        Index("ix_signal_run_inputs_process", "job_id", "process_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    job_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    representation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    latest_version_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    input_version_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    movement_snapshot_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    input_complete: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    evidence_stale: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    diagnostic: Mapped[str | None] = mapped_column(Text)
+
+
+class ProcessSignal(Base):
+    """One deterministic, historical signal linked to a normalized occurrence."""
+
+    __tablename__ = "process_signals"
+    __table_args__ = (
+        UniqueConstraint(
+            "rule_id",
+            "rule_version",
+            "evidence_id",
+            "result_fingerprint",
+            name="uq_process_signals_rule_evidence_result",
+        ),
+        CheckConstraint(
+            "evidence_kind in ('movement_occurrence', 'process_attribute', "
+            "'representation_attribute')",
+            name="ck_process_signals_evidence_kind",
+        ),
+        CheckConstraint(
+            "evidence_kind <> 'movement_occurrence' or movement_occurrence_id = evidence_id",
+            name="ck_process_signals_movement_evidence_id",
+        ),
+        CheckConstraint("environment in ('demo', 'real')", name="ck_process_signals_environment"),
+        CheckConstraint(
+            "result_fingerprint ~ '^[0-9a-f]{64}$'", name="ck_process_signals_fingerprint_hex"
+        ),
+        CheckConstraint("length(btrim(rule_id)) > 0", name="ck_process_signals_rule_nonempty"),
+        CheckConstraint(
+            "length(btrim(rule_version)) > 0", name="ck_process_signals_rule_version_nonempty"
+        ),
+        ForeignKeyConstraint(
+            ["process_id"], ["processes.id"], name="fk_process_signals_process", ondelete="RESTRICT"
+        ),
+        ForeignKeyConstraint(
+            ["representation_id"],
+            ["representations.id"],
+            name="fk_process_signals_representation",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["movement_occurrence_id"],
+            ["movement_occurrences.id"],
+            name="fk_process_signals_occurrence",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["created_run_id"],
+            ["jobs.id"],
+            name="fk_process_signals_created_run",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["published_run_id"],
+            ["jobs.id"],
+            name="fk_process_signals_published_run",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["evidence_version_id"],
+            ["representation_versions.id"],
+            name="fk_process_signals_evidence_version",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["evidence_snapshot_id"],
+            ["movement_snapshots.id"],
+            name="fk_process_signals_evidence_snapshot",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_process_signals_process_current", "process_id", "is_current", "category"),
+        Index("ix_process_signals_rule_version", "rule_id", "rule_version"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    representation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    evidence_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    evidence_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    movement_occurrence_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    evidence_version_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    evidence_snapshot_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    rule_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    rule_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    environment: Mapped[str] = mapped_column(String(8), nullable=False)
+    enablement_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    category: Mapped[str] = mapped_column(String(80), nullable=False)
+    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    result_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_run_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    published_run_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_current: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    evidence_stale: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class SignalEvaluation(Base):
+    """Append-only per-rule audit entry, including negative and insufficient checks."""
+
+    __tablename__ = "signal_evaluations"
+    __table_args__ = (
+        UniqueConstraint(
+            "job_id",
+            "input_id",
+            "rule_id",
+            "rule_version",
+            name="uq_signal_evaluations_run_input_rule",
+        ),
+        CheckConstraint(
+            "outcome in ('matched', 'no_match', 'not_evaluated')",
+            name="ck_signal_evaluations_outcome",
+        ),
+        ForeignKeyConstraint(
+            ["job_id"], ["jobs.id"], name="fk_signal_evaluations_job", ondelete="RESTRICT"
+        ),
+        ForeignKeyConstraint(
+            ["input_id"],
+            ["signal_run_inputs.id"],
+            name="fk_signal_evaluations_input",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["process_id"],
+            ["processes.id"],
+            name="fk_signal_evaluations_process",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_signal_evaluations_process_rule", "process_id", "rule_id", "evaluated_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    job_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    input_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    rule_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    rule_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(20), nullable=False)
+    diagnostic: Mapped[str | None] = mapped_column(Text)
+    matched_signal_ids: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    input_version_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    movement_snapshot_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

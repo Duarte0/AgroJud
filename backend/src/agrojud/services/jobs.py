@@ -26,7 +26,7 @@ from agrojud.services.retry_policy import (
 )
 from agrojud.sources.contracts import SourcePage
 
-type JobType = Literal["discovery", "refresh_number"]
+type JobType = Literal["discovery", "refresh_number", "reprocess_rules"]
 type JobStatus = Literal[
     "queued", "running", "retry_wait", "completed", "partial", "failed", "cancelled"
 ]
@@ -108,7 +108,7 @@ class EnqueueResult:
 @dataclass(frozen=True, slots=True)
 class JobLease:
     job_id: UUID
-    collection_id: UUID
+    collection_id: UUID | None
     job_type: JobType
     mode: Literal["demo", "real"]
     source: str
@@ -169,7 +169,7 @@ class EventSnapshot:
 @dataclass(frozen=True, slots=True)
 class JobInspection:
     id: UUID
-    collection_id: UUID
+    collection_id: UUID | None
     job_type: str
     mode: str
     source: str
@@ -294,6 +294,10 @@ class JobService:
                 ).scalar_one_or_none()
                 if existing is None:  # pragma: no cover - conflict waits for its winner
                     raise RuntimeError("A execução equivalente não pôde ser localizada.")
+                if existing.collection_id is None:
+                    raise InvalidJobTransitionError(
+                        "A execução equivalente pertence a um job sem coleta."
+                    )
                 return EnqueueResult(
                     job_id=existing.id,
                     collection_id=existing.collection_id,
@@ -686,6 +690,10 @@ class JobService:
                 raise RuntimeError("O checkpoint contém uma página inválida.")
 
             job = self._lock_job(session, job_id, lock=False)
+            if job.collection_id is None:
+                raise InvalidJobTransitionError(
+                    "Reprocessamento local não possui coleta associada."
+                )
             page_key = sha256_json(
                 {
                     "collection_id": str(job.collection_id),
@@ -918,7 +926,11 @@ class JobService:
                 job.reason = None
                 job.cancel_requested = False
                 job.finished_at = None
-                job.next_attempt_at = self._source_not_before(session, job.source, now)
+                job.next_attempt_at = (
+                    now
+                    if job.job_type == "reprocess_rules"
+                    else self._source_not_before(session, job.source, now)
+                )
                 job.retry_cycle += 1
                 job.page_attempt_count = 0
                 job.persistence_attempt_count = 0

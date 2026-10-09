@@ -156,6 +156,7 @@ def list_movements(
     request: Request,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=25, ge=1, le=100),
+    occurrence_id: UUID | None = None,
 ) -> ProcessMovementsResponse:
     with request.app.state.session_factory() as session:
         _require_process(session, process_id)
@@ -166,7 +167,29 @@ def list_movements(
         ).all()
         diagnostics, snapshots = _movement_context(session, representations)
         total = 0
-        if snapshots:
+        if occurrence_id is not None:
+            selected = session.execute(
+                select(MovementOccurrence, MovementSnapshotOccurrence)
+                .join(
+                    MovementSnapshotOccurrence,
+                    MovementSnapshotOccurrence.occurrence_id == MovementOccurrence.id,
+                )
+                .join(
+                    MovementSnapshot,
+                    MovementSnapshot.id == MovementSnapshotOccurrence.snapshot_id,
+                )
+                .join(Representation, Representation.id == MovementOccurrence.representation_id)
+                .where(
+                    Representation.process_id == process_id,
+                    MovementOccurrence.id == occurrence_id,
+                    MovementSnapshotOccurrence.present.is_(True),
+                )
+                .order_by(MovementSnapshot.processed_at.desc(), MovementSnapshot.id.desc())
+                .limit(1)
+            ).one_or_none()
+            rows = [selected] if selected is not None else []
+            total = len(rows)
+        elif snapshots:
             where = MovementSnapshotOccurrence.snapshot_id.in_(snapshots)
             total = (
                 session.scalar(

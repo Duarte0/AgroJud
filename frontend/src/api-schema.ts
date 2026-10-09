@@ -243,6 +243,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/processes/{process_id}/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista sinais vigentes e históricos com proveniência */
+        get: operations["list_process_signals_api_v1_processes__process_id__signals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/processes/{process_id}/triage": {
         parameters: {
             query?: never;
@@ -271,6 +288,57 @@ export interface paths {
         get: operations["get_process_triage_history_api_v1_processes__process_id__triage_history_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rule-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enfileira reprocessamento local de regras */
+        post: operations["create_rule_run_api_v1_rule_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rule-runs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consulta progresso do reprocessamento local */
+        get: operations["get_rule_run_api_v1_rule_runs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rule-runs/{job_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retoma execução local interrompida */
+        post: operations["resume_rule_run_api_v1_rule_runs__job_id__resume_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -877,6 +945,76 @@ export interface components {
             /** Tribunal */
             tribunal: string;
         };
+        /** ProcessSignalResponse */
+        ProcessSignalResponse: {
+            /** Category */
+            category: string;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "demo" | "real";
+            /**
+             * Evaluated At
+             * Format: date-time
+             */
+            evaluated_at: string;
+            /**
+             * Evidence Id
+             * Format: uuid
+             */
+            evidence_id: string;
+            /** Evidence Kind */
+            evidence_kind: string;
+            /** Evidence Snapshot Id */
+            evidence_snapshot_id: string | null;
+            /** Evidence Stale */
+            evidence_stale: boolean;
+            /** Evidence Version Id */
+            evidence_version_id: string | null;
+            /** Explanation */
+            explanation: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Movement Occurrence Id */
+            movement_occurrence_id: string | null;
+            /**
+             * Representation Id
+             * Format: uuid
+             */
+            representation_id: string;
+            rule_enablement: components["schemas"]["SignalRuleEnablementResponse"];
+            /** Rule Id */
+            rule_id: string;
+            /** Rule Name */
+            rule_name: string;
+            /** Rule Version */
+            rule_version: string;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "current" | "historical";
+        };
+        /** ProcessSignalsResponse */
+        ProcessSignalsResponse: {
+            /** Items */
+            items: components["schemas"]["ProcessSignalResponse"][];
+            latest_run?: components["schemas"]["SignalRunStatusResponse"] | null;
+            /**
+             * Process Id
+             * Format: uuid
+             */
+            process_id: string;
+        };
         /** ProcessSummaryResponse */
         ProcessSummaryResponse: {
             /**
@@ -1002,6 +1140,89 @@ export interface components {
              * @enum {string}
              */
             kind: "refresh_number";
+        };
+        /** SignalRuleEnablementResponse */
+        SignalRuleEnablementResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /** Evidence Ids */
+            evidence_ids: string[];
+            /** Reason */
+            reason: string;
+            /** State */
+            state: string;
+        };
+        /** SignalRunAcceptedResponse */
+        SignalRunAcceptedResponse: {
+            /** Input Count */
+            input_count: number;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Process Count */
+            process_count: number;
+            /** Reused */
+            reused: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "retry_wait" | "completed" | "partial" | "failed" | "cancelled";
+        };
+        /** SignalRunFilter */
+        SignalRunFilter: {
+            /** Process Number */
+            process_number: string;
+        };
+        /** SignalRunRequest */
+        SignalRunRequest: {
+            filters?: components["schemas"]["SignalRunFilter"] | null;
+            /** Process Ids */
+            process_ids?: string[] | null;
+            /** Rule Ids */
+            rule_ids?: string[] | null;
+        };
+        /** SignalRunStatusResponse */
+        SignalRunStatusResponse: {
+            /** Completed Process Count */
+            completed_process_count: number;
+            /** Coverage */
+            coverage: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Input Count */
+            input_count: number;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Not Evaluated Process Count */
+            not_evaluated_process_count: number;
+            /** Process Count */
+            process_count: number;
+            /** Processed Input Count */
+            processed_input_count: number;
+            /** Reason */
+            reason: string | null;
+            /** Resumable */
+            resumable: boolean;
+            /** Stale Process Count */
+            stale_process_count: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "retry_wait" | "completed" | "partial" | "failed" | "cancelled";
         };
     };
     responses: never;
@@ -1712,6 +1933,7 @@ export interface operations {
             query?: {
                 page?: number;
                 page_size?: number;
+                occurrence_id?: string | null;
             };
             header?: never;
             path: {
@@ -1789,6 +2011,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginationResponse_ProcessRepresentationResponse_"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_process_signals_api_v1_processes__process_id__signals_get: {
+        parameters: {
+            query?: {
+                include_history?: boolean;
+            };
+            header?: never;
+            path: {
+                process_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessSignalsResponse"];
                 };
             };
             /** @description Recurso não encontrado. */
@@ -1912,6 +2194,182 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginationResponse_ProcessTriageHistoryEntryResponse_"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_rule_run_api_v1_rule_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignalRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalRunAcceptedResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_rule_run_api_v1_rule_runs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalRunStatusResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    resume_rule_run_api_v1_rule_runs__job_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalRunAcceptedResponse"];
                 };
             };
             /** @description Recurso não encontrado. */

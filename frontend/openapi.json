@@ -1634,6 +1634,174 @@
         "title": "ProcessRepresentationResponse",
         "type": "object"
       },
+      "ProcessSignalResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "environment": {
+            "enum": [
+              "demo",
+              "real"
+            ],
+            "title": "Environment",
+            "type": "string"
+          },
+          "evaluated_at": {
+            "format": "date-time",
+            "title": "Evaluated At",
+            "type": "string"
+          },
+          "evidence_id": {
+            "format": "uuid",
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "evidence_kind": {
+            "title": "Evidence Kind",
+            "type": "string"
+          },
+          "evidence_snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Snapshot Id"
+          },
+          "evidence_stale": {
+            "title": "Evidence Stale",
+            "type": "boolean"
+          },
+          "evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Version Id"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "movement_occurrence_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Movement Occurrence Id"
+          },
+          "representation_id": {
+            "format": "uuid",
+            "title": "Representation Id",
+            "type": "string"
+          },
+          "rule_enablement": {
+            "$ref": "#/components/schemas/SignalRuleEnablementResponse"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "rule_name": {
+            "title": "Rule Name",
+            "type": "string"
+          },
+          "rule_version": {
+            "title": "Rule Version",
+            "type": "string"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "current",
+              "historical"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "evidence_stale",
+          "category",
+          "rule_id",
+          "rule_version",
+          "rule_name",
+          "explanation",
+          "environment",
+          "rule_enablement",
+          "representation_id",
+          "evidence_kind",
+          "evidence_id",
+          "movement_occurrence_id",
+          "evidence_version_id",
+          "evidence_snapshot_id",
+          "run_id",
+          "evaluated_at"
+        ],
+        "title": "ProcessSignalResponse",
+        "type": "object"
+      },
+      "ProcessSignalsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessSignalResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "latest_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignalRunStatusResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "process_id": {
+            "format": "uuid",
+            "title": "Process Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "process_id",
+          "items"
+        ],
+        "title": "ProcessSignalsResponse",
+        "type": "object"
+      },
       "ProcessSummaryResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1966,11 +2134,268 @@
         ],
         "title": "RefreshNumberJobRequest",
         "type": "object"
+      },
+      "SignalRuleEnablementResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "state",
+          "reason",
+          "evidence_ids"
+        ],
+        "title": "SignalRuleEnablementResponse",
+        "type": "object"
+      },
+      "SignalRunAcceptedResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "input_count": {
+            "minimum": 0.0,
+            "title": "Input Count",
+            "type": "integer"
+          },
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "process_count": {
+            "minimum": 0.0,
+            "title": "Process Count",
+            "type": "integer"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "retry_wait",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "status",
+          "process_count",
+          "input_count",
+          "reused"
+        ],
+        "title": "SignalRunAcceptedResponse",
+        "type": "object"
+      },
+      "SignalRunFilter": {
+        "additionalProperties": false,
+        "properties": {
+          "process_number": {
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Process Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "process_number"
+        ],
+        "title": "SignalRunFilter",
+        "type": "object"
+      },
+      "SignalRunRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignalRunFilter"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "process_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 2000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process Ids"
+          },
+          "rule_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Ids"
+          }
+        },
+        "title": "SignalRunRequest",
+        "type": "object"
+      },
+      "SignalRunStatusResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "completed_process_count": {
+            "minimum": 0.0,
+            "title": "Completed Process Count",
+            "type": "integer"
+          },
+          "coverage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "input_count": {
+            "minimum": 0.0,
+            "title": "Input Count",
+            "type": "integer"
+          },
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "not_evaluated_process_count": {
+            "minimum": 0.0,
+            "title": "Not Evaluated Process Count",
+            "type": "integer"
+          },
+          "process_count": {
+            "minimum": 0.0,
+            "title": "Process Count",
+            "type": "integer"
+          },
+          "processed_input_count": {
+            "minimum": 0.0,
+            "title": "Processed Input Count",
+            "type": "integer"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "resumable": {
+            "title": "Resumable",
+            "type": "boolean"
+          },
+          "stale_process_count": {
+            "minimum": 0.0,
+            "title": "Stale Process Count",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "retry_wait",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "status",
+          "reason",
+          "coverage",
+          "process_count",
+          "input_count",
+          "processed_input_count",
+          "completed_process_count",
+          "stale_process_count",
+          "not_evaluated_process_count",
+          "resumable",
+          "created_at",
+          "finished_at"
+        ],
+        "title": "SignalRunStatusResponse",
+        "type": "object"
       }
     }
   },
   "info": {
-    "description": "API local de jobs, processos, representações, movimentos e presets.",
+    "description": "API local de jobs, processos, representações, movimentos, triagem e sinais explicáveis.",
     "title": "AgroJud Radar API",
     "version": "0.1.0"
   },
@@ -3055,6 +3480,23 @@
               "title": "Page Size",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "occurrence_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occurrence Id"
+            }
           }
         ],
         "responses": {
@@ -3208,6 +3650,89 @@
         "summary": "Lista representações e seus diagnósticos",
         "tags": [
           "processes"
+        ]
+      }
+    },
+    "/api/v1/processes/{process_id}/signals": {
+      "get": {
+        "operationId": "list_process_signals_api_v1_processes__process_id__signals_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "process_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Process Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_history",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include History",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessSignalsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Lista sinais vigentes e históricos com proveniência",
+        "tags": [
+          "signals"
         ]
       }
     },
@@ -3387,6 +3912,223 @@
         "summary": "Consulta o histórico humano de triagem",
         "tags": [
           "triage"
+        ]
+      }
+    },
+    "/api/v1/rule-runs": {
+      "post": {
+        "operationId": "create_rule_run_api_v1_rule_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignalRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalRunAcceptedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Enfileira reprocessamento local de regras",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/api/v1/rule-runs/{job_id}": {
+      "get": {
+        "operationId": "get_rule_run_api_v1_rule_runs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalRunStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Consulta progresso do reprocessamento local",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/api/v1/rule-runs/{job_id}/resume": {
+      "post": {
+        "operationId": "resume_rule_run_api_v1_rule_runs__job_id__resume_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalRunAcceptedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Retoma execução local interrompida",
+        "tags": [
+          "signals"
         ]
       }
     }

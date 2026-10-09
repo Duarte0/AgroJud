@@ -33,7 +33,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-compose up --build --detach --wait db
+compose build api
+compose up --detach --wait db
 compose run --rm api uv run --no-sync alembic upgrade head
 compose up --detach --wait api
 compose up --detach worker

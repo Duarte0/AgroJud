@@ -266,6 +266,8 @@ describe("ProcessDetailPage", () => {
     mockApi({
       [`GET /api/v1/processes/${processId}`]: () => json(buildProcess()),
       [`GET /api/v1/processes/${processId}/triage-history`]: () => json(page([])),
+      [`GET /api/v1/processes/${processId}/signals`]: () =>
+        json({ process_id: processId, items: [], latest_run: null }),
       [`GET /api/v1/processes/${processId}/representations`]: () =>
         json(
           page([
@@ -330,5 +332,120 @@ describe("ProcessDetailPage", () => {
     const representation = screen.getByTestId("representation");
     expect(representation).toHaveTextContent("Procedimento Comum (7)");
     expect(representation).toHaveTextContent("original: 2025-01-15T09:00:00");
+  });
+
+  it("reprocesses only the process explicitly open in its detail", async () => {
+    let latestRun: unknown = null;
+    let submitted: unknown;
+    const api = mockApi({
+      [`GET /api/v1/processes/${processId}`]: () => json(buildProcess({ id: processId })),
+      [`GET /api/v1/processes/${processId}/triage-history`]: () => json(page([])),
+      [`GET /api/v1/processes/${processId}/signals`]: () =>
+        json({ process_id: processId, items: [], latest_run: latestRun }),
+      [`GET /api/v1/processes/${processId}/representations`]: () => json(page([])),
+      [`GET /api/v1/processes/${processId}/movements`]: () =>
+        json({ process_id: processId, page: 1, page_size: 25, total: 0, diagnostics: [], items: [] }),
+      "POST /api/v1/rule-runs": async (request) => {
+        submitted = await request.json();
+        latestRun = {
+          job_id: "77777777-7777-4777-8777-777777777777",
+          status: "queued",
+          reason: null,
+          coverage: null,
+          process_count: 1,
+          input_count: 1,
+          processed_input_count: 0,
+          completed_process_count: 0,
+          stale_process_count: 0,
+          not_evaluated_process_count: 0,
+          resumable: false,
+          created_at: "2026-10-09T12:00:00Z",
+          finished_at: null,
+        };
+        return json({
+          job_id: "77777777-7777-4777-8777-777777777777",
+          status: "queued",
+          process_count: 1,
+          input_count: 1,
+          reused: false,
+        }, 202);
+      },
+    });
+    renderRoute(<ProcessDetailPage />, {
+      path: "/processes/:processId",
+      url: `/processes/${processId}`,
+    });
+
+    await userEvent.click(await screen.findByRole("button", { name: "Reprocessar sinais deste processo" }));
+    expect(await screen.findByText("Último reprocessamento: Na fila")).toBeInTheDocument();
+    expect(submitted).toEqual({ process_ids: [processId] });
+    expect(api.count("POST", "/api/v1/rule-runs")).toBe(1);
+  });
+
+  it("opens a signal's exact movement evidence from the process detail", async () => {
+    const occurrenceId = "88888888-8888-4888-8888-888888888888";
+    const signal = {
+      id: "99999999-9999-4999-8999-999999999999",
+      state: "current",
+      evidence_stale: false,
+      category: "penhora",
+      rule_id: "sinal.penhora",
+      rule_version: "1.0.0",
+      rule_name: "Bloqueio, penhora ou arresto observado",
+      explanation: "O código TPU 11382 foi observado.",
+      environment: "demo",
+      rule_enablement: {
+        enabled: true,
+        state: "synthetic_only",
+        reason: "Fixture sintética local.",
+        evidence_ids: ["fixture:signal-rules-v1"],
+      },
+      representation_id: representationId,
+      evidence_kind: "movement_occurrence",
+      evidence_id: occurrenceId,
+      movement_occurrence_id: occurrenceId,
+      evidence_version_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      evidence_snapshot_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      run_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      evaluated_at: "2026-10-09T12:00:00Z",
+    };
+    mockApi({
+      [`GET /api/v1/processes/${processId}`]: () => json(buildProcess({ id: processId })),
+      [`GET /api/v1/processes/${processId}/triage-history`]: () => json(page([])),
+      [`GET /api/v1/processes/${processId}/signals`]: () =>
+        json({ process_id: processId, items: [signal], latest_run: null }),
+      [`GET /api/v1/processes/${processId}/representations`]: () => json(page([])),
+      [`GET /api/v1/processes/${processId}/movements`]: (request) => {
+        const evidenceId = new URL(request.url).searchParams.get("occurrence_id");
+        const item = {
+          occurrence_id: occurrenceId,
+          representation_id: representationId,
+          content: { codigo: 11382, nome: "Bloqueio, Penhora ou Arresto" },
+          source_date: null,
+          source_date_original: null,
+          source_date_status: "missing",
+          multiplicity_ordinal: 1,
+          comparison_result: "FIRST_OBSERVED",
+          comparison_detail: null,
+          first_observed_at: "2026-10-09T12:00:00Z",
+        };
+        return json({
+          process_id: processId,
+          page: 1,
+          page_size: 25,
+          total: evidenceId === occurrenceId ? 1 : 0,
+          diagnostics: [],
+          items: evidenceId === occurrenceId ? [item] : [],
+        });
+      },
+    });
+    renderRoute(<ProcessDetailPage />, {
+      path: "/processes/:processId",
+      url: `/processes/${processId}`,
+    });
+
+    await userEvent.click(await screen.findByRole("link", { name: "Ver evidência na linha do tempo" }));
+    expect(await screen.findByText("Bloqueio, Penhora ou Arresto")).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent(`evidence=${occurrenceId}`);
   });
 });

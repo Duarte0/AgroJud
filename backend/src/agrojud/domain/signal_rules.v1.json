@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "rules": [
+    {
+      "id": "sinal.penhora",
+      "version": "1.0.0",
+      "category": "penhora",
+      "name": "Bloqueio, penhora ou arresto observado",
+      "predicate": {"scope": "movement", "field": "codigo", "operator": "equals_any", "values": [11382]},
+      "explanation": "O movimento TPU 11382 foi observado nesta representação. O código é um sinal para revisão e não confirma constrição de bem rural.",
+      "enablement": {
+        "demo": {"enabled": true, "state": "synthetic_only", "reason": "Regra demonstrativa exercitada por fixtures sintéticas locais.", "evidence_ids": ["fixture:signal-rules-v1"]},
+        "real": {"enabled": false, "state": "inconclusive", "reason": "Falta exemplo estruturado real que valide este movimento como sinal.", "evidence_ids": ["movement:11382", "sample_status:inconclusive"]}
+      }
+    },
+    {
+      "id": "sinal.leilao",
+      "version": "1.0.0",
+      "category": "leilao",
+      "name": "Leilão ou praça observado",
+      "predicate": {"scope": "movement", "field": "codigo", "operator": "equals_any", "values": [311]},
+      "explanation": "O movimento TPU 311 foi observado nesta representação. O código registra evento observado e não calcula urgência ou resultado jurídico.",
+      "enablement": {
+        "demo": {"enabled": true, "state": "synthetic_only", "reason": "Regra demonstrativa exercitada por fixtures sintéticas locais.", "evidence_ids": ["fixture:signal-rules-v1"]},
+        "real": {"enabled": false, "state": "inconclusive", "reason": "Falta exemplo estruturado real que valide este movimento como sinal.", "evidence_ids": ["movement:311", "sample_status:inconclusive"]}
+      }
+    },
+    {
+      "id": "sinal.recuperacao_judicial",
+      "version": "1.0.0",
+      "category": "recuperacao_judicial",
+      "name": "Recuperação judicial observada",
+      "predicate": {"scope": "movement", "field": "codigo", "operator": "equals_any", "values": [12041]},
+      "explanation": "O movimento TPU 12041 foi observado nesta representação. O código não confirma vínculo rural nem o estado atual do processo.",
+      "enablement": {
+        "demo": {"enabled": true, "state": "synthetic_only", "reason": "Regra demonstrativa exercitada por fixtures sintéticas locais.", "evidence_ids": ["fixture:signal-rules-v1"]},
+        "real": {"enabled": false, "state": "inconclusive", "reason": "Falta exemplo estruturado real que valide este movimento como sinal.", "evidence_ids": ["movement:12041", "sample_status:inconclusive"]}
+      }
+    }
+  ]
+}

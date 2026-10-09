@@ -2,7 +2,7 @@
 
 Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada por migration em PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. M7 permanece em andamento enquanto regras, sinais e reprocessamento da SPEC-014 não forem entregues. Uma amostra manual confirmou acesso e envelope; M1 segue parcial enquanto S1/S2 externos permanecem INCONCLUSIVE. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada com PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. SPEC-014/M7 concluiu localmente regras estruturadas, sinais e reprocessamento em 09/10/2026, com 227 testes backend, 44 testes frontend, build e 10 cenários Playwright. As regras permanecem desabilitadas em `real`; S5 e a integração DataJud seguem INCONCLUSIVE até validação externa.
 
 ## 1. Estado atual e orientação
 
@@ -376,7 +376,7 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 **Implementar em duas entregas:**
 
 1. [x] Triagem, vínculo rural, notas e histórico — SPEC-013 concluída localmente em 09/10/2026 (222 testes backend, 42 frontend, 9 cenários Playwright).
-2. [ ] Regras versionadas, sinais e reprocessamento local — SPEC-014, ainda não implementada.
+2. [x] Regras versionadas, sinais e reprocessamento local — SPEC-014 concluída localmente em 09/10/2026 (227 testes backend, 44 frontend e 10 cenários Playwright); regras reais continuam desabilitadas enquanto S5 não tiver evidência validada.
 
 **Interfaces adicionais:**
 
@@ -392,7 +392,7 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 - Reprocessar não consulta DataJud nem multiplica sinais equivalentes.
 - Regras substituídas preservam histórico, distinguindo resultados atuais.
 
-**Demonstração:** a SPEC-013 comprovou revisão, reversão, histórico e preservação da decisão após recoleta. M7 só será concluído após também atender aos critérios da SPEC-014.
+**Demonstração:** SPEC-013 comprovou revisão, reversão, histórico e preservação da decisão após recoleta. SPEC-014 comprovou sinais determinísticos somente em fixtures locais, publicação consistente por processo, retomada sem duplicação e evidência clicável. M7 está concluído localmente; isso não habilita regra real nem encerra S5.
 
 ### M8 — Acompanhamento, novidades e atualização diária
 
@@ -474,7 +474,6 @@ Usar índices direcionados às consultas e à fila ativa, com restrições de un
 
 **Adiado até o núcleo estar validado, mas pertencente ao MVP:**
 
-- Regras versionadas, sinais e reprocessamento local: M7 / SPEC-014.
 - Atualização diária: M8.
 - Indicadores e CSV: M9.
 - Acabamento visual final: M9.
@@ -511,7 +510,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] M5 — API e OpenAPI estáveis (SPEC-011 DONE localmente; fonte real continua bloqueada por evidência externa).
 - [x] M6 — Fluxo visual completo (SPEC-012 DONE localmente; dados demo sintéticos, fonte real segue bloqueada).
 - [ ] S5 — Catálogo temático validado.
-- [ ] M7 — Triagem e regras.
+- [x] M7 — Triagem e regras concluídas localmente (SPEC-013/014); habilitação real continua condicionada a S5.
 - [ ] M8 — Acompanhamento, novidades e agendamento.
 - [ ] M9 — Indicadores, CSV e operação documentada.
 - [ ] Aceite sintético completo.

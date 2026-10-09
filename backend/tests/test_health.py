@@ -92,6 +92,7 @@ def test_ready_is_200_at_alembic_head_with_domain_tables(scratch_database_url: U
             "movement_snapshot_occurrences",
             "movement_snapshots",
             "processes",
+            "process_signals",
             "process_triage",
             "process_triage_history",
             "quarantine_rejections",
@@ -99,6 +100,9 @@ def test_ready_is_200_at_alembic_head_with_domain_tables(scratch_database_url: U
             "representation_subjects",
             "representation_versions",
             "representations",
+            "signal_evaluations",
+            "signal_run_inputs",
+            "signal_run_processes",
             "source_rate_limits",
         }
     finally:

@@ -7,13 +7,13 @@ import { expect, type Page, type Request } from "@playwright/test";
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 const evidenceDir = process.env.E2E_EVIDENCE_DIR;
 
-function compose(...args: string[]) {
+function compose(...args: string[]): string {
   const envFile = process.env.E2E_ENV_FILE;
   const project = process.env.E2E_COMPOSE_PROJECT;
   if (!envFile || !project?.includes("e2e")) {
     throw new Error("E2E_ENV_FILE/E2E_COMPOSE_PROJECT ausentes; execute via scripts/e2e.sh.");
   }
-  execFileSync(
+  return execFileSync(
     "docker",
     [
       "compose",
@@ -29,7 +29,7 @@ function compose(...args: string[]) {
       "worker",
       ...args,
     ],
-    { stdio: "ignore" },
+    { encoding: "utf8" },
   );
 }
 
@@ -40,6 +40,43 @@ export function stopWorker() {
 
 export function startWorker() {
   compose("up", "--detach", "worker");
+}
+
+/** Adjusts only the disposable synthetic E2E row so the local rule has evidence. */
+export function setProcessMovementCode(processId: string, code: number): string {
+  if (!/^[0-9a-f-]{36}$/i.test(processId) || !Number.isSafeInteger(code) || code <= 0) {
+    throw new Error("Process ID ou código TPU inválido para fixture E2E.");
+  }
+  const sql = `UPDATE movement_occurrences AS occurrence
+    SET normalized_content = jsonb_set(
+      jsonb_set(occurrence.normalized_content, '{codigo}', to_jsonb(${code})),
+      '{nome}', to_jsonb('Bloqueio, Penhora ou Arresto'::text)
+    )
+    FROM representations AS representation
+    WHERE representation.id = occurrence.representation_id
+      AND representation.process_id = '${processId}'::uuid
+      AND representation.id = (
+        SELECT selected.id
+        FROM representations AS selected
+        WHERE selected.process_id = '${processId}'::uuid
+        ORDER BY selected.last_observed_at DESC, selected.id DESC
+        LIMIT 1
+      )
+    RETURNING occurrence.id`;
+  const occurrenceId = compose(
+    "exec",
+    "-T",
+    "--env",
+    `SIGNAL_SEED_SQL=${sql}`,
+    "db",
+    "sh",
+    "-lc",
+    'psql --quiet --tuples-only --no-align --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --command "$SIGNAL_SEED_SQL"',
+  ).trim();
+  if (!/^[0-9a-f-]{36}$/i.test(occurrenceId)) {
+    throw new Error("A fixture E2E não encontrou uma ocorrência única para o processo.");
+  }
+  return occurrenceId;
 }
 
 /** A filing window no other test uses, so each collection is a distinct query. */

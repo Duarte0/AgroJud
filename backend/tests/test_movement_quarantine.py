@@ -52,6 +52,7 @@ EXPECTED_TABLES = {
     "movement_snapshot_occurrences",
     "movement_snapshots",
     "processes",
+    "process_signals",
     "process_triage",
     "process_triage_history",
     "quarantine_rejections",
@@ -59,6 +60,9 @@ EXPECTED_TABLES = {
     "representation_subjects",
     "representation_versions",
     "representations",
+    "signal_evaluations",
+    "signal_run_inputs",
+    "signal_run_processes",
     "source_rate_limits",
 }
 

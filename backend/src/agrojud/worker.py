@@ -18,6 +18,7 @@ from agrojud.db.engine import make_engine
 from agrojud.services.collection import build_collection_job_handler
 from agrojud.services.job_worker import LeasedWorker
 from agrojud.services.jobs import JobService
+from agrojud.services.signal_reprocessing import build_signal_run_handler
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -52,6 +53,7 @@ def main(argv: list[str] | None = None) -> None:
         lease_duration=timedelta(seconds=settings.job_lease_seconds),
     )
     collection_handler = build_collection_job_handler(settings)
+    signal_handler = build_signal_run_handler(jobs)
     worker_id = os.getenv("JOB_WORKER_ID") or f"{socket.gethostname()}:{os.getpid()}"
     worker = LeasedWorker(
         jobs,
@@ -59,6 +61,7 @@ def main(argv: list[str] | None = None) -> None:
         handlers={
             "discovery": collection_handler,
             "refresh_number": collection_handler,
+            "reprocess_rules": signal_handler,
         },
         heartbeat_interval=settings.job_heartbeat_seconds,
     )

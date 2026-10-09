@@ -5,8 +5,9 @@ from __future__ import annotations
 from typing import Any, Literal, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from sqlalchemy import func, select
+from sqlalchemy.sql.elements import ColumnElement
 
 from agrojud.api.errors import ERROR_RESPONSES
 from agrojud.api.schemas import (
@@ -109,7 +110,7 @@ def list_jobs(
     ),
     kind: str | None = Query(default=None, pattern="^(discovery|refresh_number)$"),
 ) -> PaginationResponse[JobSummaryResponse]:
-    filters = []
+    filters: list[ColumnElement[bool]] = [Job.job_type.in_(("discovery", "refresh_number"))]
     if status is not None:
         filters.append(Job.status == status)
     if kind is not None:
@@ -138,6 +139,7 @@ def list_jobs(
 )
 def get_job(job_id: UUID, request: Request) -> JobDetailResponse:
     inspection: JobInspection = request.app.state.jobs.inspect(job_id)
+    _require_collection_job(inspection)
     return _detail_from_inspection(inspection)
 
 
@@ -149,6 +151,7 @@ def get_job(job_id: UUID, request: Request) -> JobDetailResponse:
 )
 def cancel_job(job_id: UUID, request: Request) -> JobCommandResponse:
     jobs: JobService = request.app.state.jobs
+    _require_collection_job(jobs.inspect(job_id))
     jobs.request_cancel(job_id)
     return _command_from_inspection(jobs.inspect(job_id), reused=False)
 
@@ -163,6 +166,7 @@ def cancel_job(job_id: UUID, request: Request) -> JobCommandResponse:
 def resume_job(job_id: UUID, request: Request, response: Response) -> JobCommandResponse:
     jobs: JobService = request.app.state.jobs
     before = jobs.inspect(job_id)
+    _require_collection_job(before)
     resumed_id = jobs.resume(job_id)
     inspection = jobs.inspect(resumed_id)
     response.headers["Location"] = str(request.url_for("get_job", job_id=str(resumed_id)))
@@ -182,6 +186,7 @@ def resume_job(job_id: UUID, request: Request, response: Response) -> JobCommand
 def continue_job(job_id: UUID, request: Request, response: Response) -> JobCommandResponse:
     jobs: JobService = request.app.state.jobs
     before = jobs.inspect(job_id)
+    _require_collection_job(before)
     try:
         continued_id = jobs.continue_job(job_id)
     except SourceError as error:
@@ -205,6 +210,7 @@ def continue_job(job_id: UUID, request: Request, response: Response) -> JobComma
 )
 def restart_scan(job_id: UUID, request: Request, response: Response) -> JobCommandResponse:
     jobs: JobService = request.app.state.jobs
+    _require_collection_job(jobs.inspect(job_id))
     result = jobs.restart_scan(job_id)
     inspection = jobs.inspect(result.job_id)
     response.headers["Location"] = str(request.url_for("get_job", job_id=str(result.job_id)))
@@ -224,6 +230,8 @@ def _source_for_environment(
 
 
 def _summary_from_row(job: Job) -> JobSummaryResponse:
+    if job.collection_id is None:  # pragma: no cover - list query filters local rule runs
+        raise RuntimeError("Um job de coleta não possui coleta associada.")
     return JobSummaryResponse(
         id=job.id,
         collection_id=job.collection_id,
@@ -245,6 +253,8 @@ def _summary_from_row(job: Job) -> JobSummaryResponse:
 
 
 def _detail_from_inspection(inspection: JobInspection) -> JobDetailResponse:
+    if inspection.collection_id is None:  # pragma: no cover - ruled out by route guard
+        raise RuntimeError("Um job de coleta não possui coleta associada.")
     parameters = inspection.parameters_snapshot
     raw_query = parameters.get("query")
     query = raw_query if isinstance(raw_query, dict) else {}
@@ -319,6 +329,8 @@ def _command_from_inspection(
     *,
     reused: bool,
 ) -> JobCommandResponse:
+    if inspection.collection_id is None:  # pragma: no cover - ruled out by route guard
+        raise RuntimeError("Um job de coleta não possui coleta associada.")
     return JobCommandResponse(
         job_id=inspection.id,
         collection_id=inspection.collection_id,
@@ -327,3 +339,8 @@ def _command_from_inspection(
         cancel_requested=inspection.cancel_requested,
         cursor_invalid=inspection.cursor_invalid,
     )
+
+
+def _require_collection_job(inspection: JobInspection) -> None:
+    if inspection.job_type not in ("discovery", "refresh_number"):
+        raise HTTPException(status_code=404, detail="O job de coleta solicitado não existe.")
