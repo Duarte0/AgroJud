@@ -745,6 +745,12 @@ class JobService:
             coverage["quarantine_records"] = self._counter(coverage, "quarantine_records") + len(
                 ingestion.quarantine_ids
             )
+            if page.hits or "source_total" not in coverage:
+                coverage["source_total"] = {
+                    "present": page.total_value is not None,
+                    "value": page.total_value,
+                    "relation": page.total_relation,
+                }
             coverage["has_persisted_data"] = bool(coverage.get("has_persisted_data") or page.hits)
             coverage["current_page"] = checkpoint.next_page
             coverage["last_page_http_attempts"] = job.page_attempt_count
@@ -1008,6 +1014,10 @@ class JobService:
             previous = session.get(Job, job_id)
             if previous is None:
                 raise JobNotFoundError("O job solicitado não existe.")
+            if previous.status != "failed" or not previous.cursor_invalid:
+                raise InvalidJobTransitionError(
+                    "Uma nova varredura exige job failed com cursor invalidado."
+                )
             snapshot = dict(previous.parameters_snapshot)
             parameters = snapshot.get("parameters")
             if not isinstance(parameters, dict):

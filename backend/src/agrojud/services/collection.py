@@ -49,6 +49,7 @@ from agrojud.sources.contracts import (
     copy_json,
 )
 from agrojud.sources.factory import SourceKind, build_source_adapter
+from agrojud.sources.synthetic import build_demo_fixture
 
 INITIAL_HIT_BUDGET = 2_000
 DEFAULT_PAGE_SIZE = 100
@@ -769,7 +770,19 @@ def build_collection_job_handler(settings: Settings) -> CollectionJobHandler:
     """Create production source selection while keeping real pagination gated."""
 
     def source_factory(lease: JobLease) -> SourceAdapter:
-        return build_source_adapter(settings, SourceKind(lease.source))
+        kind = SourceKind(lease.source)
+        if lease.mode == "demo":
+            query = source_query_from_snapshot(
+                lease.parameters_snapshot.get("query"),
+                lease.parameters_snapshot.get("sort"),
+                environment="demo",
+            )
+            return build_source_adapter(
+                settings,
+                kind,
+                fixtures={query: build_demo_fixture(query)},
+            )
+        return build_source_adapter(settings, kind)
 
     return CollectionJobHandler(source_factory)
 

@@ -1,6 +1,6 @@
 # AgroJud Radar
 
-Fundação local do monitor de contencioso do produtor rural. A SPEC-001 entrega API e worker mínimos, PostgreSQL real, migrations, saúde e CI. A SPEC-002 acrescenta os contratos e adaptadores de fonte; a SPEC-007 acrescenta fila persistente, posse, recuperação e cancelamento cooperativo. A coleta de produção continua fora do escopo.
+Fundação local do monitor de contencioso do produtor rural. A SPEC-001 entrega PostgreSQL, migrations, saúde e CI; as SPECs seguintes acrescentam contratos de fonte, persistência, fila recuperável e API operacional. A SPEC-011 expõe jobs e dados locais com OpenAPI; a coleta DataJud de produção continua desabilitada enquanto as capacidades externas necessárias não forem aprovadas.
 
 ## Requisitos locais
 
@@ -22,7 +22,7 @@ As versões escolhidas foram conferidas em 08/10/2026: Python 3.14.8 está em ma
 
 ```sh
 cp .env.demo.example .env.demo
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml up --build --detach db api
+docker compose --project-name agrojud-demo --profile worker --env-file .env.demo -f compose.yaml up --build --detach db api worker
 docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml run --rm api uv run --no-sync alembic upgrade head
 curl --fail http://127.0.0.1:8000/api/v1/health/live
 curl --fail http://127.0.0.1:8000/api/v1/health/ready
@@ -30,21 +30,37 @@ curl --fail http://127.0.0.1:8000/api/v1/health/ready
 
 API publica apenas em `127.0.0.1:8000`; o banco não publica porta no host por padrão. `API_PORT` permite escolher outra porta quando 8000 estiver ocupada. Migrações são explícitas e devem ser aplicadas após subir o banco. A imagem API e o comando worker usam o mesmo Dockerfile e pacote.
 
-O worker executa um loop persistente, mas ainda não registra handlers de coleta; fica ocioso até uma unidade posterior introduzir esses handlers. Para validar configuração e encerrar sem iniciar o loop:
+O worker executa um loop persistente com handlers para jobs `discovery` e `refresh_number`. No ambiente `demo`, as consultas usam fixtures determinísticas marcadas como sintéticas. O ambiente `real` permanece bloqueado pela API enquanto S1/S2 não forem aprovados. Para validar configuração e encerrar sem iniciar o loop:
 
 ```sh
 docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml run --rm worker uv run --no-sync agrojud-worker --check
 ```
 
-O worker lê as opções `JOB_LEASE_SECONDS` (120), `JOB_HEARTBEAT_SECONDS` (20) e `JOB_POLL_SECONDS` (2) do ambiente. Heartbeats usam uma sessão PostgreSQL própria. O modo `--check` valida configuração sem acessar o banco. Nenhum coletor DataJud ou sintético de produção está registrado nesta SPEC.
+O worker lê as opções `JOB_LEASE_SECONDS` (120), `JOB_HEARTBEAT_SECONDS` (20) e `JOB_POLL_SECONDS` (2) do ambiente. Heartbeats usam uma sessão PostgreSQL própria. O modo `--check` valida configuração sem acessar o banco.
 
 ## Contratos de fonte (SPEC-002)
 
 `agrojud.sources` oferece consultas imutáveis TJGO, erros tipados, páginas com hits brutos e cursores preservados, além dos adaptadores HTTP DataJud e sintético. O adaptador HTTP faz uma tentativa por chamada, usa timeouts connect/read/write/pool de 5/20/20/5 segundos e não segue redirecionamentos. O endpoint é fixo em TJGO; a interface não aceita DSL livre.
 
-O seletor de fonte exige escolha explícita compatível com o ambiente: `demo` usa apenas fixtures sintéticas e `real` usa apenas DataJud com `DATAJUD_API_KEY`. Falhas de DataJud não acionam fallback sintético. Em `test`, o adaptador DataJud exige transporte HTTP simulado. O worker ainda não chama o seletor nem processa consultas.
+O seletor de fonte exige escolha explícita compatível com o ambiente: `demo` usa apenas fixtures sintéticas e `real` usa apenas DataJud com `DATAJUD_API_KEY`. Falhas de DataJud não acionam fallback sintético. Em `test`, o adaptador DataJud exige transporte HTTP simulado. O worker usa o seletor para processar jobs; a API mantém a criação no ambiente real desabilitada enquanto as evidências externas necessárias estiverem inconclusivas.
 
 O contrato e o transporte foram validados com HTTPX MockTransport. Isso não comprova o shape real dos hits, a correspondência histórica entre IDs, a ordenação composta ou a paginação do TJGO; esses pontos seguem sob SPEC-003.
+
+## API operacional e OpenAPI (SPEC-011)
+
+A API expõe criação, listagem, detalhe e comandos de jobs em `/api/v1/jobs`, além de processos, representações, movimentos, presets e ambiente. Consultas usam paginação local estável; campos brutos completos e cursores remotos não são retornados por padrão. Erros têm estrutura uniforme e `X-Request-ID`. A documentação interativa fica em `http://127.0.0.1:8000/api/v1/docs`, e o contrato JSON em `/api/v1/openapi.json`.
+
+Exemplo de criação de coleta sintética no ambiente demo:
+
+```sh
+curl --fail-with-body -X POST http://127.0.0.1:8000/api/v1/jobs \
+  -H 'Content-Type: application/json' \
+  -d '{"kind":"discovery","criteria":{"preset_id":"rural.credito_contratos"}}'
+```
+
+A resposta HTTP 202 inclui o identificador persistido do job e o cabeçalho `Location`. Consulte esse endereço para acompanhar o estado; o worker separado processa a fila PostgreSQL.
+
+Para gerar ou conferir o contrato e os tipos TypeScript, consulte [frontend/README.md](frontend/README.md). A CI executa `npm run openapi:check` sem chamadas ao DataJud.
 
 ## Probe limitada DataJud/TJGO (SPEC-003)
 
@@ -83,8 +99,8 @@ O projeto `agrojud-demo` usa o banco `agrojud_demo` e o projeto `agrojud-real` u
 Pare e retome sem remover o volume:
 
 ```sh
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml stop
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml start
+docker compose --project-name agrojud-demo --profile worker --env-file .env.demo -f compose.yaml stop
+docker compose --project-name agrojud-demo --profile worker --env-file .env.demo -f compose.yaml start
 ```
 
 ## Testes, lint e typecheck

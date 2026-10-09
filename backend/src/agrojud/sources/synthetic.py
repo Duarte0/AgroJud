@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
+from hashlib import sha256
 
 from agrojud.sources.contracts import (
     Cursor,
@@ -168,3 +169,42 @@ class SyntheticSourceAdapter:
                 "O cursor não pertence à fixture sintética selecionada.",
             )
         return matches[0]
+
+
+def build_demo_fixture(query: SourceQuery) -> SyntheticQueryFixture:
+    """Create one fixed, explicitly synthetic hit for a local demo query."""
+
+    if not isinstance(query, SourceQuery):
+        raise SourceError(SourceErrorCode.VALIDATION, "A consulta da fixture é inválida.")
+    process_number = query.process_number or "00000010020268090001"
+    source_id = "demo-" + sha256(repr(query).encode("utf-8")).hexdigest()[:24]
+    filed_date = query.filed_from or date(2025, 1, 15)
+    filed_at = datetime.combine(filed_date, time(hour=9), tzinfo=UTC)
+    updated_at = datetime.combine(filed_date, time(hour=10), tzinfo=UTC)
+    class_code = query.class_codes[0] if query.class_codes else 1116
+    subject_codes = query.subject_codes or (10501,)
+    movement_code = query.movement_codes[0] if query.movement_codes else 26
+    timestamp = updated_at.isoformat().replace("+00:00", "Z")
+    source: dict[str, JSONValue] = {
+        "id": source_id,
+        "numeroProcesso": process_number,
+        "tribunal": "TJGO",
+        "dataAjuizamento": filed_at.strftime("%Y%m%d%H%M%S"),
+        "@timestamp": timestamp,
+        "grau": "G1",
+        "classe": {"codigo": class_code, "nome": f"Classe TPU {class_code}"},
+        "assuntos": [{"codigo": code, "nome": f"Assunto TPU {code}"} for code in subject_codes],
+        "orgaoJulgador": {"codigo": query.court_unit_code or 1, "nome": "Unidade sintética TJGO"},
+        "movimentos": [
+            {
+                "codigo": movement_code,
+                "nome": f"Movimento TPU {movement_code}",
+                "dataHora": timestamp,
+            }
+        ],
+        "demonstracaoSintetica": True,
+    }
+    hit: dict[str, JSONValue] = {"_id": source_id, "_source": source, "sort": [timestamp]}
+    return SyntheticQueryFixture(
+        pages=(SyntheticPageFixture(hits=(hit,), total_value=1, total_relation="eq"),)
+    )

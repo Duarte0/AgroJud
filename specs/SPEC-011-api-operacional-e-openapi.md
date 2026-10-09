@@ -1,6 +1,6 @@
 # SPEC-011 — API operacional e OpenAPI
 
-Status: BLOCKED_DEPENDENCY
+Status: DONE
 
 Milestone/Spike: M5
 
@@ -38,14 +38,16 @@ Duas criações equivalentes retornam o mesmo job ativo. Frontend recebe totais 
 API de coleta exige capacidades reais aprovadas, mas leitura local continua disponível durante indisponibilidade remota. Não reinterpretar erro da fonte como erro de saúde do banco.
 
 ## Critérios de aceitação
-- AC1: criar/acompanhar/cancelar/retomar funcionam pelo contrato HTTP.
-- AC2: GETs não alteram tabelas de domínio.
-- AC3: filtros não duplicam processos nem cruzam capas incorretamente.
-- AC4: OpenAPI gera tipos reproduzíveis e descreve erros/estados.
-- AC5: ações incompatíveis retornam 409 sem efeito.
+- [x] AC1: criar/acompanhar/cancelar/retomar funcionam pelo contrato HTTP.
+- [x] AC2: GETs não alteram tabelas de domínio.
+- [x] AC3: filtros não duplicam processos nem cruzam capas incorretamente.
+- [x] AC4: OpenAPI gera tipos reproduzíveis e descreve erros/estados.
+- [x] AC5: ações incompatíveis retornam 409 sem efeito.
 
 ## Testes necessários
 TestClient com PostgreSQL, disputa de criação, tabela de transições, 404/409/422/503, filtros multicapa e comparação de estado antes/depois dos GETs. Validar tipos gerados e schema em CI.
+
+Validação local em 09/10/2026: `npm ci`, `pytest tests/test_api.py` (10 passed), suíte completa (`pytest`: 201 passed), `ruff check src tests`, `ruff format --check src tests`, `mypy src` e `npm run openapi:check` passaram. O pytest reportou um aviso de depreciação do Starlette sobre a integração com HTTPX; não houve falhas. Com CPython 3.14.8, schema e tipos também foram gerados em container e comparados byte a byte com os arquivos versionados.
 
 ## Erros e edge cases
 Página além do fim retorna items vazio. Ausência de movimentos mantém diagnóstico. Campos opcionais null não ganham valores de apresentação artificiais no backend.
@@ -54,5 +56,5 @@ Página além do fim retorna items vazio. Ausência de movimentos mantém diagn�
 Triagem, watchlist, exportação, autenticação e API pública para terceiros.
 
 ## Evidência e conclusão
-Sequência HTTP reproduzível criando coleta sintética e consultando resultado; logs sanitizados e comparação OpenAPI sem diff.
+Sequência HTTP reproduzível criando coleta sintética e consultando resultado. Em Compose isolado, API e worker subiram sobre banco próprio: readiness e OpenAPI responderam 200, a criação HTTP respondeu 202, o job terminou como `completed` e as consultas de processos, representações e movimentos retornaram o resultado sintético. Os testes também verificam ausência de mutação por GET e cobrem transições, disputa de criação, erros e filtros multicapa. A geração determinística foi comparada sem divergência pelo `npm run openapi:check` e, em CPython 3.14.8, por comparação byte a byte do schema e dos tipos. A fonte DataJud real e os presets reais permanecem desabilitados enquanto S1/S2 e as evidências pertinentes de S5 não aprovarem essas capacidades.
 

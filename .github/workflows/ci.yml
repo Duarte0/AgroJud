@@ -14,6 +14,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
 
+      - name: Install uv and the pinned Python
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: 0.12.20
+          python-version: 3.14.8
+          working-directory: backend
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify generated OpenAPI and TypeScript contract
+        working-directory: frontend
+        run: npm ci && npm run openapi:check
+
       - name: Create local-only environment files
         run: |
           cp .env.demo.example .env.demo

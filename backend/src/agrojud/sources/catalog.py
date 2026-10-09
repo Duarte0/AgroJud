@@ -765,12 +765,18 @@ def _subtract_calendar_months(value: date, months: int) -> date:
 
 def _item_by_id(item_id: str) -> CatalogItem:
     if not isinstance(item_id, str) or not item_id.strip():
-        raise SourceError(SourceErrorCode.VALIDATION, "O identificador do catálogo é inválido.")
+        raise SourceError(
+            SourceErrorCode.VALIDATION,
+            "O identificador do catálogo é inválido.",
+            field_path="preset_id",
+        )
     for item in load_catalog().items:
         if item.id == item_id:
             return item
     raise SourceError(
-        SourceErrorCode.VALIDATION, "O preset ou regra informado não existe no catálogo."
+        SourceErrorCode.VALIDATION,
+        "O preset ou regra informado não existe no catálogo.",
+        field_path="preset_id",
     )
 
 

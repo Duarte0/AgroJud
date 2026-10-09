@@ -2,7 +2,7 @@
 
 Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial enquanto S1/S2 externos permanecem INCONCLUSIVE. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. Uma amostra manual confirmou acesso e envelope; M1 segue parcial enquanto S1/S2 externos permanecem INCONCLUSIVE. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
 
 ## 1. Estado atual e orientação
 
@@ -342,6 +342,8 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 
 **Demonstração:** iniciar e acompanhar uma coleta exclusivamente por HTTP.
 
+**Estado em 09/10/2026 — DONE localmente (SPEC-011):** os endpoints de jobs, processos, representações, movimentos, presets e ambiente estão implementados com DTOs tipados, erros uniformes e paginação local. Smoke Compose isolado confirmou readiness/OpenAPI HTTP 200, criação HTTP 202, processamento até `completed` pelo worker e leitura de processos, representações e movimentos. A fonte real continua desabilitada até aprovação de S1/S2 e evidências de S5. `npm ci`, `pytest tests/test_api.py` (10 testes), a suíte completa (201 testes), Ruff, formatação, mypy e `npm run openapi:check` passaram. Schema e tipos também coincidiram byte a byte com a geração em Python 3.14.8. A suíte reportou um aviso de depreciação Starlette/HTTPX.
+
 ### M6 — Primeira fatia completa de frontend
 
 **Dependência:** M5.
@@ -504,7 +506,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] S4 — Atomicidade e recuperação comprovadas localmente; integração real permanece bloqueada por S2.
 - [x] M4 — Coleta recuperável demonstrada localmente; consulta real multipágina segue pendente.
 - [x] SPEC-010 — Catálogo versionado e investigação TPU concluídos localmente; gates de evidência real preservados.
-- [ ] M5 — API e OpenAPI estáveis.
+- [x] M5 — API e OpenAPI estáveis (SPEC-011 DONE localmente; fonte real continua bloqueada por evidência externa).
 - [ ] M6 — Fluxo visual completo.
 - [ ] S5 — Catálogo temático validado.
 - [ ] M7 — Triagem e regras.
@@ -517,7 +519,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-010 estão DONE localmente; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-011 estão DONE localmente; as sucessoras permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |
