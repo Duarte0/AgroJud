@@ -917,6 +917,11 @@ def _parse_source_date(value: object) -> date | None:
     candidate = value.strip()
     if not candidate:
         return None
+    if re.fullmatch(r"\d{14}", candidate):
+        try:
+            return datetime.strptime(candidate, "%Y%m%d%H%M%S").date()
+        except ValueError:
+            return None
     try:
         return date.fromisoformat(candidate[:10])
     except ValueError:

@@ -1,6 +1,6 @@
 # SPECs — AgroJud Radar
 
-Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e SPEC-003 foram concluídas em 08/10/2026. A execução remota da SPEC-003 ficou inconclusiva; isso não aprova S1/S2 nem habilita a fonte real.
+Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. Uma amostra manual posterior confirmou envelope e campos de um hit; filtro, sort e paginação seguem sem validação externa.
 
 ## Como executar uma unidade
 
@@ -20,13 +20,13 @@ Uma SPEC contém objetivo, contexto, dependências, escopo, requisitos/contratos
 - **IN_PROGRESS:** execução iniciada.
 - **DONE:** todos os critérios desta unidade foram atendidos e registrados.
 
-SPEC-001, SPEC-002 e SPEC-003 estão DONE. SPEC-004, SPEC-005 e SPEC-010 estão READY porque suas dependências diretas estão entregues; READY autoriza iniciar cada unidade, sem validar capacidades externas. As demais seguem BLOCKED_DEPENDENCY. SPEC-003 entregou probe/testes/relatório; suas capacidades reais S1/S2 permanecem INCONCLUSIVE conforme a evidência registrada. SPEC-010 continua responsável pelo catálogo versionado.
+SPEC-001, SPEC-002 e SPEC-003 estão DONE. SPEC-004, SPEC-005 e SPEC-010 estão READY porque suas dependências diretas estão entregues; READY autoriza iniciar cada unidade, sem validar capacidades externas. As demais seguem BLOCKED_DEPENDENCY. SPEC-003 entregou probe/testes/relatório. Uma amostra manual confirmou envelope, campos essenciais e igualdade de `_id`/`_source.id` para um hit; filtros, busca exata, sort e paginação permanecem INCONCLUSIVE. SPEC-010 continua responsável pelo catálogo versionado.
 
 ### Dois controles distintos
 
 Status da SPEC mede a entrega da unidade. Capacidades externas têm estado VALIDATED, INCOMPATIBLE ou INCONCLUSIVE, com evidência e data.
 
-SPEC-003 está DONE como unidade de implementação, mas todas as capacidades reais da matriz estão INCONCLUSIVE após timeout; S1/S2 seguem pendentes. SPEC-010 pode entregar catálogo/investigação com itens inconclusivos sem aprovar S5 por completo. DONE nesses documentos não libera capacidades reais pendentes.
+SPEC-003 está DONE como unidade de implementação. A probe limitada expirou; uma amostra manual posterior confirmou apenas envelope, campos essenciais e identidade para um hit. Filtro, busca exata, sort e paginação continuam pendentes, portanto S1/S2 não liberam a fonte real. SPEC-010 pode entregar catálogo/investigação com itens inconclusivos sem aprovar S5 por completo. DONE nesses documentos não libera capacidades reais pendentes.
 
 SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus critérios; isso não encerra os aceites reais. SPEC-020 exige os aceites reais pertinentes para DONE integral e fica BLOCKED_VALIDATION se faltar essa evidência. Nunca substituir erro externo por fonte sintética dentro de uma execução real.
 

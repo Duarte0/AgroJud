@@ -2,7 +2,7 @@
 
 Data: 08/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. M1 segue parcial até o catálogo da SPEC-010 e evidência externa S1/S2, que permanece INCONCLUSIVE.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
 
 ## 1. Estado atual e orientação
 
@@ -30,8 +30,8 @@ Estado após a implementação de SPEC-002, confirmado em 08/10/2026:
 Estado após a implementação de SPEC-003, confirmado em 08/10/2026:
 
 - `agrojud-datajud-probe` limita cada execução a seis requisições, cem hits por página e nenhuma repetição automática; escreve relatório sanitizado e não acessa o banco de produto.
-- A execução real ao endpoint TJGO expirou após 20.187 ms na primeira requisição, sem status HTTP. O relatório em `docs/evidence/datajud-tjgo-validacao-2026-10-08.json` mantém envelope, campos, filtros, identidade, consultas, sort e paginação como INCONCLUSIVE. Nenhuma capacidade real foi aprovada ou habilitada.
-- SPEC-003 está DONE para ferramenta, testes e relatório. S1/S2 continuam pendentes; não repetir a probe sem novo motivo. SPEC-010 ainda entrega catálogo e presets.
+- A probe limitada ao endpoint TJGO expirou após 20.187 ms, sem status HTTP. Depois, uma resposta manual `match_all`, `size: 1` confirmou envelope, campos essenciais e `_id == _source.id` em um hit; `dataAjuizamento` veio como `YYYYMMDDHHMMSS`. A evidência sanitizada está em `docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json`.
+- A resposta manual não exercitou filtro de data, busca exata por CNJ, sort nem paginação. SPEC-003 está DONE para ferramenta, testes e relatório; essas capacidades de S1/S2 seguem pendentes e não liberam a fonte real. SPEC-010 ainda entrega catálogo e presets.
 
 A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 prova a base local e persistência; as próximas etapas introduzirão adaptadores e processamento conforme suas SPECs.
 
@@ -151,9 +151,9 @@ Regras para os spikes:
 
 **Entregue pela SPEC-002:** consulta imutável TJGO com filtros allowlisted e intervalo semiaberto; busca exata por CNJ; DTOs que preservam hit bruto, metadados, sort e cursor; erros tipados; HTTPX síncrono com timeouts 5/20/20/5 segundos, redirects desativados e sem retry; fixtures sintéticas explícitas e mutáveis entre execuções; isolamento de fonte por ambiente.
 
-**Pendências mantidas nas unidades próprias:** catálogo e estados de habilitação em SPEC-010; a execução remota, validação observada de campos/IDs e evidência de sort/paginação real continuam pendentes na matriz da SPEC-003. O probe está entregue, mas sua chamada real expirou antes de receber resposta; nenhuma capacidade foi habilitada.
+**Pendências mantidas nas unidades próprias:** catálogo e estados de habilitação em SPEC-010; filtro por data, busca exata, sort e paginação reais continuam pendentes na SPEC-003. O probe limitado expirou; uma amostra manual posterior confirmou somente envelope, campos essenciais e correspondência de IDs em um hit. Nenhuma capacidade não observada foi habilitada.
 
-**Evidência da SPEC-003:** 66 testes passaram, com Ruff, formatação e mypy aprovados. Os testes HTTP usam MockTransport. Uma chamada remota limitada expirou em 20.187 ms sem status HTTP; consulta, orçamento, duração e matriz estão em `docs/evidence/datajud-tjgo-validacao-2026-10-08.json`. O timeout é indisponibilidade, não consulta vazia. Assim, S1/S2 continuam pendentes e não liberam coleta real.
+**Evidência da SPEC-003:** 67 testes passaram, com Ruff, formatação e mypy aprovados. Os testes HTTP usam MockTransport, incluindo o formato compacto observado para `dataAjuizamento`. A probe limitada expirou em 20.187 ms sem status HTTP; a amostra manual validou somente envelope, campos essenciais e relação de IDs para um hit. As evidências estão em `docs/evidence/datajud-tjgo-validacao-2026-10-08.json` e `docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json`. S1/S2 seguem pendentes e não liberam coleta real.
 
 **Concluir quando:**
 

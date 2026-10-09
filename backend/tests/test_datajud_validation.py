@@ -42,14 +42,20 @@ def make_settings() -> Settings:
     )
 
 
-def hit(case_number: str, source_id: str, sort_values: list[object]) -> dict[str, object]:
+def hit(
+    case_number: str,
+    source_id: str,
+    sort_values: list[object],
+    *,
+    filed_at: str = "2025-12-01T00:00:00",
+) -> dict[str, object]:
     return {
         "_id": source_id,
         "_source": {
             "id": source_id,
             "numeroProcesso": case_number,
             "tribunal": "TJGO",
-            "dataAjuizamento": "2025-12-01T00:00:00",
+            "dataAjuizamento": filed_at,
             "grau": "G1",
             "classe": {"codigo": 100},
             "assuntos": [{"codigo": 200}],
@@ -165,6 +171,37 @@ def test_probe_stays_within_six_calls_and_sanitizes_every_report_field(
     assert pagination_evidence["cursor_advanced"] is True
     assert pagination_evidence["overlap_by_source_document_id"] == 0
     assert report["repeat_comparison"]["overlap_by_source_document_id"] == 2
+
+
+def test_filter_check_accepts_compact_datajud_filing_timestamp() -> None:
+    compact_date = "20260731204748"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload: dict[str, Any] = json.loads(request.content)
+        sort_fields = [next(iter(term)) for term in payload["sort"]]
+        values = [100, SOURCE_A] if len(sort_fields) == 2 else [100]
+        return httpx.Response(
+            200,
+            json=response_body([hit(CASE_A, SOURCE_A, values, filed_at=compact_date)]),
+        )
+
+    adapter = DataJudSourceAdapter(
+        make_settings(),
+        transport=httpx.MockTransport(handler),
+    )
+    try:
+        report = TJGOValidationProbe(
+            adapter,
+            filed_from=date(2026, 7, 31),
+            filed_to=date(2026, 8, 1),
+        ).run()
+    finally:
+        adapter.close()
+
+    filters = report["capabilities"]["filters"]
+    assert filters["state"] == "VALIDATED"
+    assert filters["evidence"]["date_min"] == "2026-07-31"
+    assert filters["evidence"]["date_max"] == "2026-07-31"
 
 
 def test_missing_key_report_has_no_requests_and_marks_external_capabilities_inconclusive() -> None:

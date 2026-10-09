@@ -57,7 +57,7 @@ mkdir -p docs/evidence
 docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm --no-deps -v "$PWD/docs/evidence:/evidence" api uv run --no-sync agrojud-datajud-probe --output /evidence/datajud-tjgo-validacao.json
 ```
 
-Timeout ou indisponibilidade gera diagnóstico `INCONCLUSIVE`, nunca resultado vazio nem habilitação da fonte real. O comando só pesquisa por CNJ depois de observar o número em um hit público. A SPEC-003 registra a matriz e os limites atuais em [sua evidência](docs/evidence/datajud-tjgo-validacao-2026-10-08.json); o uso da API também permanece sujeito ao termo registrado no [PRD](PRD.md#2-decisões-e-premissas).
+Timeout ou indisponibilidade gera diagnóstico `INCONCLUSIVE`, nunca resultado vazio nem habilitação da fonte real. O comando só pesquisa por CNJ depois de observar o número em um hit público. A matriz da probe está em [sua evidência](docs/evidence/datajud-tjgo-validacao-2026-10-08.json); a [amostra manual sanitizada](docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json) confirma apenas o envelope e alguns campos de um hit. O uso da API também permanece sujeito ao termo registrado no [PRD](PRD.md#2-decisões-e-premissas).
 
 ## Ambientes separados
 

@@ -1,0 +1,82 @@
+{
+  "evidence_version": 1,
+  "provenance": "Resumo sanitizado de resposta cURL fornecida pelo usuário; a chave e o payload bruto foram omitidos.",
+  "observed_at_local_date": "2026-10-09",
+  "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+  "request": {
+    "method": "POST",
+    "query_shape": "match_all",
+    "size": 1,
+    "sort_requested": false,
+    "http_status": "not included in the supplied output"
+  },
+  "response": {
+    "took_ms": 56777,
+    "timed_out": false,
+    "shards": {
+      "total": 4,
+      "successful": 4,
+      "failed": 0
+    },
+    "total_hits": {
+      "value": 10000,
+      "relation": "gte"
+    },
+    "returned_hits": 1,
+    "sample_shapes": {
+      "_id": "string; value omitted",
+      "_source.id": "string; value omitted",
+      "_source.tribunal": "TJGO",
+      "_source.numeroProcesso": "20-digit CNJ; value omitted",
+      "_source.grau": "string",
+      "_source.dataAjuizamento": "string YYYYMMDDHHMMSS; value omitted",
+      "_source.@timestamp": "ISO-8601 UTC string",
+      "_source.orgaoJulgador": "object",
+      "_source.classe": "object",
+      "_source.assuntos": "array",
+      "_source.movimentos": "array"
+    },
+    "identity_observation": {
+      "_id_equals_source_id": true,
+      "scope": "one returned hit; no historical stability claim"
+    }
+  },
+  "capabilities": {
+    "response_envelope": {
+      "state": "VALIDATED",
+      "scope": "one user-supplied response"
+    },
+    "essential_fields": {
+      "state": "VALIDATED",
+      "scope": "one user-supplied hit"
+    },
+    "source_identity": {
+      "state": "VALIDATED",
+      "scope": "_id and _source.id matched in one hit; no stability claim"
+    },
+    "date_range_filter": {
+      "state": "INCONCLUSIVE",
+      "reason": "The request used match_all and did not test a dataAjuizamento range."
+    },
+    "query_by_case_number": {
+      "state": "INCONCLUSIVE",
+      "reason": "No exact numeroProcesso query was sent."
+    },
+    "sort": {
+      "state": "INCONCLUSIVE",
+      "reason": "No sort was requested or observed."
+    },
+    "pagination": {
+      "state": "INCONCLUSIVE",
+      "reason": "Only one hit was requested; no search_after cursor was tested."
+    }
+  },
+  "observations": {
+    "filing_date_format": "YYYYMMDDHHMMSS"
+  },
+  "limitations": [
+    "The supplied output does not include the HTTP status line.",
+    "A match_all response does not establish date-filter semantics, exact search behavior, sort support, or pagination.",
+    "The reported took value is 56777 ms; this sample does not change the adapter timeout or authorize automatic retries."
+  ]
+}
