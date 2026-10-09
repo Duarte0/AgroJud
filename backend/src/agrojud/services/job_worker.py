@@ -169,7 +169,7 @@ class LeasedWorker:
 
         if not self.handlers:
             return False
-        lease = self.jobs.claim(self.worker_id, job_types=tuple(self.handlers))
+        lease = self.jobs.claim(self.worker_id, job_types=tuple(self.handlers), fair=True)
         if lease is None:
             return False
 

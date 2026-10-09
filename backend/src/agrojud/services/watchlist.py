@@ -4,11 +4,17 @@ from __future__ import annotations
 
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from agrojud.db.models import Process, ProcessWatchlistEntry, ProcessWatchlistHistory
+from agrojud.db.models import (
+    Process,
+    ProcessWatchlistEntry,
+    ProcessWatchlistHistory,
+    ScheduleDispatch,
+)
 from agrojud.services.news import end_watch_cycle, start_watch_cycle
+from agrojud.services.schedule_time import next_daily_occurrence
 
 
 def set_process_watch(
@@ -41,15 +47,26 @@ def set_process_watch(
             active=True,
             included_at=now,
             removed_at=None,
+            next_run_at=next_daily_occurrence(now),
         )
         session.add(entry)
     elif active:
         entry.active = True
         entry.included_at = now
         entry.removed_at = None
+        entry.next_run_at = next_daily_occurrence(now)
     else:
         entry.active = False
         entry.removed_at = now
+        entry.next_run_at = None
+        session.execute(
+            update(ScheduleDispatch)
+            .where(
+                ScheduleDispatch.process_id == process_id,
+                ScheduleDispatch.status == "pending",
+            )
+            .values(status="cancelled", reason="watch_removed", updated_at=now)
+        )
 
     session.add(
         ProcessWatchlistHistory(

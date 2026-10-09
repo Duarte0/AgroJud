@@ -19,6 +19,8 @@ import type {
   ProcessListQuery,
   ProcessWatch,
   ProcessTriagePatch,
+  SavedSearchCreate,
+  SavedSearchPatch,
   SignalRunRequest,
   WatchlistQuery,
 } from "@/api/types";
@@ -39,6 +41,7 @@ export function createQueryClient(): QueryClient {
 export const queryKeys = {
   environment: ["environment"] as const,
   presets: (env: EnvironmentName) => [env, "presets"] as const,
+  savedSearches: (env: EnvironmentName) => [env, "saved-searches"] as const,
   jobs: (env: EnvironmentName) => [env, "jobs"] as const,
   jobList: (env: EnvironmentName, query: JobListQuery) => [env, "jobs", "list", query] as const,
   job: (env: EnvironmentName, id: string) => [env, "jobs", "detail", id] as const,
@@ -79,6 +82,62 @@ export function usePresets() {
     queryKey: queryKeys.presets(environment),
     queryFn: ({ signal }) => request(() => api.GET("/api/v1/presets", { signal })),
     staleTime: 60_000,
+  });
+}
+
+export function useSavedSearches() {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.savedSearches(environment),
+    queryFn: ({ signal }) => request(() => api.GET("/api/v1/saved-searches", { signal })),
+  });
+}
+
+export function useCreateSavedSearch() {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SavedSearchCreate) =>
+      request(() => api.POST("/api/v1/saved-searches", { body })),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.savedSearches(environment) });
+    },
+  });
+}
+
+export function usePatchSavedSearch() {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: SavedSearchPatch }) =>
+      request(() =>
+        api.PATCH("/api/v1/saved-searches/{search_id}", {
+          params: { path: { search_id: id } },
+          body,
+        }),
+      ),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.savedSearches(environment) });
+    },
+  });
+}
+
+export function useRunSavedSearch() {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      request(() =>
+        api.POST("/api/v1/saved-searches/{search_id}/run", {
+          params: { path: { search_id: id } },
+        }),
+      ),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.savedSearches(environment) }),
+        client.invalidateQueries({ queryKey: queryKeys.jobs(environment) }),
+      ]);
+    },
   });
 }
 

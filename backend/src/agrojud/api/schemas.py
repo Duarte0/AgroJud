@@ -50,6 +50,87 @@ class DiscoveryCriteria(APIModel):
         return self
 
 
+class SavedSearchFilters(APIModel):
+    filed_from: date | None = None
+    filed_through: date | None = None
+    page_size: int = Field(default=100, ge=1, le=100)
+    hit_budget: int = Field(default=2_000, ge=1, le=2_000)
+
+    @model_validator(mode="after")
+    def validate_dates(self) -> SavedSearchFilters:
+        if (self.filed_from is None) != (self.filed_through is None):
+            raise ValueError("Informe filed_from e filed_through juntos.")
+        if (
+            self.filed_from is not None
+            and self.filed_through is not None
+            and self.filed_from > self.filed_through
+        ):
+            raise ValueError("filed_from deve ser anterior ou igual a filed_through.")
+        return self
+
+
+class SavedSearchCreateRequest(APIModel):
+    name: str = Field(min_length=1, max_length=160)
+    preset_id: str = Field(min_length=1, max_length=120)
+    window_mode: Literal["fixed", "rolling_12_months"]
+    filters: SavedSearchFilters
+    enabled: bool = True
+
+    @model_validator(mode="after")
+    def validate_window(self) -> SavedSearchCreateRequest:
+        has_dates = self.filters.filed_from is not None
+        if (self.window_mode == "fixed") != has_dates:
+            raise ValueError("Janela fixa exige datas; rolling_12_months não aceita datas fixas.")
+        return self
+
+
+class SavedSearchPatchRequest(APIModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    preset_id: str | None = Field(default=None, min_length=1, max_length=120)
+    window_mode: Literal["fixed", "rolling_12_months"] | None = None
+    filters: SavedSearchFilters | None = None
+    enabled: bool | None = None
+
+    @model_validator(mode="after")
+    def reject_null_changes(self) -> SavedSearchPatchRequest:
+        for field in ("name", "preset_id", "window_mode", "filters", "enabled"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} não pode ser nulo quando informado.")
+        return self
+
+
+class ScheduleDispatchResponse(APIModel):
+    id: UUID
+    scheduled_for_date: date
+    status: Literal["pending", "enqueued", "blocked", "cancelled", "coalesced"]
+    job_id: UUID | None
+    missed_from: date | None
+    missed_through: date | None
+    reason: str | None
+    updated_at: datetime
+
+
+class SavedSearchAvailabilityResponse(APIModel):
+    enabled: bool
+    reasons: list[str]
+
+
+class SavedSearchResponse(APIModel):
+    id: UUID
+    name: str
+    version: int = Field(ge=1)
+    preset_id: str
+    preset_version: str
+    window_mode: Literal["fixed", "rolling_12_months"]
+    filters: SavedSearchFilters
+    enabled: bool
+    next_run_at: datetime | None
+    availability: SavedSearchAvailabilityResponse
+    last_dispatch: ScheduleDispatchResponse | None
+    created_at: datetime
+    updated_at: datetime
+
+
 class RefreshNumberCriteria(APIModel):
     process_number: str = Field(min_length=1, max_length=30)
     page_size: int = Field(default=100, ge=1, le=100)
@@ -232,6 +313,8 @@ class ProcessWatchResponse(APIModel):
     active: bool
     included_at: datetime | None
     removed_at: datetime | None
+    next_run_at: datetime | None
+    last_schedule: ScheduleDispatchResponse | None
     history: list[ProcessWatchHistoryResponse]
     baselines: list[RepresentationBaselineResponse]
     last_refresh: ProcessRefreshResultResponse | None
@@ -264,7 +347,9 @@ class WatchlistItemResponse(APIModel):
     process_id: UUID
     numero_cnj: str = Field(pattern=r"^\d{20}$")
     included_at: datetime
+    next_run_at: datetime
     last_refresh: ProcessRefreshResultResponse | None
+    last_schedule: ScheduleDispatchResponse | None
 
 
 class SignalRunFilter(APIModel):

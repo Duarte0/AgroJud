@@ -15,7 +15,14 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from agrojud.db.models import Job, JobAttempt, JobCheckpoint, JobEvent, SourceRateLimit
+from agrojud.db.models import (
+    Job,
+    JobAttempt,
+    JobCheckpoint,
+    JobEvent,
+    QueueClaimState,
+    SourceRateLimit,
+)
 from agrojud.domain.canonical_json import JSONValue, canonical_json_bytes, sha256_json
 from agrojud.services.ingestion import IngestPageResult, create_collection, ingest_page
 from agrojud.services.retry_policy import (
@@ -222,6 +229,13 @@ class JobService:
         """
 
         self._validate_enqueue_request(request)
+        with self.sessions() as session, session.begin():
+            return self.enqueue_in_session(session, request)
+
+    def enqueue_in_session(self, session: Session, request: EnqueueRequest) -> EnqueueResult:
+        """Enqueue within a caller-owned transaction, including deduplication."""
+
+        self._validate_enqueue_request(request)
         operation = {
             "type": request.job_type,
             "source": request.source,
@@ -235,121 +249,121 @@ class JobService:
             "parameters": request.parameters,
         }
 
-        with self.sessions() as session, session.begin():
-            savepoint = session.begin_nested()
-            predecessor: Job | None = None
-            previous_collection_id: UUID | None = None
-            if request.predecessor_job_id is not None:
-                predecessor = session.execute(
-                    select(Job).where(Job.id == request.predecessor_job_id).with_for_update()
-                ).scalar_one_or_none()
-                if predecessor is None:
-                    raise JobNotFoundError("A execução predecessora não existe.")
-                previous_collection_id = predecessor.collection_id
-            collection = create_collection(
-                session,
-                mode=request.mode,
-                resolved_criteria=parameters_snapshot,
-                previous_collection_id=previous_collection_id,
-            )
-            now = self._database_now(session)
-            available_at = self._source_not_before(session, request.source, now)
-            job_id = session.execute(
-                pg_insert(Job)
-                .values(
-                    id=uuid4(),
-                    collection_id=collection.id,
-                    job_type=request.job_type,
-                    mode=request.mode,
-                    source=request.source,
-                    tribunal=request.tribunal,
-                    operation_key=operation_key,
-                    parameters_snapshot=parameters_snapshot,
-                    status="queued",
-                    next_attempt_at=available_at,
-                    attempt_count=0,
-                    retry_cycle=1,
-                    page_attempt_count=0,
-                    persistence_attempt_count=0,
-                    recovery_count=0,
-                    cursor_invalid=False,
-                    predecessor_job_id=request.predecessor_job_id,
-                    event_count=0,
-                )
-                .on_conflict_do_nothing(
-                    index_elements=[Job.operation_key], index_where=_ACTIVE_INDEX_PREDICATE
-                )
-                .returning(Job.id)
+        savepoint = session.begin_nested()
+        predecessor: Job | None = None
+        previous_collection_id: UUID | None = None
+        if request.predecessor_job_id is not None:
+            predecessor = session.execute(
+                select(Job).where(Job.id == request.predecessor_job_id).with_for_update()
             ).scalar_one_or_none()
-
-            if job_id is None:
-                savepoint.rollback()
-                existing = session.execute(
-                    select(Job)
-                    .where(
-                        Job.operation_key == operation_key,
-                        Job.status.in_(ACTIVE_STATUSES),
-                    )
-                    .with_for_update()
-                ).scalar_one_or_none()
-                if existing is None:  # pragma: no cover - conflict waits for its winner
-                    raise RuntimeError("A execução equivalente não pôde ser localizada.")
-                if existing.collection_id is None:
-                    raise InvalidJobTransitionError(
-                        "A execução equivalente pertence a um job sem coleta."
-                    )
-                return EnqueueResult(
-                    job_id=existing.id,
-                    collection_id=existing.collection_id,
-                    operation_key=operation_key,
-                    created=False,
-                )
-
-            session.add(
-                JobCheckpoint(
-                    id=uuid4(),
-                    job_id=job_id,
-                    cursor=None,
-                    next_page=1,
-                    revision=0,
-                    updated_at=now,
-                )
+            if predecessor is None:
+                raise JobNotFoundError("A execução predecessora não existe.")
+            previous_collection_id = predecessor.collection_id
+        collection = create_collection(
+            session,
+            mode=request.mode,
+            resolved_criteria=parameters_snapshot,
+            previous_collection_id=previous_collection_id,
+        )
+        now = self._database_now(session)
+        available_at = self._source_not_before(session, request.source, now)
+        job_id = session.execute(
+            pg_insert(Job)
+            .values(
+                id=uuid4(),
+                collection_id=collection.id,
+                job_type=request.job_type,
+                mode=request.mode,
+                source=request.source,
+                tribunal=request.tribunal,
+                operation_key=operation_key,
+                parameters_snapshot=parameters_snapshot,
+                status="queued",
+                next_attempt_at=available_at,
+                attempt_count=0,
+                retry_cycle=1,
+                page_attempt_count=0,
+                persistence_attempt_count=0,
+                recovery_count=0,
+                cursor_invalid=False,
+                predecessor_job_id=request.predecessor_job_id,
+                event_count=0,
             )
-            job = session.get(Job, job_id)
-            if job is None:  # pragma: no cover - inserted by this transaction
-                raise RuntimeError("O job recém-criado não pôde ser lido.")
+            .on_conflict_do_nothing(
+                index_elements=[Job.operation_key], index_where=_ACTIVE_INDEX_PREDICATE
+            )
+            .returning(Job.id)
+        ).scalar_one_or_none()
+
+        if job_id is None:
+            savepoint.rollback()
+            existing = session.execute(
+                select(Job)
+                .where(
+                    Job.operation_key == operation_key,
+                    Job.status.in_(ACTIVE_STATUSES),
+                )
+                .with_for_update()
+            ).scalar_one_or_none()
+            if existing is None:  # pragma: no cover - conflict waits for its winner
+                raise RuntimeError("A execução equivalente não pôde ser localizada.")
+            if existing.collection_id is None:
+                raise InvalidJobTransitionError(
+                    "A execução equivalente pertence a um job sem coleta."
+                )
+            return EnqueueResult(
+                job_id=existing.id,
+                collection_id=existing.collection_id,
+                operation_key=operation_key,
+                created=False,
+            )
+
+        session.add(
+            JobCheckpoint(
+                id=uuid4(),
+                job_id=job_id,
+                cursor=None,
+                next_page=1,
+                revision=0,
+                updated_at=now,
+            )
+        )
+        job = session.get(Job, job_id)
+        if job is None:  # pragma: no cover - inserted by this transaction
+            raise RuntimeError("O job recém-criado não pôde ser lido.")
+        self._append_event(
+            session,
+            job,
+            "enqueued",
+            {"job_type": request.job_type, "operation_key": operation_key},
+        )
+        if predecessor is not None:
             self._append_event(
                 session,
                 job,
-                "enqueued",
-                {"job_type": request.job_type, "operation_key": operation_key},
+                "restart_scan_started",
+                {"predecessor_job_id": str(predecessor.id)},
             )
-            if predecessor is not None:
-                self._append_event(
-                    session,
-                    job,
-                    "restart_scan_started",
-                    {"predecessor_job_id": str(predecessor.id)},
-                )
-                self._append_event(
-                    session,
-                    predecessor,
-                    "restart_scan_spawned",
-                    {"job_id": str(job.id)},
-                )
-            savepoint.commit()
-            return EnqueueResult(
-                job_id=job_id,
-                collection_id=collection.id,
-                operation_key=operation_key,
-                created=True,
+            self._append_event(
+                session,
+                predecessor,
+                "restart_scan_spawned",
+                {"job_id": str(job.id)},
             )
+        savepoint.commit()
+        return EnqueueResult(
+            job_id=job_id,
+            collection_id=collection.id,
+            operation_key=operation_key,
+            created=True,
+        )
 
     def claim(
         self,
         worker_id: str,
         *,
         job_types: Sequence[str] | None = None,
+        fair: bool = False,
     ) -> JobLease | None:
         """Atomically reserve ready work or recover one expired running lease."""
 
@@ -358,6 +372,21 @@ class JobService:
             return None
 
         with self.sessions() as session, session.begin():
+            queue_state: QueueClaimState | None = None
+            categories: tuple[str, ...] = ()
+            if fair:
+                queue_state = session.execute(
+                    select(QueueClaimState).where(QueueClaimState.key == "main").with_for_update()
+                ).scalar_one_or_none()
+                if queue_state is None:  # pragma: no cover - installed by the migration
+                    raise RuntimeError("O estado persistente da fila não foi inicializado.")
+                categories = (
+                    ("refresh", "non_refresh")
+                    if queue_state.last_category == "non_refresh"
+                    else ("non_refresh", "refresh")
+                )
+            else:
+                categories = ("all",)
             while True:
                 now_expression = func.clock_timestamp()
                 eligible = or_(
@@ -367,16 +396,27 @@ class JobService:
                     ),
                     (Job.status == "running") & (Job.lease_expires_at <= now_expression),
                 )
-                statement = (
-                    select(Job)
-                    .where(eligible)
-                    .order_by(Job.created_at, Job.id)
-                    .with_for_update(skip_locked=True, of=Job)
-                    .limit(1)
-                )
-                if job_types is not None:
-                    statement = statement.where(Job.job_type.in_(job_types))
-                job = session.execute(statement).scalar_one_or_none()
+                job: Job | None = None
+                claimed_category: str | None = None
+                for category in categories:
+                    statement = select(Job).where(eligible)
+                    if job_types is not None:
+                        statement = statement.where(Job.job_type.in_(job_types))
+                    if category == "refresh":
+                        statement = statement.where(Job.job_type == "refresh_number")
+                    elif category == "non_refresh":
+                        statement = statement.where(
+                            Job.job_type.in_(("discovery", "reprocess_rules"))
+                        )
+                    statement = (
+                        statement.order_by(Job.created_at, Job.id)
+                        .with_for_update(skip_locked=True, of=Job)
+                        .limit(1)
+                    )
+                    job = session.execute(statement).scalar_one_or_none()
+                    if job is not None:
+                        claimed_category = category
+                        break
                 if job is None:
                     return None
 
@@ -477,6 +517,9 @@ class JobService:
                     {"attempt_number": job.attempt_count, "worker_id": worker_id},
                 )
                 session.flush()
+                if queue_state is not None:
+                    queue_state.last_category = claimed_category or "non_refresh"
+                    queue_state.updated_at = now
                 return JobLease(
                     job_id=job.id,
                     collection_id=job.collection_id,

@@ -6,6 +6,7 @@ import logging
 import time
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from threading import Barrier, Event
 from uuid import UUID, uuid4
@@ -20,6 +21,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from agrojud.db.engine import make_engine
 from agrojud.db.migrations_runner import make_alembic_config, upgrade_database
 from agrojud.db.models import Collection, Job, JobCheckpoint
+from agrojud.services.collection import build_collection_request
 from agrojud.services.job_worker import JobExecutionContext, JobOutcome, LeasedWorker
 from agrojud.services.jobs import (
     CheckpointRevisionConflict,
@@ -29,6 +31,7 @@ from agrojud.services.jobs import (
     JobService,
     LeaseLostError,
 )
+from agrojud.sources.contracts import build_query_by_case_number
 
 EXPECTED_JOB_TABLES = {
     "alembic_version",
@@ -45,6 +48,7 @@ EXPECTED_JOB_TABLES = {
     "processes",
     "process_signals",
     "process_news",
+    "queue_claim_state",
     "process_triage",
     "process_triage_history",
     "process_watchlist_entries",
@@ -60,6 +64,9 @@ EXPECTED_JOB_TABLES = {
     "signal_run_inputs",
     "signal_run_processes",
     "source_rate_limits",
+    "saved_searches",
+    "saved_search_versions",
+    "schedule_dispatches",
 }
 
 
@@ -642,3 +649,37 @@ def test_unexpected_handler_failure_is_persisted_without_raw_exception_text(
     assert inspection.attempts[0].error_code == "handler_error"
     assert inspection.attempts[0].error_summary == "Falha inesperada no handler."
     assert "private-token" not in caplog.text
+
+
+def test_worker_claims_refresh_and_discovery_in_alternating_persisted_turns(
+    migrated_engine: Engine,
+) -> None:
+    jobs = make_service(migrated_engine)
+    refresh_requests = [
+        build_collection_request(
+            mode="demo",
+            source="synthetic",
+            job_type="refresh_number",
+            query=build_query_by_case_number(number),
+        )
+        for number in ("00000010020268090001", "00000020020268090002")
+    ]
+    discovery_requests = [
+        make_request(),
+        replace(
+            make_request(), resolved_query={"date_from": "2025-01-01", "date_to": "2025-02-01"}
+        ),
+    ]
+    for queued in (*refresh_requests, *discovery_requests):
+        jobs.enqueue(queued)
+
+    first = jobs.claim("worker-before-restart", fair=True)
+    assert first is not None and first.job_type == "refresh_number"
+
+    restarted_service = make_service(migrated_engine)
+    second = restarted_service.claim("worker-after-restart", fair=True)
+    assert second is not None and second.job_type == "discovery"
+    third = restarted_service.claim("worker-after-restart", fair=True)
+    assert third is not None and third.job_type == "refresh_number"
+    fourth = restarted_service.claim("worker-after-restart", fair=True)
+    assert fourth is not None and fourth.job_type == "discovery"

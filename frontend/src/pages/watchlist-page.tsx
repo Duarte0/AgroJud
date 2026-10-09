@@ -50,6 +50,17 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
           <div className="text-xs text-muted-foreground">
             Incluído em {formatDateTime(item.included_at)}
           </div>
+          <div className="text-xs text-muted-foreground">
+            Próxima atualização diária: {formatDateTime(item.next_run_at)}
+          </div>
+          {item.last_schedule?.missed_from ? (
+            <div className="text-xs text-warning-foreground">
+              Intervalo perdido: {item.last_schedule.missed_from} a {item.last_schedule.missed_through}
+            </div>
+          ) : null}
+          {item.last_schedule?.status === "pending" ? (
+            <div className="text-xs text-muted-foreground">Aguardando o job anterior deste alvo.</div>
+          ) : null}
         </div>
       </TableCell>
       <TableCell>
@@ -89,7 +100,7 @@ export function WatchlistPage() {
     <div className="space-y-6">
       <PageHeader
         title="Acompanhados"
-        description="Processos locais que você selecionou para atualização manual por número CNJ."
+        description="Processos locais com atualização diária às 06h e comando manual por número CNJ."
       />
       <Card>
         <CardContent className="space-y-4">

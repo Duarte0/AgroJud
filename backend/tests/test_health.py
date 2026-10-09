@@ -94,6 +94,7 @@ def test_ready_is_200_at_alembic_head_with_domain_tables(scratch_database_url: U
             "processes",
             "process_signals",
             "process_news",
+            "queue_claim_state",
             "process_triage",
             "process_triage_history",
             "process_watchlist_entries",
@@ -109,6 +110,9 @@ def test_ready_is_200_at_alembic_head_with_domain_tables(scratch_database_url: U
             "signal_run_inputs",
             "signal_run_processes",
             "source_rate_limits",
+            "saved_searches",
+            "saved_search_versions",
+            "schedule_dispatches",
         }
     finally:
         engine.dispose()

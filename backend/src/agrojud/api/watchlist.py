@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal, cast
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from agrojud.api.errors import ERROR_RESPONSES
 from agrojud.api.jobs import SourceCapabilityUnavailable, _source_for_environment
+from agrojud.api.schedule_status import schedule_dispatch_response
 from agrojud.api.schemas import (
     JobCreatedResponse,
     JobStatus,
@@ -27,6 +29,7 @@ from agrojud.db.models import (
     Process,
     ProcessWatchlistEntry,
     ProcessWatchlistHistory,
+    ScheduleDispatch,
 )
 from agrojud.services.collection import build_collection_request
 from agrojud.services.news import watch_baselines
@@ -73,12 +76,15 @@ def list_watchlist(
             [process.numero_cnj for _entry, process in entries],
             settings=request.app.state.settings,
         )
+        schedules = _latest_watch_schedules(session, [entry.process_id for entry, _ in entries])
         items = [
             WatchlistItemResponse(
                 process_id=process.id,
                 numero_cnj=process.numero_cnj,
                 included_at=entry.included_at,
+                next_run_at=cast(datetime, entry.next_run_at),
                 last_refresh=refreshes.get(process.numero_cnj),
+                last_schedule=schedule_dispatch_response(schedules.get(entry.process_id)),
             )
             for entry, process in entries
         ]
@@ -191,6 +197,10 @@ def _watch_response(
         active=entry.active if entry is not None else False,
         included_at=entry.included_at if entry is not None else None,
         removed_at=entry.removed_at if entry is not None else None,
+        next_run_at=entry.next_run_at if entry is not None else None,
+        last_schedule=schedule_dispatch_response(
+            _latest_watch_schedules(session, [process.id]).get(process.id)
+        ),
         history=[
             ProcessWatchHistoryResponse(
                 id=event.id,
@@ -216,6 +226,28 @@ def _watch_response(
         ),
         last_refresh=refreshes.get(process.numero_cnj),
     )
+
+
+def _latest_watch_schedules(
+    session: Session,
+    process_ids: list[UUID],
+) -> dict[UUID, ScheduleDispatch]:
+    if not process_ids:
+        return {}
+    dispatches = session.scalars(
+        select(ScheduleDispatch)
+        .where(ScheduleDispatch.process_id.in_(process_ids))
+        .order_by(
+            ScheduleDispatch.scheduled_for_date.desc(),
+            ScheduleDispatch.created_at.desc(),
+            ScheduleDispatch.id.desc(),
+        )
+    ).all()
+    latest: dict[UUID, ScheduleDispatch] = {}
+    for dispatch in dispatches:
+        if dispatch.process_id is not None:
+            latest.setdefault(dispatch.process_id, dispatch)
+    return latest
 
 
 def _latest_refreshes(

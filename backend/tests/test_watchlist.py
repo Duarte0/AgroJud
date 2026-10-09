@@ -75,7 +75,7 @@ def test_watchlist_migration_upgrades_0007_without_losing_local_processes(
         tables = set(inspect(engine).get_table_names())
         assert {"process_watchlist_entries", "process_watchlist_history"}.issubset(tables)
         with engine.connect() as connection:
-            assert MigrationContext.configure(connection).get_current_revision() == "20261009_0009"
+            assert MigrationContext.configure(connection).get_current_revision() == "20261009_0010"
     finally:
         engine.dispose()
 

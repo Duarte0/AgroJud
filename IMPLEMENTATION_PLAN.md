@@ -2,7 +2,7 @@
 
 Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada com PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. SPEC-014/M7 concluiu localmente regras estruturadas, sinais e reprocessamento em 09/10/2026, com 227 testes backend, 44 testes frontend, build e 10 cenários Playwright. SPEC-015 concluiu localmente a primeira entrega de M8 em 09/10/2026, com acompanhamento auditável, atualização manual por CNJ, 237 testes backend, 47 frontend, build e 11 cenários Playwright. SPEC-016 concluiu localmente baselines por representação, novidades idempotentes/revisáveis e evidências API/UI em 09/10/2026, com 245 testes backend, 49 frontend, build e 12 cenários Playwright aprovados. M8 permanece parcialmente aberto até SPEC-017. Regras reais e integração DataJud/TJGO permanecem desabilitadas enquanto S5/S1/S2 não tiverem validação externa.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada com PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. SPEC-014/M7 concluiu localmente regras estruturadas, sinais e reprocessamento em 09/10/2026, com 227 testes backend, 44 testes frontend, build e 10 cenários Playwright. SPEC-015 concluiu localmente a primeira entrega de M8 em 09/10/2026, com acompanhamento auditável, atualização manual por CNJ, 237 testes backend, 47 frontend, build e 11 cenários Playwright. SPEC-016 concluiu localmente baselines por representação, novidades idempotentes/revisáveis e evidências API/UI em 09/10/2026, com 245 testes backend, 49 testes frontend, build e 12 cenários Playwright aprovados. SPEC-017 concluiu localmente buscas salvas versionadas, agendas recuperáveis e alternância persistente da fila em 09/10/2026, com 261 testes backend, 49 testes frontend, build e 13 cenários Playwright aprovados. M8 está completo localmente. Regras reais e integração DataJud/TJGO permanecem desabilitadas enquanto S5/S1/S2 não tiverem validação externa.
 
 ## 1. Estado atual e orientação
 
@@ -402,9 +402,9 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 
 1. [x] Lista de acompanhados e atualização manual por número — SPEC-015 concluída localmente em 09/10/2026; estado, histórico e resultados de consulta persistidos, com update por processo acompanhado e UI validada.
 2. [x] Referência histórica e caixa de novidades — SPEC-016 concluída localmente em 09/10/2026; baseline completa/pendente por representação, novidades com revisão persistida e replay/reprocessamento idempotentes.
-3. [ ] Agendamento persistente — SPEC-017.
+3. [x] Agendamento persistente — SPEC-017 concluída localmente em 09/10/2026; busca versionada, execução manual, recuperação diária por alvo, acompanhamentos agendados e alternância justa da fila validados.
 
-M8 segue parcialmente aberto até a conclusão de SPEC-017.
+M8 está concluído localmente. A automação usa dados sintéticos; os gates de fonte real S5/S1/S2 permanecem externos.
 
 **Definições:**
 
@@ -426,7 +426,7 @@ M8 segue parcialmente aberto até a conclusão de SPEC-017.
 - Disparo manual e agendado não duplicam trabalho equivalente.
 - Reinício não cria uma execução por dia perdido.
 
-**Demonstração:** SPEC-015 comprovou inclusão, atualização por número, resultado da consulta e remoção na stack demo isolada. SPEC-016 comprovou baseline pendente após resposta parcial, incorporação silenciosa da primeira versão completa, uma novidade por nova representação, distinção entre data do evento e primeira observação, revisão/reabertura, idempotência em replay/reprocessamento/reinclusão e rollback por falha/perda de posse. Migration 0009 e testes de aceitação passaram em PostgreSQL isolado; a validação total desta entrega registrou 245 testes backend, 49 frontend, lint, typecheck, build e 12 cenários Playwright aprovados. A caixa de novidades usa fixtures sintéticas e não valida a fonte real. O agendamento permanece na SPEC-017.
+**Demonstração:** SPEC-015 comprovou inclusão, atualização por número, resultado da consulta e remoção na stack demo isolada. SPEC-016 comprovou baseline pendente após resposta parcial, incorporação silenciosa da primeira versão completa, uma novidade por nova representação, distinção entre data do evento e primeira observação, revisão/reabertura, idempotência em replay/reprocessamento/reinclusão e rollback por falha/perda de posse. SPEC-017 comprovou revisões append-only, recuperação agregada com um dispatch por alvo, deduplicação de execução manual/agendada, adiamento após alteração durante job ativo, janela rolling congelada por coleta, gate para DataJud real e alternância persistida entre refresh e discovery. Migration 0010 e testes de aceitação passaram em PostgreSQL isolado; a validação desta entrega registrou 261 testes backend, 49 frontend, lint, typecheck, mypy, build e 13 cenários Playwright aprovados. A fonte permanece sintética e não valida filtros nem respostas reais do DataJud/TJGO.
 
 ### M9 — Indicadores, CSV e aceite do MVP
 
@@ -513,7 +513,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] M6 — Fluxo visual completo (SPEC-012 DONE localmente; dados demo sintéticos, fonte real segue bloqueada).
 - [ ] S5 — Catálogo temático validado.
 - [x] M7 — Triagem e regras concluídas localmente (SPEC-013/014); habilitação real continua condicionada a S5.
-- [ ] M8 — Acompanhamento e novidades estão concluídos localmente (SPEC-015/016); agendamento continua pendente na SPEC-017.
+- [x] M8 — Acompanhamento, novidades e agendamento estão concluídos localmente (SPEC-015/016/017); fonte real continua condicionada a S5/S1/S2.
 - [ ] M9 — Indicadores, CSV e operação documentada.
 - [ ] Aceite sintético completo.
 - [ ] Aceite real TJGO registrado separadamente.
@@ -522,7 +522,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-011 estão DONE localmente; as sucessoras permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-017 estão DONE localmente; SPEC-018 a SPEC-020 permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |

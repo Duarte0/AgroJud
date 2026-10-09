@@ -3,8 +3,16 @@ import { useId, useRef, useState, type SubmitEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { describeError } from "@/api/client";
-import { useCreateJob, useJobList, usePresets } from "@/api/queries";
-import type { Preset } from "@/api/types";
+import {
+  useCreateJob,
+  useCreateSavedSearch,
+  useJobList,
+  usePatchSavedSearch,
+  usePresets,
+  useRunSavedSearch,
+  useSavedSearches,
+} from "@/api/queries";
+import type { Preset, SavedSearch } from "@/api/types";
 import { useCurrentEnvironment } from "@/app/environment-context";
 import { JobStatusBadge } from "@/components/job-status-badge";
 import { PageHeader } from "@/components/page-header";
@@ -27,6 +35,120 @@ import { cn } from "@/lib/utils";
 
 const MAX_HIT_BUDGET = 2_000;
 const PAGE_SIZE = 100;
+
+function formatScheduleTime(value: string): string {
+  return formatDateTime(value);
+}
+
+function savedSearchScheduleLabel(search: SavedSearch): string {
+  const dispatch = search.last_dispatch;
+  if (!dispatch) return "Nenhum disparo realizado ainda.";
+  if (dispatch.status === "pending") return "Aguardando o job anterior deste alvo.";
+  if (dispatch.status === "coalesced") return "Disparo agregado a uma avaliação pendente.";
+  if (dispatch.status === "blocked") return `Não executado: ${dispatch.reason ?? "validação pendente."}`;
+  if (dispatch.status === "cancelled") return "Disparo cancelado porque a busca foi desativada.";
+  return dispatch.job_id ? `Job ${dispatch.job_id}` : "Disparo enfileirado.";
+}
+
+function SavedSearchRow({ search }: { search: SavedSearch }) {
+  const navigate = useNavigate();
+  const patch = usePatchSavedSearch();
+  const run = useRunSavedSearch();
+  const actionError = patch.error ?? run.error;
+
+  return (
+    <li className="space-y-3 py-4" data-testid="saved-search" data-search-id={search.id}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <h3 className="font-medium">{search.name}</h3>
+          <p className="text-xs text-muted-foreground">
+            {search.preset_id} · preset {search.preset_version} · busca v{search.version}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {search.window_mode === "rolling_12_months"
+              ? "Janela móvel de 12 meses"
+              : `Período fixo: ${search.filters.filed_from} a ${search.filters.filed_through}`}
+          </p>
+          <p className="text-sm">
+            {search.enabled ? "Agenda ativa" : "Agenda desativada"}
+            {search.next_run_at ? ` · próxima atualização ${formatScheduleTime(search.next_run_at)}` : ""}
+          </p>
+          <p className="text-xs text-muted-foreground">{savedSearchScheduleLabel(search)}</p>
+          {search.last_dispatch?.missed_from ? (
+            <p className="text-xs text-warning-foreground">
+              Intervalo perdido: {search.last_dispatch.missed_from} a {search.last_dispatch.missed_through}
+            </p>
+          ) : null}
+          {!search.availability.enabled ? (
+            <div className="space-y-1 text-sm text-warning-foreground" role="status">
+              {search.availability.reasons.map((reason) => <p key={reason}>{reason}</p>)}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => patch.mutate({ id: search.id, body: { enabled: !search.enabled } })}
+            disabled={patch.isPending}
+          >
+            {search.enabled ? "Desativar" : "Ativar"}
+          </Button>
+          <Button
+            onClick={() =>
+              run.mutate(search.id, {
+                onSuccess: (created) =>
+                  void navigate(`/jobs/${created.job_id}`, {
+                    state: { created: true, reused: created.reused },
+                  }),
+              })
+            }
+            disabled={!search.availability.enabled || run.isPending}
+          >
+            {run.isPending ? "Enfileirando…" : "Executar agora"}
+          </Button>
+        </div>
+      </div>
+      {actionError ? (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>A ação não foi concluída</AlertTitle>
+          <AlertDescription>{describeError(actionError)}</AlertDescription>
+        </Alert>
+      ) : null}
+    </li>
+  );
+}
+
+function SavedSearchesPanel() {
+  const searches = useSavedSearches();
+  return (
+    <section className="mt-8 border-t pt-6" aria-labelledby="saved-searches-title">
+      <div className="mb-3">
+        <h2 id="saved-searches-title" className="text-lg font-semibold">Buscas salvas</h2>
+        <p className="text-sm text-muted-foreground">
+          Atualizações automáticas ocorrem às 06h no fuso de São Paulo. Executar agora é uma ação manual.
+        </p>
+      </div>
+      {searches.isPending ? (
+        <LoadingState label="Carregando buscas salvas…" />
+      ) : !searches.data ? (
+        <ErrorState
+          title="Não foi possível carregar as buscas salvas"
+          error={searches.error}
+          onRetry={() => void searches.refetch()}
+          retrying={searches.isFetching}
+        />
+      ) : searches.data.length === 0 ? (
+        <EmptyState title="Nenhuma busca salva">
+          Salve os critérios do radar para ativar uma atualização diária.
+        </EmptyState>
+      ) : (
+        <ul className="divide-y">
+          {searches.data.map((search) => <SavedSearchRow key={search.id} search={search} />)}
+        </ul>
+      )}
+    </section>
+  );
+}
 
 function PresetOption({
   preset,
@@ -98,6 +220,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const createJob = useCreateJob();
+  const createSavedSearch = useCreateSavedSearch();
   // Blocks a second submit before React re-renders the disabled button.
   const submitting = useRef(false);
 
@@ -107,6 +230,8 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const [filedThrough, setFiledThrough] = useState(suggested.through);
   const [hitBudget, setHitBudget] = useState(String(MAX_HIT_BUDGET));
   const [validation, setValidation] = useState<string | null>(null);
+  const [savedSearchName, setSavedSearchName] = useState("");
+  const [enableSavedSearch, setEnableSavedSearch] = useState(false);
 
   const requestedId = searchParams.get("preset");
   const enabledPresets = presets.filter((preset) => preset.availability.enabled);
@@ -149,6 +274,40 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
       // The mutation error is rendered below; nothing was started on our side.
     } finally {
       submitting.current = false;
+    }
+  }
+
+  async function saveSearch() {
+    if (!selected || sourceBlocked) return;
+    const budget = Number(hitBudget);
+    if (!savedSearchName.trim()) {
+      setValidation("Informe um nome para a busca salva.");
+      return;
+    }
+    if (!Number.isInteger(budget) || budget < 1 || budget > MAX_HIT_BUDGET) {
+      setValidation(`O limite deve ser um número inteiro entre 1 e ${MAX_HIT_BUDGET}.`);
+      return;
+    }
+    if (!useDefaultWindow && (!filedFrom || !filedThrough || filedFrom > filedThrough)) {
+      setValidation("Informe uma janela válida: a data inicial deve ser anterior ou igual à final.");
+      return;
+    }
+    setValidation(null);
+    try {
+      await createSavedSearch.mutateAsync({
+        name: savedSearchName.trim(),
+        preset_id: selected.id,
+        window_mode: useDefaultWindow ? "rolling_12_months" : "fixed",
+        filters: {
+          page_size: PAGE_SIZE,
+          hit_budget: budget,
+          ...(useDefaultWindow ? {} : { filed_from: filedFrom, filed_through: filedThrough }),
+        },
+        enabled: enableSavedSearch,
+      });
+      setSavedSearchName("");
+    } catch {
+      // The mutation error is rendered below; no search was saved on our side.
     }
   }
 
@@ -255,6 +414,46 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         </Alert>
       ) : null}
 
+      <div className="space-y-3 rounded-lg border p-4">
+        <div>
+          <h2 className="font-semibold">Salvar estes critérios</h2>
+          <p className="text-sm text-muted-foreground">
+            A busca mantém a versão do preset e os filtros desta coleta.
+          </p>
+        </div>
+        <div className="space-y-1.5 sm:max-w-md">
+          <Label htmlFor="saved-search-name">Nome da busca salva</Label>
+          <Input
+            id="saved-search-name"
+            value={savedSearchName}
+            maxLength={160}
+            onChange={(event) => setSavedSearchName(event.target.value)}
+            placeholder="Ex.: Crédito rural no TJGO"
+          />
+        </div>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={enableSavedSearch}
+            onChange={(event) => setEnableSavedSearch(event.target.checked)}
+            className="mt-0.5 size-4 accent-primary"
+          />
+          <span>Ativar atualização diária às 06h</span>
+        </label>
+        {createSavedSearch.isError ? (
+          <Alert variant="destructive" role="alert">
+            <AlertTitle>A busca não foi salva</AlertTitle>
+            <AlertDescription>{describeError(createSavedSearch.error)}</AlertDescription>
+          </Alert>
+        ) : null}
+        {createSavedSearch.isSuccess ? (
+          <p role="status" className="text-sm text-success">Busca salva.</p>
+        ) : null}
+        <Button type="button" variant="outline" onClick={() => void saveSearch()} disabled={createSavedSearch.isPending || !selected || sourceBlocked}>
+          {createSavedSearch.isPending ? "Salvando…" : "Salvar busca"}
+        </Button>
+      </div>
+
       <Button type="submit" size="lg" disabled={pending || !selected || sourceBlocked}>
         {pending ? (
           <Loader2 className="animate-spin" aria-hidden="true" />
@@ -331,6 +530,7 @@ export function RadarPage() {
               <>
                 <StaleNotice query={presets} />
                 <CollectionForm presets={presets.data.items} />
+                <SavedSearchesPanel />
               </>
             ) : (
               <ErrorState

@@ -614,22 +614,25 @@ def test_migration_backfills_active_watch_baselines_without_losing_process(
                     processed_at=observed_at,
                 )
             )
-            session.add(
-                ProcessWatchlistEntry(
-                    process_id=process.id,
-                    active=True,
-                    included_at=datetime(2026, 10, 1, tzinfo=UTC),
-                )
+            session.execute(
+                text(
+                    "INSERT INTO process_watchlist_entries "
+                    "(process_id, active, included_at, removed_at) "
+                    "VALUES (:process_id, true, :included_at, null)"
+                ),
+                {"process_id": process.id, "included_at": datetime(2026, 10, 1, tzinfo=UTC)},
             )
             process_id = process.id
             complete_representation_id = complete_representation.id
 
         with engine.begin() as connection:
             upgrade_database(connection)
-            assert MigrationContext.configure(connection).get_current_revision() == "20261009_0009"
+            assert MigrationContext.configure(connection).get_current_revision() == "20261009_0010"
 
         with Session(engine) as session:
             assert session.get(Process, process_id) is not None
+            watch_entry = session.get(ProcessWatchlistEntry, process_id)
+            assert watch_entry is not None and watch_entry.next_run_at is not None
             cycle = session.scalar(
                 select(ProcessWatchCycle).where(ProcessWatchCycle.process_id == process_id)
             )

@@ -9,8 +9,10 @@ import signal
 import socket
 from datetime import timedelta
 from threading import Event
+from typing import Literal
 
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 from agrojud.config import get_settings
@@ -18,6 +20,7 @@ from agrojud.db.engine import make_engine
 from agrojud.services.collection import build_collection_job_handler
 from agrojud.services.job_worker import LeasedWorker
 from agrojud.services.jobs import JobService
+from agrojud.services.scheduling import SCHEDULER_INTERVAL_SECONDS, DailyScheduler
 from agrojud.services.signal_reprocessing import build_signal_run_handler
 
 
@@ -54,6 +57,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     collection_handler = build_collection_job_handler(settings)
     signal_handler = build_signal_run_handler(jobs)
+    mode: Literal["demo", "real"] = "real" if settings.environment == "real" else "demo"
+    source = "datajud" if mode == "real" else "synthetic"
+    scheduler = DailyScheduler(sessions, jobs, mode=mode, source=source)
     worker_id = os.getenv("JOB_WORKER_ID") or f"{socket.gethostname()}:{os.getpid()}"
     worker = LeasedWorker(
         jobs,
@@ -81,8 +87,21 @@ def main(argv: list[str] | None = None) -> None:
     )
     try:
         while not stop.is_set():
+            try:
+                scheduler.run_due()
+            except SQLAlchemyError as error:
+                print(
+                    json.dumps(
+                        {
+                            "event": "scheduler_check_failed",
+                            "error_type": type(error).__name__,
+                        },
+                        sort_keys=True,
+                    ),
+                    flush=True,
+                )
             if not worker.run_once():
-                stop.wait(settings.job_poll_seconds)
+                stop.wait(min(settings.job_poll_seconds, SCHEDULER_INTERVAL_SECONDS))
     finally:
         engine.dispose()
 

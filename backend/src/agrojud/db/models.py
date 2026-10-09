@@ -1,12 +1,13 @@
 """SQLAlchemy models for the locally persisted source covers."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
@@ -52,6 +53,10 @@ class ProcessWatchlistEntry(Base):
             "(active and removed_at is null) or (not active and removed_at is not null)",
             name="ck_process_watchlist_active_removed_at",
         ),
+        CheckConstraint(
+            "(active and next_run_at is not null) or (not active and next_run_at is null)",
+            name="ck_process_watchlist_schedule_matches_active",
+        ),
         ForeignKeyConstraint(
             ["process_id"],
             ["processes.id"],
@@ -74,6 +79,7 @@ class ProcessWatchlistEntry(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class ProcessWatchlistHistory(Base):
@@ -938,6 +944,194 @@ class Job(Base):
     )
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SavedSearch(Base):
+    """Current activation and schedule pointer for an immutable saved search."""
+
+    __tablename__ = "saved_searches"
+    __table_args__ = (
+        CheckConstraint("length(btrim(name)) between 1 and 160", name="ck_saved_searches_name"),
+        CheckConstraint("current_version >= 1", name="ck_saved_searches_version_positive"),
+        CheckConstraint(
+            "(enabled and next_run_at is not null) or (not enabled and next_run_at is null)",
+            name="ck_saved_searches_schedule_matches_enabled",
+        ),
+        Index(
+            "ix_saved_searches_due",
+            "next_run_at",
+            "id",
+            postgresql_where=text("enabled"),
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    current_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    next_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class SavedSearchVersion(Base):
+    """Append-only criteria and preset contract for one saved-search revision."""
+
+    __tablename__ = "saved_search_versions"
+    __table_args__ = (
+        UniqueConstraint("saved_search_id", "version", name="uq_saved_search_versions_number"),
+        UniqueConstraint("id", "saved_search_id", name="uq_saved_search_versions_id_search"),
+        CheckConstraint("version >= 1", name="ck_saved_search_versions_positive"),
+        CheckConstraint(
+            "length(btrim(name)) between 1 and 160", name="ck_saved_search_versions_name"
+        ),
+        CheckConstraint(
+            "window_mode in ('fixed', 'rolling_12_months')",
+            name="ck_saved_search_versions_window_mode",
+        ),
+        ForeignKeyConstraint(
+            ["saved_search_id"],
+            ["saved_searches.id"],
+            name="fk_saved_search_versions_search",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_saved_search_versions_search", "saved_search_id", "version"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    saved_search_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    preset_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    preset_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    window_mode: Mapped[str] = mapped_column(String(24), nullable=False)
+    filters: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    catalog_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class ScheduleDispatch(Base):
+    """Idempotent local-date dispatch and its pending recovery/queue state."""
+
+    __tablename__ = "schedule_dispatches"
+    __table_args__ = (
+        CheckConstraint(
+            "(target_kind = 'saved_search' and saved_search_id is not null "
+            "and process_id is null) or "
+            "(target_kind = 'watch' and process_id is not null "
+            "and saved_search_id is null)",
+            name="ck_schedule_dispatches_target",
+        ),
+        CheckConstraint(
+            "status in ('pending', 'enqueued', 'blocked', 'cancelled', 'coalesced')",
+            name="ck_schedule_dispatches_status",
+        ),
+        CheckConstraint(
+            "(missed_from is null and missed_through is null) or "
+            "(missed_from is not null and missed_through is not null "
+            "and missed_from <= missed_through)",
+            name="ck_schedule_dispatches_missed_interval",
+        ),
+        CheckConstraint(
+            "(status = 'pending' and job_id is null and request_snapshot is not null) or "
+            "(status = 'enqueued' and job_id is not null and request_snapshot is not null) or "
+            "(status in ('blocked', 'cancelled', 'coalesced') and job_id is null)",
+            name="ck_schedule_dispatches_status_fields",
+        ),
+        ForeignKeyConstraint(
+            ["saved_search_id"],
+            ["saved_searches.id"],
+            name="fk_schedule_dispatches_saved_search",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["process_id"],
+            ["processes.id"],
+            name="fk_schedule_dispatches_process",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["job_id"], ["jobs.id"], name="fk_schedule_dispatches_job", ondelete="RESTRICT"
+        ),
+        ForeignKeyConstraint(
+            ["coalesced_into_id"],
+            ["schedule_dispatches.id"],
+            name="fk_schedule_dispatches_coalesced_into",
+            ondelete="RESTRICT",
+        ),
+        Index(
+            "uq_schedule_dispatch_search_date",
+            "saved_search_id",
+            "scheduled_for_date",
+            unique=True,
+            postgresql_where=text("saved_search_id is not null"),
+        ),
+        Index(
+            "uq_schedule_dispatch_watch_date",
+            "process_id",
+            "scheduled_for_date",
+            unique=True,
+            postgresql_where=text("process_id is not null"),
+        ),
+        Index(
+            "uq_schedule_dispatch_pending_search",
+            "saved_search_id",
+            unique=True,
+            postgresql_where=text("status = 'pending' and saved_search_id is not null"),
+        ),
+        Index(
+            "uq_schedule_dispatch_pending_watch",
+            "process_id",
+            unique=True,
+            postgresql_where=text("status = 'pending' and process_id is not null"),
+        ),
+        Index("ix_schedule_dispatch_search_date", "saved_search_id", "scheduled_for_date"),
+        Index("ix_schedule_dispatch_watch_date", "process_id", "scheduled_for_date"),
+        Index("ix_schedule_dispatch_pending", "status", "created_at", "id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    target_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    saved_search_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    process_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    scheduled_for_date: Mapped[date] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(String(12), nullable=False)
+    job_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    request_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    missed_from: Mapped[date | None] = mapped_column(Date)
+    missed_through: Mapped[date | None] = mapped_column(Date)
+    coalesced_into_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    reason: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class QueueClaimState(Base):
+    """Persist the last claimed refresh/discovery category for fair worker turns."""
+
+    __tablename__ = "queue_claim_state"
+    __table_args__ = (
+        CheckConstraint(
+            "last_category in ('refresh', 'non_refresh')",
+            name="ck_queue_claim_state_category",
+        ),
+    )
+
+    key: Mapped[str] = mapped_column(String(32), primary_key=True)
+    last_category: Mapped[str] = mapped_column(String(16), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
 
 
 class SourceRateLimit(Base):

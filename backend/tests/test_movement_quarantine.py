@@ -59,6 +59,7 @@ EXPECTED_TABLES = {
     "process_watchlist_history",
     "process_watch_cycles",
     "process_news",
+    "queue_claim_state",
     "quarantine_rejections",
     "quarantine_resolutions",
     "representation_subjects",
@@ -69,6 +70,9 @@ EXPECTED_TABLES = {
     "signal_run_inputs",
     "signal_run_processes",
     "source_rate_limits",
+    "saved_searches",
+    "saved_search_versions",
+    "schedule_dispatches",
 }
 
 

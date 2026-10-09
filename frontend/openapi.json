@@ -2394,6 +2394,28 @@
               }
             ]
           },
+          "last_schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleDispatchResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next_run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Run At"
+          },
           "process_id": {
             "format": "uuid",
             "title": "Process Id",
@@ -2417,6 +2439,8 @@
           "active",
           "included_at",
           "removed_at",
+          "next_run_at",
+          "last_schedule",
           "history",
           "baselines",
           "last_refresh"
@@ -2562,6 +2586,367 @@
           "established_at"
         ],
         "title": "RepresentationBaselineResponse",
+        "type": "object"
+      },
+      "SavedSearchAvailabilityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "enabled",
+          "reasons"
+        ],
+        "title": "SavedSearchAvailabilityResponse",
+        "type": "object"
+      },
+      "SavedSearchCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/SavedSearchFilters"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "preset_id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Preset Id",
+            "type": "string"
+          },
+          "window_mode": {
+            "enum": [
+              "fixed",
+              "rolling_12_months"
+            ],
+            "title": "Window Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "preset_id",
+          "window_mode",
+          "filters"
+        ],
+        "title": "SavedSearchCreateRequest",
+        "type": "object"
+      },
+      "SavedSearchFilters": {
+        "additionalProperties": false,
+        "properties": {
+          "filed_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed From"
+          },
+          "filed_through": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed Through"
+          },
+          "hit_budget": {
+            "default": 2000,
+            "maximum": 2000.0,
+            "minimum": 1.0,
+            "title": "Hit Budget",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 100,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          }
+        },
+        "title": "SavedSearchFilters",
+        "type": "object"
+      },
+      "SavedSearchPatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SavedSearchFilters"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "preset_id": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Id"
+          },
+          "window_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fixed",
+                  "rolling_12_months"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Window Mode"
+          }
+        },
+        "title": "SavedSearchPatchRequest",
+        "type": "object"
+      },
+      "SavedSearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/SavedSearchAvailabilityResponse"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/SavedSearchFilters"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_dispatch": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleDispatchResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Run At"
+          },
+          "preset_id": {
+            "title": "Preset Id",
+            "type": "string"
+          },
+          "preset_version": {
+            "title": "Preset Version",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "window_mode": {
+            "enum": [
+              "fixed",
+              "rolling_12_months"
+            ],
+            "title": "Window Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "version",
+          "preset_id",
+          "preset_version",
+          "window_mode",
+          "filters",
+          "enabled",
+          "next_run_at",
+          "availability",
+          "last_dispatch",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SavedSearchResponse",
+        "type": "object"
+      },
+      "ScheduleDispatchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "missed_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Missed From"
+          },
+          "missed_through": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Missed Through"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "scheduled_for_date": {
+            "format": "date",
+            "title": "Scheduled For Date",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "enqueued",
+              "blocked",
+              "cancelled",
+              "coalesced"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "scheduled_for_date",
+          "status",
+          "job_id",
+          "missed_from",
+          "missed_through",
+          "reason",
+          "updated_at"
+        ],
+        "title": "ScheduleDispatchResponse",
         "type": "object"
       },
       "SignalRuleEnablementResponse": {
@@ -2839,6 +3224,21 @@
               }
             ]
           },
+          "last_schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleDispatchResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next_run_at": {
+            "format": "date-time",
+            "title": "Next Run At",
+            "type": "string"
+          },
           "numero_cnj": {
             "pattern": "^\\d{20}$",
             "title": "Numero Cnj",
@@ -2854,7 +3254,9 @@
           "process_id",
           "numero_cnj",
           "included_at",
-          "last_refresh"
+          "next_run_at",
+          "last_refresh",
+          "last_schedule"
         ],
         "title": "WatchlistItemResponse",
         "type": "object"
@@ -5129,6 +5531,296 @@
         "summary": "Retoma execução local interrompida",
         "tags": [
           "signals"
+        ]
+      }
+    },
+    "/api/v1/saved-searches": {
+      "get": {
+        "operationId": "list_saved_searches_api_v1_saved_searches_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SavedSearchResponse"
+                  },
+                  "title": "Response List Saved Searches Api V1 Saved Searches Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Lista buscas salvas, versão atual e situação da agenda",
+        "tags": [
+          "saved-searches"
+        ]
+      },
+      "post": {
+        "operationId": "create_saved_search_api_v1_saved_searches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedSearchCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Salva uma busca versionada e agenda sua próxima atualização",
+        "tags": [
+          "saved-searches"
+        ]
+      }
+    },
+    "/api/v1/saved-searches/{search_id}": {
+      "patch": {
+        "operationId": "patch_saved_search_api_v1_saved_searches__search_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedSearchPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Altera uma busca salva sem reescrever revisões anteriores",
+        "tags": [
+          "saved-searches"
+        ]
+      }
+    },
+    "/api/v1/saved-searches/{search_id}/run": {
+      "post": {
+        "operationId": "run_saved_search_api_v1_saved_searches__search_id__run_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobCreatedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Inicia explicitamente uma execução manual da busca salva",
+        "tags": [
+          "saved-searches"
         ]
       }
     },

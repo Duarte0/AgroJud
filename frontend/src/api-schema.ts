@@ -415,6 +415,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/saved-searches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista buscas salvas, versão atual e situação da agenda */
+        get: operations["list_saved_searches_api_v1_saved_searches_get"];
+        put?: never;
+        /** Salva uma busca versionada e agenda sua próxima atualização */
+        post: operations["create_saved_search_api_v1_saved_searches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/saved-searches/{search_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Altera uma busca salva sem reescrever revisões anteriores */
+        patch: operations["patch_saved_search_api_v1_saved_searches__search_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/saved-searches/{search_id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inicia explicitamente uma execução manual da busca salva */
+        post: operations["run_saved_search_api_v1_saved_searches__search_id__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/watchlist": {
         parameters: {
             query?: never;
@@ -1337,6 +1389,9 @@ export interface components {
             /** Included At */
             included_at: string | null;
             last_refresh: components["schemas"]["ProcessRefreshResultResponse"] | null;
+            last_schedule: components["schemas"]["ScheduleDispatchResponse"] | null;
+            /** Next Run At */
+            next_run_at: string | null;
             /**
              * Process Id
              * Format: uuid
@@ -1401,6 +1456,129 @@ export interface components {
             tribunal: string;
             /** Version Id */
             version_id: string | null;
+        };
+        /** SavedSearchAvailabilityResponse */
+        SavedSearchAvailabilityResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /** Reasons */
+            reasons: string[];
+        };
+        /** SavedSearchCreateRequest */
+        SavedSearchCreateRequest: {
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            filters: components["schemas"]["SavedSearchFilters"];
+            /** Name */
+            name: string;
+            /** Preset Id */
+            preset_id: string;
+            /**
+             * Window Mode
+             * @enum {string}
+             */
+            window_mode: "fixed" | "rolling_12_months";
+        };
+        /** SavedSearchFilters */
+        SavedSearchFilters: {
+            /** Filed From */
+            filed_from?: string | null;
+            /** Filed Through */
+            filed_through?: string | null;
+            /**
+             * Hit Budget
+             * @default 2000
+             */
+            hit_budget: number;
+            /**
+             * Page Size
+             * @default 100
+             */
+            page_size: number;
+        };
+        /** SavedSearchPatchRequest */
+        SavedSearchPatchRequest: {
+            /** Enabled */
+            enabled?: boolean | null;
+            filters?: components["schemas"]["SavedSearchFilters"] | null;
+            /** Name */
+            name?: string | null;
+            /** Preset Id */
+            preset_id?: string | null;
+            /** Window Mode */
+            window_mode?: ("fixed" | "rolling_12_months") | null;
+        };
+        /** SavedSearchResponse */
+        SavedSearchResponse: {
+            availability: components["schemas"]["SavedSearchAvailabilityResponse"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Enabled */
+            enabled: boolean;
+            filters: components["schemas"]["SavedSearchFilters"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            last_dispatch: components["schemas"]["ScheduleDispatchResponse"] | null;
+            /** Name */
+            name: string;
+            /** Next Run At */
+            next_run_at: string | null;
+            /** Preset Id */
+            preset_id: string;
+            /** Preset Version */
+            preset_version: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+            /**
+             * Window Mode
+             * @enum {string}
+             */
+            window_mode: "fixed" | "rolling_12_months";
+        };
+        /** ScheduleDispatchResponse */
+        ScheduleDispatchResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Job Id */
+            job_id: string | null;
+            /** Missed From */
+            missed_from: string | null;
+            /** Missed Through */
+            missed_through: string | null;
+            /** Reason */
+            reason: string | null;
+            /**
+             * Scheduled For Date
+             * Format: date
+             */
+            scheduled_for_date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "enqueued" | "blocked" | "cancelled" | "coalesced";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** SignalRuleEnablementResponse */
         SignalRuleEnablementResponse: {
@@ -1493,6 +1671,12 @@ export interface components {
              */
             included_at: string;
             last_refresh: components["schemas"]["ProcessRefreshResultResponse"] | null;
+            last_schedule: components["schemas"]["ScheduleDispatchResponse"] | null;
+            /**
+             * Next Run At
+             * Format: date-time
+             */
+            next_run_at: string;
             /** Numero Cnj */
             numero_cnj: string;
             /**
@@ -3004,6 +3188,242 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SignalRunAcceptedResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_saved_searches_api_v1_saved_searches_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSearchResponse"][];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_saved_search_api_v1_saved_searches_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedSearchCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSearchResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    patch_saved_search_api_v1_saved_searches__search_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                search_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedSearchPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSearchResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    run_saved_search_api_v1_saved_searches__search_id__run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                search_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobCreatedResponse"];
                 };
             };
             /** @description Recurso não encontrado. */

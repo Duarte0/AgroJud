@@ -30,6 +30,7 @@ from agrojud.api.jobs import router as jobs_router
 from agrojud.api.metadata import router as metadata_router
 from agrojud.api.news import router as news_router
 from agrojud.api.processes import router as processes_router
+from agrojud.api.saved_searches import router as saved_searches_router
 from agrojud.api.signals import router as signals_router
 from agrojud.api.triage import router as triage_router
 from agrojud.api.watchlist import router as watchlist_router
@@ -42,6 +43,7 @@ from agrojud.services.jobs import (
     JobNotFoundError,
     JobService,
 )
+from agrojud.services.saved_searches import SavedSearchService
 from agrojud.services.signal_reprocessing import SignalReprocessingService
 from agrojud.sources.contracts import SourceError, SourceErrorCode
 
@@ -83,6 +85,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.state.signal_reprocessing = SignalReprocessingService(
         app.state.session_factory, app.state.jobs
     )
+    app.state.saved_searches = SavedSearchService(app.state.session_factory, app.state.jobs)
 
     app.add_middleware(
         CORSMiddleware,
@@ -244,6 +247,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.include_router(signals_router)
     app.include_router(triage_router)
     app.include_router(watchlist_router)
+    app.include_router(saved_searches_router)
     app.include_router(metadata_router)
 
     return app
