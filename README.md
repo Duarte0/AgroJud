@@ -1,6 +1,6 @@
 # AgroJud Radar
 
-Fundação local do monitor de contencioso do produtor rural. A SPEC-001 entrega API e worker mínimos, PostgreSQL real, migrations, saúde e CI. Não há tabela de domínio, coleta DataJud ou frontend funcional nesta etapa.
+Fundação local do monitor de contencioso do produtor rural. A SPEC-001 entrega API e worker mínimos, PostgreSQL real, migrations, saúde e CI. A SPEC-002 acrescenta os contratos e adaptadores de fonte; a API e o worker ainda não iniciam coleta de produto.
 
 ## Requisitos locais
 
@@ -38,6 +38,14 @@ docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml 
 
 O worker valida ambiente e credenciais e encerra; não consulta fonte nem fica em loop.
 
+## Contratos de fonte (SPEC-002)
+
+`agrojud.sources` oferece consultas imutáveis TJGO, erros tipados, páginas com hits brutos e cursores preservados, além dos adaptadores HTTP DataJud e sintético. O adaptador HTTP faz uma tentativa por chamada, usa timeouts connect/read/write/pool de 5/20/20/5 segundos e não segue redirecionamentos. O endpoint é fixo em TJGO; a interface não aceita DSL livre.
+
+O seletor de fonte exige escolha explícita compatível com o ambiente: `demo` usa apenas fixtures sintéticas e `real` usa apenas DataJud com `DATAJUD_API_KEY`. Falhas de DataJud não acionam fallback sintético. Em `test`, o adaptador DataJud exige transporte HTTP simulado. O worker ainda não chama o seletor nem processa consultas.
+
+O contrato e o transporte foram validados com HTTPX MockTransport. Isso não comprova o shape real dos hits, a correspondência histórica entre IDs, a ordenação composta ou a paginação do TJGO; esses pontos seguem sob SPEC-003.
+
 ## Ambientes separados
 
 Crie `.env.real` a partir de `.env.real.example`, substitua os valores de exemplo por credenciais locais e escolha `API_PORT` disponível. Suba com um projeto Compose e um volume próprios:
@@ -48,7 +56,7 @@ docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml 
 docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm api uv run --no-sync alembic upgrade head
 ```
 
-O projeto `agrojud-demo` usa o banco `agrojud_demo` e o projeto `agrojud-real` usa `agrojud_real`; os nomes Compose distintos isolam rede e volume. Os arquivos locais `.env.*` não são versionados. `DATAJUD_API_KEY` é lida somente no backend e não é usada nesta SPEC.
+O projeto `agrojud-demo` usa o banco `agrojud_demo` e o projeto `agrojud-real` usa `agrojud_real`; os nomes Compose distintos isolam rede e volume. Os arquivos locais `.env.*` não são versionados. `DATAJUD_API_KEY` é lida somente no backend e usada pelo adaptador DataJud no ambiente `real`; não é exposta ao frontend nem registrada nos logs.
 
 Pare e retome sem remover o volume:
 

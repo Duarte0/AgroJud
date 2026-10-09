@@ -1,6 +1,6 @@
 # SPEC-005 — Persistência de capas e payloads
 
-Status: BLOCKED_DEPENDENCY
+Status: READY
 
 Milestone/Spike: M2
 

@@ -1,6 +1,6 @@
 # SPEC-004 — Identidade e reconciliação
 
-Status: BLOCKED_DEPENDENCY
+Status: READY
 
 Milestone/Spike: S3
 

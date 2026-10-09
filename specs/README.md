@@ -1,6 +1,6 @@
 # SPECs — AgroJud Radar
 
-Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001 foi concluída em 08/10/2026; SPEC-002 ficou READY após reavaliação da dependência. Nenhuma sucessora foi implementada.
+Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001 e SPEC-002 foram concluídas em 08/10/2026. As sucessoras diretas de SPEC-002 estão READY; nenhuma foi implementada nesta entrega.
 
 ## Como executar uma unidade
 
@@ -20,7 +20,7 @@ Uma SPEC contém objetivo, contexto, dependências, escopo, requisitos/contratos
 - **IN_PROGRESS:** execução iniciada.
 - **DONE:** todos os critérios desta unidade foram atendidos e registrados.
 
-SPEC-001 está DONE. SPEC-002 está READY porque sua dependência local foi concluída e sua especificação permite validar o cliente HTTP por transporte simulado; compatibilidade real continua sob SPEC-003. As demais seguem BLOCKED_DEPENDENCY. A conclusão de SPEC-001 não promove unidades além da dependência direta reavaliada.
+SPEC-001 e SPEC-002 estão DONE. SPEC-003, SPEC-004, SPEC-005 e SPEC-010 estão READY porque sua dependência direta agora está entregue; READY autoriza iniciar cada unidade, sem validar capacidades externas. As demais seguem BLOCKED_DEPENDENCY. SPEC-003 continua responsável pela compatibilidade real, e SPEC-010 pelo catálogo versionado.
 
 ### Dois controles distintos
 
@@ -35,15 +35,15 @@ SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus c
 | SPEC | Milestone/Spike | Dependências diretas | Status atual |
 | --- | --- | --- | --- |
 | [SPEC-001 — Fundação local](SPEC-001-fundacao-local.md) | M0 | Nenhuma | DONE |
-| [SPEC-002 — Contratos e adaptadores de fonte](SPEC-002-contratos-e-adaptadores-de-fonte.md) | M1 | [SPEC-001](SPEC-001-fundacao-local.md) | READY |
-| [SPEC-003 — Validação DataJud/TJGO](SPEC-003-validacao-datajud-tjgo.md) | S1/S2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | BLOCKED_DEPENDENCY |
-| [SPEC-004 — Identidade e reconciliação](SPEC-004-identidade-e-reconciliacao.md) | S3 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | BLOCKED_DEPENDENCY |
-| [SPEC-005 — Persistência de capas e payloads](SPEC-005-persistencia-de-capas-e-payloads.md) | M2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | BLOCKED_DEPENDENCY |
+| [SPEC-002 — Contratos e adaptadores de fonte](SPEC-002-contratos-e-adaptadores-de-fonte.md) | M1 | [SPEC-001](SPEC-001-fundacao-local.md) | DONE |
+| [SPEC-003 — Validação DataJud/TJGO](SPEC-003-validacao-datajud-tjgo.md) | S1/S2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | READY |
+| [SPEC-004 — Identidade e reconciliação](SPEC-004-identidade-e-reconciliacao.md) | S3 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | READY |
+| [SPEC-005 — Persistência de capas e payloads](SPEC-005-persistencia-de-capas-e-payloads.md) | M2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | READY |
 | [SPEC-006 — Movimentos e quarentena](SPEC-006-movimentos-e-quarentena.md) | M2 | [SPEC-004](SPEC-004-identidade-e-reconciliacao.md), [SPEC-005](SPEC-005-persistencia-de-capas-e-payloads.md) | BLOCKED_DEPENDENCY |
 | [SPEC-007 — Jobs, leases e posse](SPEC-007-jobs-leases-e-posse.md) | M3 | [SPEC-006](SPEC-006-movimentos-e-quarentena.md) | BLOCKED_DEPENDENCY |
 | [SPEC-008 — Paginação e checkpoints](SPEC-008-paginacao-e-checkpoints.md) | M4 | [SPEC-007](SPEC-007-jobs-leases-e-posse.md) | BLOCKED_DEPENDENCY |
 | [SPEC-009 — Retries e recuperação](SPEC-009-retries-e-recuperacao.md) | M4/S4 | [SPEC-008](SPEC-008-paginacao-e-checkpoints.md) | BLOCKED_DEPENDENCY |
-| [SPEC-010 — Catálogo temático versionado](SPEC-010-catalogo-tematico-versionado.md) | S5/M1 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | BLOCKED_DEPENDENCY |
+| [SPEC-010 — Catálogo temático versionado](SPEC-010-catalogo-tematico-versionado.md) | S5/M1 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | READY |
 | [SPEC-011 — API operacional e OpenAPI](SPEC-011-api-operacional-e-openapi.md) | M5 | [SPEC-009](SPEC-009-retries-e-recuperacao.md), [SPEC-010](SPEC-010-catalogo-tematico-versionado.md) | BLOCKED_DEPENDENCY |
 | [SPEC-012 — Frontend de coleta e consulta](SPEC-012-frontend-de-coleta-e-consulta.md) | M6 | [SPEC-011](SPEC-011-api-operacional-e-openapi.md) | BLOCKED_DEPENDENCY |
 | [SPEC-013 — Triagem e histórico humano](SPEC-013-triagem-e-historico-humano.md) | M7 | [SPEC-012](SPEC-012-frontend-de-coleta-e-consulta.md) | BLOCKED_DEPENDENCY |

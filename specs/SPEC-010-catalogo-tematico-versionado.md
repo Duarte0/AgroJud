@@ -1,6 +1,6 @@
 # SPEC-010 — Catálogo temático versionado
 
-Status: BLOCKED_DEPENDENCY
+Status: READY
 
 Milestone/Spike: S5/M1
 

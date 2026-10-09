@@ -1,6 +1,6 @@
 # SPEC-003 — Validação DataJud/TJGO
 
-Status: BLOCKED_DEPENDENCY
+Status: READY
 
 Milestone/Spike: S1/S2
 

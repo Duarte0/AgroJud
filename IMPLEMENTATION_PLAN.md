@@ -2,7 +2,7 @@
 
 Data: 08/10/2026.
 
-Status: M0 concluído em 08/10/2026; milestones seguintes não iniciados.
+Status: M0 concluído em 08/10/2026. A unidade SPEC-002 de M1 foi concluída em 08/10/2026; M1 segue parcial até o catálogo da SPEC-010 e a evidência S1/S2 da SPEC-003.
 
 ## 1. Estado atual e orientação
 
@@ -19,6 +19,13 @@ Estado após a implementação de SPEC-001, confirmado em 08/10/2026:
 - Alembic registra a revisão inicial sem tabelas de produto. A migration é explícita; readiness compara revisões sem alterar o banco.
 - `.env.demo.example`, `.env.real.example` e `.env.test.example` orientam projetos Compose e bancos isolados; testes recusam banco sem sufixo `_test` ou URL idêntica à operacional.
 - O frontend contém somente documentação para SPEC-012. DataJud, domínios processuais, fila e coleta continuam fora de M0.
+
+Estado após a implementação de SPEC-002, confirmado em 08/10/2026:
+
+- Contratos Python, compilação allowlisted da consulta TJGO, cliente HTTPX de tentativa única e fonte sintética determinística estão entregues em `backend/src/agrojud/sources/`.
+- Testes HTTP usam MockTransport; fixtures e payload bruto são locais e sintéticos. API e worker ainda não iniciam consultas nem persistem resultados.
+- O ambiente demo seleciona somente fonte sintética; o ambiente real seleciona somente DataJud e exige `DATAJUD_API_KEY`; teste exige transporte simulado. Não há fallback entre fontes.
+- Nenhuma chamada real ao CNJ foi executada. Shape do TJGO, identidade de origem e paginação permanecem sem validação externa em SPEC-003; catálogo e presets seguem com SPEC-010.
 
 A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 prova a base local e persistência; as próximas etapas introduzirão adaptadores e processamento conforme suas SPECs.
 
@@ -125,6 +132,8 @@ Regras para os spikes:
 
 **Dependência:** M0.
 
+**Status em 08/10/2026:** parcial. SPEC-002 está DONE para contratos e adaptadores locais; o milestone não está concluído. SPEC-010 ainda entrega o catálogo e SPEC-003 mantém os aceites externos S1/S2.
+
 **Implementar:**
 
 - Interface de fonte com operações de consulta paginada e pesquisa por número.
@@ -134,6 +143,10 @@ Regras para os spikes:
 - Catálogo versionado de presets; itens não validados permanecem desativados no modo real.
 - Ferramenta limitada de diagnóstico para S1/S2.
 
+**Entregue pela SPEC-002:** consulta imutável TJGO com filtros allowlisted e intervalo semiaberto; busca exata por CNJ; DTOs que preservam hit bruto, metadados, sort e cursor; erros tipados; HTTPX síncrono com timeouts 5/20/20/5 segundos, redirects desativados e sem retry; fixtures sintéticas explícitas e mutáveis entre execuções; isolamento de fonte por ambiente.
+
+**Pendências mantidas nas unidades próprias:** catálogo e estados de habilitação em SPEC-010; probe, validação de campos/IDs e evidência de sort/paginação real em SPEC-003. A conclusão local de SPEC-002 não habilita coleta real.
+
 **Concluir quando:**
 
 - Testes distinguem resultado vazio de erro.
@@ -142,6 +155,8 @@ Regras para os spikes:
 - Evidência real e cobertura sintética estão registradas separadamente.
 
 **Demonstração:** executar a mesma consulta pelo adaptador sintético e apresentar o relatório do probe real, inclusive se indisponível.
+
+**Evidência de SPEC-002:** lint, formatação, mypy e 57 testes passaram em container Python 3.14.8 com PostgreSQL 18.6 isolado; Compose validou demo/real/test; imagem de produção API/worker foi construída e os adaptadores foram importados nela. Os testes HTTP usaram MockTransport; não houve chamada externa. Resultado registrado em [SPEC-002](specs/SPEC-002-contratos-e-adaptadores-de-fonte.md).
 
 ### M2 — Persistência idempotente de uma página
 
