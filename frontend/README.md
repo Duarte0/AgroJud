@@ -49,7 +49,7 @@ Os testes Playwright param e reiniciam o worker para observar jobs em fila. Falh
 
 ## Contrato de API
 
-O schema [openapi.json](openapi.json) e os tipos [src/api-schema.ts](src/api-schema.ts) são gerados a partir da aplicação FastAPI em modo `demo`, sem banco ou DataJud (requer uv 0.12.20 e CPython 3.14.8):
+O schema [openapi.json](openapi.json) e os tipos [src/api-schema.ts](src/api-schema.ts) são gerados a partir da aplicação FastAPI em modo `demo`, sem banco ou DataJud (requer uv 0.12.22 e CPython 3.14.8):
 
 ```sh
 npm run openapi:generate

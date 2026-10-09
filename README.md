@@ -6,17 +6,17 @@ Fundação local do monitor de contencioso do produtor rural. A SPEC-001 entrega
 
 - Docker Engine e Docker Compose v2.
 - `curl` para os probes HTTP documentados.
-- Para comandos Python no host: uv **0.12.20** e CPython **3.14.8**. O fluxo Compose usa a mesma versão fixada e não depende do Python global.
+- Para comandos Python no host: uv **0.12.22** e CPython **3.14.8**. O fluxo Compose usa a mesma versão fixada e não depende do Python global.
 
 Instale a versão documentada do uv pelo instalador oficial:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.12.20/uv-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.12.22/uv-installer.sh | sh
 ```
 
 Instale CPython 3.14.8 pelo gerenciador oficial do sistema quando quiser executar ferramentas no host. Os comandos Compose não dependem dessa instalação local.
 
-As versões escolhidas foram conferidas em 08/10/2026: Python 3.14.8 está em manutenção estável, PostgreSQL 18.6 é a versão minor atual suportada, e o uv é fixado em 0.12.20. Consulte a [política de versões do Python](https://devguide.python.org/versions/), a [política de versões do PostgreSQL](https://www.postgresql.org/support/versioning/) e o [lockfile do uv](https://docs.astral.sh/uv/guides/projects/).
+As versões escolhidas foram conferidas em 08/10/2026: Python 3.14.8 está em manutenção estável, PostgreSQL 18.6 é a versão minor atual suportada, e o uv é fixado em 0.12.22 (atualizado em 09/10/2026: o 0.12.20 não oferece download gerenciado do CPython 3.14.8). Consulte a [política de versões do Python](https://devguide.python.org/versions/), a [política de versões do PostgreSQL](https://www.postgresql.org/support/versioning/) e o [lockfile do uv](https://docs.astral.sh/uv/guides/projects/).
 
 ## Configurar e subir a demonstração
 
