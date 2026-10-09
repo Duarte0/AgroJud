@@ -79,6 +79,8 @@ class SourceDateRegression:
 @dataclass(frozen=True, slots=True)
 class IngestPageResult:
     counts: IngestionCounts
+    valid_hit_count: int
+    rejected_hit_count: int
     representation_ids: tuple[UUID, ...]
     observation_ids: tuple[UUID, ...]
     versions: tuple[IngestedVersion, ...]
@@ -180,6 +182,8 @@ def ingest_page(
     version_by_id: dict[UUID, IngestedVersion] = {}
     first_outcome_by_representation: dict[UUID, CaptureOutcome] = {}
     regressions: list[SourceDateRegression] = []
+    valid_hit_count = 0
+    rejected_hit_count = 0
 
     with session.begin_nested():
         collection = collection_repository.lock(collection_id)
@@ -205,9 +209,11 @@ def ingest_page(
             if existing_rejections:
                 _assert_quarantine_replay_matches(existing_rejections, raw_hit)
             if existing is None and existing_rejections:
+                rejected_hit_count += 1
                 quarantine_ids.extend(item.id for item in existing_rejections)
                 continue
             if isinstance(prepared, _RejectedHit):
+                rejected_hit_count += 1
                 if existing is not None:
                     raise ObservationPositionConflict(
                         "A posição já persistida como observação não pode virar rejeição."
@@ -224,6 +230,8 @@ def ingest_page(
                 )
                 quarantine_ids.append(rejection.id)
                 continue
+
+            valid_hit_count += 1
 
             outcome: CaptureOutcome
             if existing is not None:
@@ -419,6 +427,8 @@ def ingest_page(
     )
     return IngestPageResult(
         counts=counts,
+        valid_hit_count=valid_hit_count,
+        rejected_hit_count=rejected_hit_count,
         representation_ids=tuple(representation_ids),
         observation_ids=tuple(observation_ids),
         versions=tuple(version_by_id.values()),

@@ -16,7 +16,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from agrojud.db.models import Job, JobAttempt, JobCheckpoint, JobEvent
 from agrojud.domain.canonical_json import JSONValue, canonical_json_bytes, sha256_json
-from agrojud.services.ingestion import create_collection
+from agrojud.services.ingestion import IngestPageResult, create_collection, ingest_page
+from agrojud.sources.contracts import SourcePage
 
 type JobType = Literal["discovery", "refresh_number"]
 type JobStatus = Literal[
@@ -77,6 +78,9 @@ class JobLease:
     job_id: UUID
     collection_id: UUID
     job_type: JobType
+    mode: Literal["demo", "real"]
+    source: str
+    tribunal: str
     attempt_id: UUID
     attempt_number: int
     worker_id: str
@@ -97,6 +101,14 @@ class CheckpointSnapshot:
     next_page: int
     revision: int
     updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class PageCommitResult:
+    checkpoint: CheckpointSnapshot
+    ingestion: IngestPageResult
+    page_key: str
+    coverage: dict[str, JSONValue]
 
 
 @dataclass(frozen=True, slots=True)
@@ -366,6 +378,9 @@ class JobService:
                     job_id=job.id,
                     collection_id=job.collection_id,
                     job_type=job.job_type,  # type: ignore[arg-type]
+                    mode=job.mode,  # type: ignore[arg-type]
+                    source=job.source,
+                    tribunal=job.tribunal,
                     attempt_id=attempt.id,
                     attempt_number=job.attempt_count,
                     worker_id=worker_id,
@@ -419,6 +434,169 @@ class JobService:
             yield session
             self._assert_local_authorization(ownership_lost)
             self._assert_lease(session, job, possession_token)
+
+    def record_http_attempt(
+        self,
+        job_id: UUID,
+        possession_token: UUID,
+        *,
+        expected_revision: int,
+        budget_limit: int,
+        ownership_lost: Event | None = None,
+    ) -> int:
+        """Durably count a page request before calling the external source."""
+
+        if expected_revision < 0 or budget_limit < 1:
+            raise ValueError("A revisão e o orçamento da coleta são inválidos.")
+        with self.owned_transaction(
+            job_id,
+            possession_token,
+            ownership_lost=ownership_lost,
+        ) as session:
+            checkpoint = session.execute(
+                select(JobCheckpoint).where(JobCheckpoint.job_id == job_id).with_for_update()
+            ).scalar_one_or_none()
+            if checkpoint is None:  # pragma: no cover - enqueue creates it atomically
+                raise RuntimeError("O checkpoint inicial do job não foi encontrado.")
+            if checkpoint.revision != expected_revision:
+                raise CheckpointRevisionConflict("A revisão do checkpoint foi alterada.")
+            job = self._lock_job(session, job_id, lock=False)
+            coverage = self._collection_progress(job.coverage, budget_limit=budget_limit)
+            attempt_count = self._counter(coverage, "http_attempts") + 1
+            coverage["http_attempts"] = attempt_count
+            coverage["current_page"] = checkpoint.next_page
+            coverage["checkpoint_revision"] = checkpoint.revision
+            job.coverage = coverage
+            self._append_event(
+                session,
+                job,
+                "http_attempted",
+                {
+                    "page": checkpoint.next_page,
+                    "http_attempt": attempt_count,
+                    "checkpoint_revision": checkpoint.revision,
+                },
+            )
+            return attempt_count
+
+    def commit_page(
+        self,
+        job_id: UUID,
+        possession_token: UUID,
+        *,
+        expected_revision: int,
+        budget_limit: int,
+        source: Literal["datajud", "synthetic"],
+        page: SourcePage,
+        ownership_lost: Event | None = None,
+    ) -> PageCommitResult:
+        """Persist page data, cumulative counters, and its checkpoint atomically."""
+
+        if expected_revision < 0 or budget_limit < 1:
+            raise ValueError("A revisão e o orçamento da coleta são inválidos.")
+        with self.owned_transaction(
+            job_id,
+            possession_token,
+            ownership_lost=ownership_lost,
+        ) as session:
+            checkpoint = session.execute(
+                select(JobCheckpoint).where(JobCheckpoint.job_id == job_id).with_for_update()
+            ).scalar_one_or_none()
+            if checkpoint is None:  # pragma: no cover - enqueue creates it atomically
+                raise RuntimeError("O checkpoint inicial do job não foi encontrado.")
+            if checkpoint.revision != expected_revision:
+                raise CheckpointRevisionConflict("A revisão do checkpoint foi alterada.")
+            if checkpoint.next_page < 1:
+                raise RuntimeError("O checkpoint contém uma página inválida.")
+
+            job = self._lock_job(session, job_id, lock=False)
+            page_key = sha256_json(
+                {
+                    "collection_id": str(job.collection_id),
+                    "previous_checkpoint_revision": checkpoint.revision,
+                }
+            )
+            ingestion = ingest_page(
+                session,
+                collection_id=job.collection_id,
+                page_key=page_key,
+                source=source,
+                page=page,
+            )
+
+            now = self._database_now(session)
+            next_cursor: JSONValue | None = (
+                list(page.cursor_final)
+                if page.hits and page.cursor_final is not None
+                else checkpoint.cursor
+            )
+            result = session.execute(
+                update(JobCheckpoint)
+                .where(
+                    JobCheckpoint.id == checkpoint.id,
+                    JobCheckpoint.revision == expected_revision,
+                )
+                .values(
+                    cursor=next_cursor,
+                    next_page=checkpoint.next_page + 1,
+                    revision=expected_revision + 1,
+                    updated_at=now,
+                )
+                .returning(
+                    JobCheckpoint.cursor,
+                    JobCheckpoint.next_page,
+                    JobCheckpoint.revision,
+                    JobCheckpoint.updated_at,
+                )
+            ).one_or_none()
+            if result is None:
+                raise CheckpointRevisionConflict("A revisão do checkpoint foi alterada.")
+
+            coverage = self._collection_progress(job.coverage, budget_limit=budget_limit)
+            coverage["pages_confirmed"] = self._counter(coverage, "pages_confirmed") + 1
+            coverage["hits_confirmed"] = self._counter(coverage, "hits_confirmed") + len(page.hits)
+            coverage["valid_hits"] = (
+                self._counter(coverage, "valid_hits") + ingestion.valid_hit_count
+            )
+            coverage["rejected_hits"] = (
+                self._counter(coverage, "rejected_hits") + ingestion.rejected_hit_count
+            )
+            coverage["new"] = self._counter(coverage, "new") + ingestion.counts.new
+            coverage["updated"] = self._counter(coverage, "updated") + ingestion.counts.updated
+            coverage["unchanged"] = (
+                self._counter(coverage, "unchanged") + ingestion.counts.unchanged
+            )
+            coverage["quarantine_records"] = self._counter(coverage, "quarantine_records") + len(
+                ingestion.quarantine_ids
+            )
+            coverage["has_persisted_data"] = bool(coverage.get("has_persisted_data") or page.hits)
+            coverage["current_page"] = checkpoint.next_page
+            coverage["checkpoint_revision"] = result.revision
+            coverage["query_status"] = "exhausted" if not page.hits else "running"
+            job.coverage = coverage
+            self._append_event(
+                session,
+                job,
+                "page_committed",
+                {
+                    "page": checkpoint.next_page,
+                    "hits": len(page.hits),
+                    "valid_hits": ingestion.valid_hit_count,
+                    "rejected_hits": ingestion.rejected_hit_count,
+                    "checkpoint_revision": result.revision,
+                },
+            )
+            return PageCommitResult(
+                checkpoint=CheckpointSnapshot(
+                    cursor=result.cursor,
+                    next_page=result.next_page,
+                    revision=result.revision,
+                    updated_at=result.updated_at,
+                ),
+                ingestion=ingestion,
+                page_key=page_key,
+                coverage=coverage,
+            )
 
     def advance_checkpoint(
         self,
@@ -675,6 +853,56 @@ class JobService:
         canonical_json_bytes(request.resolved_query)
         canonical_json_bytes(request.sort)
         canonical_json_bytes(request.parameters)
+
+    @classmethod
+    def _collection_progress(
+        cls,
+        value: dict[str, Any] | None,
+        *,
+        budget_limit: int,
+    ) -> dict[str, Any]:
+        if value is None:
+            coverage: dict[str, Any] = {}
+        elif isinstance(value, dict):
+            coverage = dict(value)
+        else:
+            raise RuntimeError("A cobertura persistida da coleta não é um objeto.")
+
+        saved_budget = coverage.get("budget_limit")
+        if saved_budget is not None:
+            if (
+                isinstance(saved_budget, bool)
+                or not isinstance(saved_budget, int)
+                or saved_budget < 1
+            ):
+                raise RuntimeError("O orçamento persistido da coleta é inválido.")
+            budget_limit = max(budget_limit, saved_budget)
+        coverage["budget_limit"] = budget_limit
+        for name in (
+            "pages_confirmed",
+            "hits_confirmed",
+            "valid_hits",
+            "rejected_hits",
+            "new",
+            "updated",
+            "unchanged",
+            "quarantine_records",
+            "http_attempts",
+        ):
+            coverage.setdefault(name, 0)
+            cls._counter(coverage, name)
+        if "has_persisted_data" not in coverage:
+            coverage["has_persisted_data"] = False
+        elif not isinstance(coverage["has_persisted_data"], bool):
+            raise RuntimeError("O indicador de persistência da coleta é inválido.")
+        return coverage
+
+    @staticmethod
+    def _counter(coverage: dict[str, Any], name: str) -> int:
+        value = coverage.get(name, 0)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise RuntimeError(f"O contador persistido {name} da coleta é inválido.")
+        return int(value)
 
     @staticmethod
     def _validate_worker_id(worker_id: str) -> str:

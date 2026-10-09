@@ -1,4 +1,4 @@
-"""Persistent worker process; production collectors are registered by later SPECs."""
+"""Persistent worker process for leased collection jobs."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from sqlalchemy.orm import sessionmaker
 
 from agrojud.config import get_settings
 from agrojud.db.engine import make_engine
+from agrojud.services.collection import build_collection_job_handler
 from agrojud.services.job_worker import LeasedWorker
 from agrojud.services.jobs import JobService
 
@@ -50,11 +51,15 @@ def main(argv: list[str] | None = None) -> None:
         sessions,
         lease_duration=timedelta(seconds=settings.job_lease_seconds),
     )
+    collection_handler = build_collection_job_handler(settings)
     worker_id = os.getenv("JOB_WORKER_ID") or f"{socket.gethostname()}:{os.getpid()}"
     worker = LeasedWorker(
         jobs,
         worker_id=worker_id,
-        handlers={},
+        handlers={
+            "discovery": collection_handler,
+            "refresh_number": collection_handler,
+        },
         heartbeat_interval=settings.job_heartbeat_seconds,
     )
     stop = Event()

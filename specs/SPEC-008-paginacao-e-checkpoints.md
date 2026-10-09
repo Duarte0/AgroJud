@@ -1,6 +1,6 @@
 # SPEC-008 — Paginação e checkpoints
 
-Status: READY
+Status: DONE
 
 Milestone/Spike: M4
 
@@ -55,5 +55,19 @@ Mutação da fonte pode deslocar registros; documentar limite e depender de reva
 Backoff, scheduler, UI, aprovação remota sem evidência e snapshot/PIT.
 
 ## Evidência e conclusão
-Apresentar contagens e checkpoints antes/depois de replay. Registrar validação local separada de capacidades reais.
+Concluída localmente em 09/10/2026. `JobService.commit_page` grava ingestão, quarentena, contadores, evento e avanço CAS do checkpoint na mesma transação, sob posse válida. A requisição HTTP e a validação do envelope ocorrem fora da transação. A chave determinística da página combina a coleta com a revisão anterior do checkpoint. Consultas e sort ficam congelados; o cursor guarda integralmente o sort retornado. Página curta não prova exaustão: somente página vazia encerra a consulta. Hits rejeitados contam para o orçamento e são confirmados com a quarentena. Nenhuma migration foi necessária.
+
+O worker registra handlers locais para `discovery` e `refresh_number`. Busca por número pagina todas as representações encontradas. O contrato interno de continuação valida `partial/limit`, cursor e revisão e permite acrescentar no máximo 2.000 hits sem trocar cursor, revisão ou contadores. Comando e ciclo operacional de retomada continuam na SPEC-009.
+
+| Critério | Resultado | Evidência |
+| --- | --- | --- |
+| AC1 — execução contínua e replay têm os mesmos efeitos locais | PASSOU | Teste PostgreSQL compara execução contínua com replay após commit e confirma ausência de observação duplicada. |
+| AC2 — falha de gravação reverte página e checkpoint | PASSOU | Falha injetada ao gravar quarentena; teste confirma rollback dos dados e da revisão e repetição com a mesma chave determinística. |
+| AC3 — limite parcial e continuação preservam critérios | PASSOU | Testes de orçamento exato e saldo por requisição; continuação valida limite, elegibilidade, cursor/revisão e preservação de contadores. |
+| AC4 — cursor inválido/repetido não cria loop | PASSOU | Testes para cursor repetido e sort ausente; o segundo HTTP não é enviado quando o cursor não avança. |
+| AC5 — exaustão, rejeição e falha com dados têm resultados distintos | PASSOU | Testes para página vazia, rejeições e falha HTTP após página persistida, com cobertura parcial e `has_persisted_data`. |
+
+Validações executadas em PostgreSQL 18.6 isolado (`agrojud-spec008-validation`, porta 55508; sem dados operacionais): Ruff check, Ruff format, mypy (`38 source files`) e suíte completa (`153 passed`). Também passaram as configurações Compose demo/real/test, build de produção das imagens API/worker, `agrojud-worker --check` e importação runtime do handler de coleta. A revisão final do diff não encontrou erros de whitespace (`git diff --check`).
+
+Os testes usam HTTP simulado. Não houve consulta real ao DataJud: S2 permanece inconclusivo e o handler mantém a fonte real bloqueada por `DATAJUD_PAGINATION_APPROVED = False`. Essa evidência local não aprova paginação real nem encerra M4/S4, cujos retries e comandos de recuperação pertencem à SPEC-009.
 

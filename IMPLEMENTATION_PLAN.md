@@ -2,7 +2,7 @@
 
 Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3 foi concluída localmente em 09/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3 e SPEC-008 foram concluídas localmente em 09/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2. M4/S4 permanece em andamento: a política persistente de retries e os comandos/ciclos de recuperação são escopo da SPEC-009. Paginação real segue bloqueada até validação de S2.
 
 ## 1. Estado atual e orientação
 
@@ -62,7 +62,15 @@ Estado após a implementação de SPEC-007, confirmado em 09/10/2026:
 - `JobService` implementa enqueue concorrente idempotente, claim com `FOR UPDATE SKIP LOCKED`, token UUID, lease verificada com `clock_timestamp()`, heartbeat, cancelamento, finish, inspect e checkpoint CAS. Gravações protegidas bloqueiam primeiro o job e revalidam lease/cancelamento antes do commit.
 - `LeasedWorker` mantém o heartbeat em sessão/thread separada, não mantém transação durante handler bloqueado e suspende gravação após falha do heartbeat. Erros inesperados são registrados com código/resumo sanitizados. Nenhum handler de coleta de produção foi registrado.
 - PostgreSQL 18.6 isolado validou migration em banco vazio e sobre SPEC-006 com collection preexistente; 142 testes passaram incluindo disputa em duas sessões, lease vencida durante gravação, cancelamento concorrente, heartbeat independente, CAS e recuperação após nova instância. Ruff check/format, mypy, Compose demo/real/test, build de produção API/worker e `agrojud-worker --check` passaram. Evidência detalhada em [SPEC-007](specs/SPEC-007-jobs-leases-e-posse.md).
-- A evidência é local e sintética. SPEC-008/009 ainda precisam implementar paginação, retries e coleta recuperável; nenhuma chamada ao DataJud ocorreu.
+- Naquele ponto, após SPEC-007, a evidência era local e sintética: SPEC-008/009 ainda precisavam implementar paginação, retries e coleta recuperável; nenhuma chamada ao DataJud havia ocorrido.
+
+Estado após a implementação de SPEC-008, confirmado em 09/10/2026:
+
+- `JobService` confirma atomicamente ingestão da página, quarentena, contadores, evento e checkpoint CAS sob posse válida. A chamada HTTP fica fora da transação; replay usa chave estável pela coleta e revisão anterior. Não foi necessária migration.
+- Os handlers `discovery` e `refresh_number` implementam paginação, congelamento de consulta/sort, cursor integral, orçamento inicial de 2.000 hits, página padrão 100 e término por página vazia. Página curta não prova exaustão; falha posterior preserva cobertura parcial e sinaliza dados persistidos. Busca por número percorre todas as representações.
+- O contrato interno de continuação permite até 2.000 hits adicionais preservando cursor, revisão e contadores. Comandos e ciclos de retomada, retries persistentes e invalidação de cursor permanecem na SPEC-009.
+- Ruff check/format, mypy, 153 testes PostgreSQL, Compose demo/real/test, build de produção API/worker, `agrojud-worker --check` e import runtime do handler passaram. Evidência e rastreabilidade de critérios em [SPEC-008](specs/SPEC-008-paginacao-e-checkpoints.md).
+- A validação usa PostgreSQL isolado e HTTP simulado. A fonte real continua bloqueada porque S2 não foi validado; não houve chamada ao DataJud. M4 e S4 permanecem abertos até SPEC-009 e as evidências integradas previstas.
 
 A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 estabelece a fundação local; SPEC-005/006 completam M2; SPEC-007 entrega a infraestrutura de M3; as próximas etapas introduzirão processamento conforme suas SPECs.
 
@@ -270,9 +278,9 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 
 **Implementar em três entregas:**
 
-1. Paginação e commit atômico de página/checkpoint.
-2. Retries persistentes e recuperação.
-3. Limites, continuação e invalidação segura de cursor.
+1. [x] Paginação, limites e contrato interno de continuação com commit atômico de página/checkpoint (SPEC-008 concluída localmente).
+2. [ ] Retries persistentes e recuperação (SPEC-009).
+3. [ ] Execução dos comandos/ciclos de continuação e invalidação segura de cursor (SPEC-009).
 
 **Definições:**
 
@@ -480,7 +488,8 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] S3 — Reconciliação documentada e testada (SPEC-004 DONE; fixtures sintéticas, sem validação da fonte real).
 - [ ] M1 — Adaptadores e erros tipados.
 - [x] M2 — Persistência de página idempotente (SPEC-005 e SPEC-006 concluídas localmente).
-- [x] M3 — Fila, lease e posse (SPEC-007 DONE localmente; handlers de produção e coleta pertencem às unidades seguintes).
+- [x] M3 — Fila, lease e posse (SPEC-007 DONE localmente).
+- [x] SPEC-008 — Paginação e checkpoints localmente concluídos; fonte real permanece bloqueada por S2.
 - [ ] S4 — Atomicidade e recuperação comprovadas.
 - [ ] M4 — Coleta recuperável demonstrada.
 - [ ] M5 — API e OpenAPI estáveis.
@@ -496,7 +505,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-007 estão DONE; SPEC-008 e SPEC-010 estão READY; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-008 estão DONE; SPEC-009 e SPEC-010 estão READY; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |

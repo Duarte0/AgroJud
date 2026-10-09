@@ -16,12 +16,15 @@ from sqlalchemy.orm import Session
 from agrojud.domain.canonical_json import JSONValue
 from agrojud.services.jobs import (
     CheckpointSnapshot,
+    JobCancellationRequestedError,
     JobLease,
     JobService,
     JobStatus,
     JobType,
     LeaseLostError,
+    PageCommitResult,
 )
+from agrojud.sources.contracts import SourcePage
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +33,8 @@ class JobOutcome:
     coverage: dict[str, JSONValue] | None = None
     reason: str | None = None
     retry_at: datetime | None = None
+    error_code: str | None = None
+    error_summary: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +72,48 @@ class JobExecutionContext:
             next_page=next_page,
             ownership_lost=self.ownership_lost,
         )
+
+    def record_http_attempt(
+        self,
+        lease: JobLease,
+        *,
+        expected_revision: int,
+        budget_limit: int,
+    ) -> int:
+        self.assert_active()
+        return self.jobs.record_http_attempt(
+            lease.job_id,
+            lease.possession_token,
+            expected_revision=expected_revision,
+            budget_limit=budget_limit,
+            ownership_lost=self.ownership_lost,
+        )
+
+    def commit_page(
+        self,
+        lease: JobLease,
+        *,
+        expected_revision: int,
+        budget_limit: int,
+        source: Literal["datajud", "synthetic"],
+        page: SourcePage,
+    ) -> PageCommitResult:
+        self.assert_active()
+        return self.jobs.commit_page(
+            lease.job_id,
+            lease.possession_token,
+            expected_revision=expected_revision,
+            budget_limit=budget_limit,
+            source=source,
+            page=page,
+            ownership_lost=self.ownership_lost,
+        )
+
+    def assert_active(self) -> None:
+        if self.ownership_lost.is_set():
+            raise LeaseLostError("O worker suspendeu a execução após falha no heartbeat.")
+        if self.cancellation_requested.is_set():
+            raise JobCancellationRequestedError("O cancelamento do job foi solicitado.")
 
 
 type JobHandler = Callable[[JobLease, JobExecutionContext], JobOutcome]
@@ -155,10 +202,15 @@ class LeasedWorker:
 
         try:
             if handler_error:
+                try:
+                    coverage = self.jobs.inspect(lease.job_id).coverage
+                except Exception:
+                    coverage = None
                 status: JobStatus = self.jobs.finish(
                     lease.job_id,
                     lease.possession_token,
                     status="failed",
+                    coverage=coverage,
                     reason="handler_error",
                     error_code="handler_error",
                     error_summary="Falha inesperada no handler.",
@@ -171,6 +223,8 @@ class LeasedWorker:
                     coverage=outcome.coverage,
                     reason=outcome.reason,
                     retry_at=outcome.retry_at,
+                    error_code=outcome.error_code,
+                    error_summary=outcome.error_summary,
                 )
             else:  # pragma: no cover - handler paths above either return or set an error
                 return True

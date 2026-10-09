@@ -1,6 +1,6 @@
 # SPEC-009 — Retries e recuperação
 
-Status: BLOCKED_DEPENDENCY
+Status: READY
 
 Milestone/Spike: M4/S4
 
