@@ -54,6 +54,8 @@ Validação local em 09/10/2026:
 - Backend: CORS restrito a `FRONTEND_ORIGIN` (somente origem loopback com porta). Em PostgreSQL isolado, Ruff, formatação, mypy e `pytest` passaram com 214 testes; houve somente o aviso de depreciação Starlette/HTTPX já conhecido. O schema OpenAPI exportado em CPython 3.14.8 e os tipos gerados coincidiram byte a byte com os versionados; `uv` não estava disponível no host para `npm run openapi:check`, executado pela CI.
 - `docker compose config --quiet` passou para demo, real e o override E2E.
 
+Correção do CI em 09/10/2026: `npm ci` rejeitava TypeScript 6.0.3 porque `openapi-typescript@7.13.0` declara peer `typescript: ^5.x`. TypeScript foi fixado em 5.9.3, compatível também com `typescript-eslint@8.71.1`. `npm ci`, `npm run openapi:check` (com Python 3.14.4 local), lint, typecheck, os 47 testes Vitest e build passaram.
+
 ## Erros e edge cases
 Clique duplo desabilita envio até resposta e backend permanece idempotente. Job removido/inexistente mostra 404. Data ausente aparece “Não informado”, não data atual.
 
@@ -70,6 +72,6 @@ Limites registrados:
 - Dados vêm de fixtures sintéticas demo; isso não valida o TJGO nem altera S1/S2/S5. A fonte demo não produz falhas: o job `failed` e as falhas de rede/503 foram simulados por interceptação no navegador.
 - A fixture demo traz datas com fuso; a sinalização de datas ambíguas e ausentes foi comprovada por teste de componente, não pelo fluxo de navegador.
 - Os componentes shadcn/ui foram escritos no padrão do projeto (`components.json`, Radix e `class-variance-authority`), sem executar o CLI do shadcn.
-- TypeScript fica em 6.0.3 porque typescript-eslint 8.71.1 suporta TypeScript abaixo de 6.1.
+- TypeScript fica em 5.9.3 para atender o peer `^5.x` de `openapi-typescript@7.13.0`; essa versão também está dentro da faixa aceita por `typescript-eslint@8.71.1`.
 - A interface é servida apenas pelo Vite em localhost (dev/preview); a inclusão do frontend no Compose permanece em M9.
 
