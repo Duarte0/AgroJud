@@ -15,8 +15,10 @@ import type {
   JobListQuery,
   ProcessDetail,
   ProcessListQuery,
+  ProcessWatch,
   ProcessTriagePatch,
   SignalRunRequest,
+  WatchlistQuery,
 } from "@/api/types";
 import { useCurrentEnvironment } from "@/app/environment-context";
 import { jobListPollInterval, jobPollInterval } from "@/lib/job-progress";
@@ -42,6 +44,10 @@ export const queryKeys = {
   processList: (env: EnvironmentName, query: ProcessListQuery) =>
     [env, "processes", "list", query] as const,
   process: (env: EnvironmentName, id: string) => [env, "processes", "detail", id] as const,
+  processWatch: (env: EnvironmentName, id: string) =>
+    [env, "processes", "detail", id, "watch"] as const,
+  watchlist: (env: EnvironmentName, query?: WatchlistQuery) =>
+    query ? ([env, "watchlist", query] as const) : ([env, "watchlist"] as const),
   triageHistory: (env: EnvironmentName, id: string, page?: number) =>
     page === undefined
       ? ([env, "processes", "detail", id, "triage-history"] as const)
@@ -116,6 +122,76 @@ export function useProcess(processId: string) {
           signal,
         }),
       ),
+  });
+}
+
+export function useProcessWatch(processId: string) {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.processWatch(environment, processId),
+    queryFn: ({ signal }) =>
+      request(() =>
+        api.GET("/api/v1/processes/{process_id}/watch", {
+          params: { path: { process_id: processId } },
+          signal,
+        }),
+      ),
+    refetchInterval: (current) =>
+      current.state.data?.last_refresh?.state === "pending" ? 3_000 : false,
+  });
+}
+
+export function useWatchlist(query: WatchlistQuery) {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.watchlist(environment, query),
+    queryFn: ({ signal }) =>
+      request(() => api.GET("/api/v1/watchlist", { params: { query }, signal })),
+    placeholderData: keepPreviousData,
+    refetchInterval: (current) =>
+      current.state.data?.items.some((item) => item.last_refresh?.state === "pending")
+        ? 3_000
+        : false,
+  });
+}
+
+export function useSetProcessWatch(processId: string) {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (active: boolean) => {
+      const params = { path: { process_id: processId } };
+      return active
+        ? request(() => api.PUT("/api/v1/processes/{process_id}/watch", { params }))
+        : request(() => api.DELETE("/api/v1/processes/{process_id}/watch", { params }));
+    },
+    onSuccess: async (watch) => {
+      client.setQueryData<ProcessWatch>(queryKeys.processWatch(environment, processId), watch);
+      await Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.watchlist(environment) }),
+        client.invalidateQueries({ queryKey: queryKeys.processes(environment) }),
+      ]);
+    },
+  });
+}
+
+export function useRefreshProcess(processId: string) {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      request(() =>
+        api.POST("/api/v1/processes/{process_id}/refresh", {
+          params: { path: { process_id: processId } },
+        }),
+      ),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.processWatch(environment, processId) }),
+        client.invalidateQueries({ queryKey: queryKeys.watchlist(environment) }),
+        client.invalidateQueries({ queryKey: queryKeys.jobs(environment) }),
+      ]);
+    },
   });
 }
 

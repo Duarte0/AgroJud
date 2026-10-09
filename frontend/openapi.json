@@ -1100,6 +1100,42 @@
         "title": "PaginationResponse[ProcessTriageHistoryEntryResponse]",
         "type": "object"
       },
+      "PaginationResponse_WatchlistItemResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WatchlistItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "PaginationResponse[WatchlistItemResponse]",
+        "type": "object"
+      },
       "PresetAvailabilityResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1435,6 +1471,66 @@
           "diagnostics"
         ],
         "title": "ProcessMovementsResponse",
+        "type": "object"
+      },
+      "ProcessRefreshResultResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "checked_at": {
+            "format": "date-time",
+            "title": "Checked At",
+            "type": "string"
+          },
+          "hit_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit Count"
+          },
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "job_status": {
+            "enum": [
+              "queued",
+              "running",
+              "retry_wait",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Job Status",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "found",
+              "absent_in_query",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "state",
+          "job_status",
+          "checked_at"
+        ],
+        "title": "ProcessRefreshResultResponse",
         "type": "object"
       },
       "ProcessRepresentationResponse": {
@@ -2055,6 +2151,101 @@
         "title": "ProcessTriageStateResponse",
         "type": "object"
       },
+      "ProcessWatchHistoryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "included",
+              "removed"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "created_at"
+        ],
+        "title": "ProcessWatchHistoryResponse",
+        "type": "object"
+      },
+      "ProcessWatchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessWatchHistoryResponse"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "included_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included At"
+          },
+          "last_refresh": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessRefreshResultResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "process_id": {
+            "format": "uuid",
+            "title": "Process Id",
+            "type": "string"
+          },
+          "removed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Removed At"
+          }
+        },
+        "required": [
+          "process_id",
+          "active",
+          "included_at",
+          "removed_at",
+          "history",
+          "last_refresh"
+        ],
+        "title": "ProcessWatchResponse",
+        "type": "object"
+      },
       "ReadyResponse": {
         "properties": {
           "checks": {
@@ -2391,11 +2582,49 @@
         ],
         "title": "SignalRunStatusResponse",
         "type": "object"
+      },
+      "WatchlistItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "included_at": {
+            "format": "date-time",
+            "title": "Included At",
+            "type": "string"
+          },
+          "last_refresh": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessRefreshResultResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "numero_cnj": {
+            "pattern": "^\\d{20}$",
+            "title": "Numero Cnj",
+            "type": "string"
+          },
+          "process_id": {
+            "format": "uuid",
+            "title": "Process Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "process_id",
+          "numero_cnj",
+          "included_at",
+          "last_refresh"
+        ],
+        "title": "WatchlistItemResponse",
+        "type": "object"
       }
     }
   },
   "info": {
-    "description": "API local de jobs, processos, representações, movimentos, triagem e sinais explicáveis.",
+    "description": "API local de jobs, processos, representações, movimentos, triagem, acompanhamento manual e sinais explicáveis.",
     "title": "AgroJud Radar API",
     "version": "0.1.0"
   },
@@ -3557,6 +3786,79 @@
         ]
       }
     },
+    "/api/v1/processes/{process_id}/refresh": {
+      "post": {
+        "operationId": "refresh_process_api_v1_processes__process_id__refresh_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "process_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Process Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobCreatedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Enfileira atualização manual do processo acompanhado",
+        "tags": [
+          "watchlist"
+        ]
+      }
+    },
     "/api/v1/processes/{process_id}/representations": {
       "get": {
         "operationId": "list_representations_api_v1_processes__process_id__representations_get",
@@ -3915,6 +4217,221 @@
         ]
       }
     },
+    "/api/v1/processes/{process_id}/watch": {
+      "delete": {
+        "operationId": "remove_process_watch_api_v1_processes__process_id__watch_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "process_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Process Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessWatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Remove um processo dos acompanhados sem apagar seus dados",
+        "tags": [
+          "watchlist"
+        ]
+      },
+      "get": {
+        "operationId": "get_process_watch_api_v1_processes__process_id__watch_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "process_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Process Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessWatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Consulta o acompanhamento e seu histórico",
+        "tags": [
+          "watchlist"
+        ]
+      },
+      "put": {
+        "operationId": "include_process_watch_api_v1_processes__process_id__watch_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "process_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Process Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessWatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Inclui ou reinclui um processo nos acompanhados",
+        "tags": [
+          "watchlist"
+        ]
+      }
+    },
     "/api/v1/rule-runs": {
       "post": {
         "operationId": "create_rule_run_api_v1_rule_runs_post",
@@ -4129,6 +4646,92 @@
         "summary": "Retoma execução local interrompida",
         "tags": [
           "signals"
+        ]
+      }
+    },
+    "/api/v1/watchlist": {
+      "get": {
+        "operationId": "list_watchlist_api_v1_watchlist_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginationResponse_WatchlistItemResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Lista os processos acompanhados",
+        "tags": [
+          "watchlist"
         ]
       }
     }

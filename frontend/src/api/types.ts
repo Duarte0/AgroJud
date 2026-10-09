@@ -26,6 +26,11 @@ export type ProcessTriagePatch = Schemas["ProcessTriagePatchRequest"];
 export type ProcessTriageHistoryEntry = Schemas["ProcessTriageHistoryEntryResponse"];
 export type ProcessTriageHistoryPage =
   Schemas["PaginationResponse_ProcessTriageHistoryEntryResponse_"];
+export type ProcessWatch = Schemas["ProcessWatchResponse"];
+export type ProcessWatchHistory = Schemas["ProcessWatchHistoryResponse"];
+export type ProcessRefreshResult = Schemas["ProcessRefreshResultResponse"];
+export type WatchlistItem = Schemas["WatchlistItemResponse"];
+export type WatchlistPage = Schemas["PaginationResponse_WatchlistItemResponse_"];
 export type SignalRunRequest = Schemas["SignalRunRequest"];
 export type SignalRunAccepted = Schemas["SignalRunAcceptedResponse"];
 export type SignalRunStatus = Schemas["SignalRunStatusResponse"];
@@ -46,5 +51,8 @@ export type JobListQuery = NonNullable<
 >;
 export type ProcessListQuery = NonNullable<
   paths["/api/v1/processes"]["get"]["parameters"]["query"]
+>;
+export type WatchlistQuery = NonNullable<
+  paths["/api/v1/watchlist"]["get"]["parameters"]["query"]
 >;
 export type JobCommand = "cancel" | "resume" | "continue" | "restart-scan";

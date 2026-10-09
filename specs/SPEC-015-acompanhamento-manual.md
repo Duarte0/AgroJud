@@ -1,6 +1,6 @@
 # SPEC-015 — Acompanhamento manual
 
-Status: BLOCKED_DEPENDENCY
+Status: DONE
 
 Milestone/Spike: M8
 
@@ -52,5 +52,16 @@ Processo inexistente: 404. Refresh sem acompanhamento ativo: 409. Remover enquan
 Múltiplas watchlists, novidades, agenda, inserção direta de CNJ e notificações externas.
 
 ## Evidência e conclusão
-Demonstrar processo antigo acompanhado e atualizado com suas capas; histórico permanece após remoção.
+
+- A migration `20261009_0008` cria uma entrada única por processo, com estado ativo, datas de inclusão/remoção, índice da lista ativa e histórico append-only protegido por trigger. A migration passou em banco vazio e a partir de `20261009_0007`, preservando processos existentes.
+- `PUT` e `DELETE /api/v1/processes/{id}/watch` são idempotentes e registram somente transições efetivas. `GET /api/v1/processes/{id}/watch` expõe estado e histórico; `GET /api/v1/watchlist` lista somente entradas ativas com paginação.
+- `POST /api/v1/processes/{id}/refresh` enfileira `refresh_number` apenas para processo local acompanhado ativo. A criação genérica de refresh por `/api/v1/jobs` aplica o mesmo gate para não aceitar CNJs ausentes ou não acompanhados. Locks no processo serializam acompanhamento e enqueue; a chave existente do job coalesce o mesmo tipo/fonte/tribunal/CNJ e mantém alvos diferentes independentes.
+- Cada job conserva a consulta, estado, cobertura e horário. A API projeta `found`, `absent_in_query`, `partial`, `failed`, `cancelled` ou `pending`; o texto e o estado persistido não chamam o processo de juridicamente inexistente. Uma consulta vazia ou falha não remove capas ou movimentos locais.
+- A lista Acompanhados e o painel no detalhe permitem incluir, remover e atualizar. A remoção não cancela job enfileirado, não apaga o processo e não muda triagem ou vínculo rural.
+- AC1 foi comprovado com inclusão/remoção/reinclusão idempotentes, duas inclusões concorrentes e histórico imutável. AC2 foi comprovado atualizando processo com representação ajuizada em 2001 sem filtro de data e preservando todas as capas retornadas; o teste de coleta por CNJ pagina três capas. AC3 foi comprovado com clique repetido reutilizando o job e alvos distintos gerando jobs distintos. AC4 foi comprovado para consulta vazia, falha, resposta 429 em retry e resultado parcial. AC5 foi comprovado comparando triagem antes/depois do acompanhamento e refresh.
+- Backend: `pytest -q` passou com 237 testes em PostgreSQL isolado; Ruff check, formatação e mypy passaram. As migrations foram exercitadas em banco vazio e a partir de revisões anteriores suportadas.
+- Frontend: lint, typecheck, 47 testes Vitest e build passaram. O schema OpenAPI e os tipos TypeScript gerados conferem byte a byte com a API.
+- Playwright Chromium: `./scripts/e2e.sh` passou com 11 cenários na stack demo isolada. O cenário desta SPEC inclui, atualiza, remove, consulta o histórico e confirma o resultado persistido.
+
+A entrega conclui apenas o acompanhamento manual local com fonte sintética. Não habilita a integração real DataJud/TJGO, baseline/novidades ou agendamento; SPEC-016 e SPEC-017 continuam fora desta unidade.
 

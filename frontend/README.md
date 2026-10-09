@@ -22,7 +22,8 @@ Vite escuta somente em `127.0.0.1` e encaminha `/api` para `AGROJUD_API_URL` (pa
 - `/` redireciona para `/radar` enquanto não existir visão geral.
 - `/radar`: presets com versão, vínculo rural e disponibilidade; itens indisponíveis ficam desabilitados com o motivo. Janela padrão de 12 meses resolvida pelo servidor, ou janela editável; limite de 1 a 2.000 registros.
 - `/jobs` e `/jobs/:id`: estado persistido, progresso confirmado, tentativas, rejeições, cobertura, erros e comandos (cancelar, retomar, continuar, reiniciar varredura). A porcentagem só aparece quando o total remoto é exato.
-- `/processes` e `/processes/:id`: filtros e página na URL; capas por origem e timeline com data do evento, atualização da fonte e observação local. Datas ambíguas são sinalizadas e ausentes aparecem como “Não informado”.
+- `/processes` e `/processes/:id`: filtros e página na URL; capas por origem, timeline com data do evento, atualização da fonte e observação local, triagem, sinais e acompanhamento manual. A atualização por número só é aceita para processo local acompanhado e não usa a janela de descoberta.
+- `/watchlist`: lista paginada de processos acompanhados, resultado/horário da última consulta, atualização manual e remoção. Remover não apaga o processo nem cancela job já iniciado.
 
 Chaves de cache começam pelo ambiente (`demo`/`real`). Jobs `queued`, `running` e `retry_wait` são consultados a cada 3 s; o polling termina em estado terminal e volta após comando confirmado. Comandos não têm retry automático nem atualização otimista. Falha de leitura sem cache mostra erro com nova tentativa de leitura; com cache, os dados permanecem visíveis com aviso de desatualização.
 

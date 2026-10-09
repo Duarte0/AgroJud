@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: "/radar", label: "Radar" },
   { to: "/jobs", label: "Coletas" },
   { to: "/processes", label: "Processos" },
+  { to: "/watchlist", label: "Acompanhados" },
 ] as const;
 
 function EnvironmentBar({ environment }: { environment: Environment }) {

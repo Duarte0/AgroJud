@@ -201,6 +201,36 @@ class ProcessTriageHistoryEntryResponse(APIModel):
     created_at: datetime
 
 
+class ProcessWatchHistoryResponse(APIModel):
+    id: UUID
+    action: Literal["included", "removed"]
+    created_at: datetime
+
+
+class ProcessRefreshResultResponse(APIModel):
+    job_id: UUID
+    state: Literal["pending", "found", "absent_in_query", "partial", "failed", "cancelled"]
+    job_status: JobStatus
+    checked_at: datetime
+    hit_count: int | None = Field(default=None, ge=0)
+
+
+class ProcessWatchResponse(APIModel):
+    process_id: UUID
+    active: bool
+    included_at: datetime | None
+    removed_at: datetime | None
+    history: list[ProcessWatchHistoryResponse]
+    last_refresh: ProcessRefreshResultResponse | None
+
+
+class WatchlistItemResponse(APIModel):
+    process_id: UUID
+    numero_cnj: str = Field(pattern=r"^\d{20}$")
+    included_at: datetime
+    last_refresh: ProcessRefreshResultResponse | None
+
+
 class SignalRunFilter(APIModel):
     process_number: str = Field(min_length=1, max_length=30)
 

@@ -28,6 +28,7 @@ from agrojud.config import Settings
 from agrojud.db.models import Job
 from agrojud.services.collection import build_collection_request
 from agrojud.services.jobs import InvalidJobTransitionError, JobInspection, JobService
+from agrojud.services.watchlist import lock_process_watch
 from agrojud.sources.catalog import compile_preset
 from agrojud.sources.contracts import SourceError, build_query_by_case_number
 
@@ -80,10 +81,20 @@ def create_job(
             page_size=body.criteria.page_size,
             hit_budget=body.criteria.hit_budget,
         )
+        if query.process_number is None:  # pragma: no cover - builder guarantees a CNJ number
+            raise RuntimeError("A consulta por número não contém o CNJ normalizado.")
+        with request.app.state.session_factory() as session, session.begin():
+            process, entry = lock_process_watch(session, process_number=query.process_number)
+            if process is None:
+                raise HTTPException(status_code=404)
+            if entry is None or not entry.active:
+                raise HTTPException(status_code=409)
+            result = request.app.state.jobs.enqueue(enqueue_request)
     else:  # pragma: no cover - discriminator validation owns this boundary
         raise AssertionError("Tipo de job não suportado.")
 
-    result = request.app.state.jobs.enqueue(enqueue_request)
+    if isinstance(body, DiscoveryJobRequest):
+        result = request.app.state.jobs.enqueue(enqueue_request)
     inspection = request.app.state.jobs.inspect(result.job_id)
     response.headers["Location"] = str(request.url_for("get_job", job_id=str(result.job_id)))
     return JobCreatedResponse(

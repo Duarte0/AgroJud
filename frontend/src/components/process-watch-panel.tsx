@@ -1,0 +1,119 @@
+import { useNavigate } from "react-router";
+
+import { describeError } from "@/api/client";
+import { useProcessWatch, useRefreshProcess, useSetProcessWatch } from "@/api/queries";
+import { ProcessRefreshStatus } from "@/components/process-refresh-status";
+import { ErrorState, LoadingState } from "@/components/query-feedback";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDateTime } from "@/lib/format";
+
+export function ProcessWatchPanel({ processId }: { processId: string }) {
+  const navigate = useNavigate();
+  const watch = useProcessWatch(processId);
+  const setWatch = useSetProcessWatch(processId);
+  const refresh = useRefreshProcess(processId);
+  const mutationError = setWatch.error ?? refresh.error;
+
+  function toggleWatch() {
+    if (!watch.data) return;
+    setWatch.mutate(!watch.data.active);
+  }
+
+  function refreshProcess() {
+    refresh.mutate(undefined, {
+      onSuccess: (accepted) => void navigate(`/jobs/${accepted.job_id}`),
+    });
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Acompanhamento manual</CardTitle>
+        <CardDescription>
+          Atualize este processo por número CNJ fora da janela de descoberta. A triagem permanece
+          independente do acompanhamento.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {watch.isPending ? (
+          <LoadingState label="Carregando acompanhamento…" />
+        ) : !watch.data ? (
+          <ErrorState
+            title="Não foi possível carregar o acompanhamento"
+            error={watch.error}
+            onRetry={() => void watch.refetch()}
+            retrying={watch.isFetching}
+          />
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium">
+                {watch.data.active ? "Acompanhamento ativo" : "Não acompanhado"}
+              </span>
+              {watch.data.active && watch.data.included_at ? (
+                <span className="text-sm text-muted-foreground">
+                  incluído em {formatDateTime(watch.data.included_at)}
+                </span>
+              ) : null}
+              {!watch.data.active && watch.data.removed_at ? (
+                <span className="text-sm text-muted-foreground">
+                  removido em {formatDateTime(watch.data.removed_at)}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={watch.data.active ? "outline" : "default"}
+                onClick={toggleWatch}
+                disabled={setWatch.isPending}
+              >
+                {setWatch.isPending
+                  ? watch.data.active
+                    ? "Removendo…"
+                    : "Incluindo…"
+                  : watch.data.active
+                    ? "Remover acompanhamento"
+                    : "Acompanhar processo"}
+              </Button>
+              {watch.data.active ? (
+                <Button onClick={refreshProcess} disabled={refresh.isPending}>
+                  {refresh.isPending ? "Enfileirando…" : "Atualizar processo"}
+                </Button>
+              ) : null}
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold">Resultado da última consulta por número</h3>
+              <ProcessRefreshStatus result={watch.data.last_refresh} />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold">Histórico de acompanhamento</h3>
+              {watch.data.history.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sem alterações registradas.</p>
+              ) : (
+                <ol className="space-y-1 text-sm text-muted-foreground">
+                  {watch.data.history.map((event) => (
+                    <li key={event.id} data-testid="watch-history-entry">
+                      {event.action === "included" ? "Incluído" : "Removido"} em{" "}
+                      {formatDateTime(event.created_at)}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </>
+        )}
+        {mutationError ? (
+          <Alert variant="destructive" role="alert">
+            <AlertTitle>A ação não foi concluída</AlertTitle>
+            <AlertDescription>{describeError(mutationError)}</AlertDescription>
+          </Alert>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}

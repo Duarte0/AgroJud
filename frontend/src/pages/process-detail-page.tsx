@@ -12,6 +12,7 @@ import type {
 import { DescriptionList } from "@/components/description-list";
 import { ProcessTriagePanel } from "@/components/process-triage-panel";
 import { ProcessSignalsPanel } from "@/components/process-signals-panel";
+import { ProcessWatchPanel } from "@/components/process-watch-panel";
 import { PageHeader } from "@/components/page-header";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Pagination } from "@/components/pagination";
@@ -410,6 +411,7 @@ function ProcessView({ process }: { process: ProcessDetail }) {
         </CardContent>
       </Card>
 
+      <ProcessWatchPanel processId={process.id} />
       <ProcessTriagePanel processId={process.id} initialTriage={process.triage} />
       <ProcessSignalsPanel processId={process.id} />
 

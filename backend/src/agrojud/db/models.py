@@ -43,6 +43,62 @@ class Process(Base):
     )
 
 
+class ProcessWatchlistEntry(Base):
+    """Current manual watch state for one locally known process."""
+
+    __tablename__ = "process_watchlist_entries"
+    __table_args__ = (
+        CheckConstraint(
+            "(active and removed_at is null) or (not active and removed_at is not null)",
+            name="ck_process_watchlist_active_removed_at",
+        ),
+        ForeignKeyConstraint(
+            ["process_id"],
+            ["processes.id"],
+            name="fk_process_watchlist_process",
+            ondelete="RESTRICT",
+        ),
+        Index(
+            "ix_process_watchlist_active_included",
+            "included_at",
+            "process_id",
+            postgresql_where=text("active"),
+        ),
+    )
+
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True)
+    active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+    included_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ProcessWatchlistHistory(Base):
+    """Append-only audit of effective manual watchlist transitions."""
+
+    __tablename__ = "process_watchlist_history"
+    __table_args__ = (
+        CheckConstraint("action in ('included', 'removed')", name="ck_watchlist_history_action"),
+        ForeignKeyConstraint(
+            ["process_id"],
+            ["processes.id"],
+            name="fk_watchlist_history_process",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_watchlist_history_process_created", "process_id", "created_at", "id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    process_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    action: Mapped[str] = mapped_column(String(12), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class ProcessTriage(Base):
     """Latest human review state, stored separately from imported process data."""
 

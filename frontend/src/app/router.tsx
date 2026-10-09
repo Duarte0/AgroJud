@@ -7,6 +7,7 @@ import { NotFoundPage } from "@/pages/not-found-page";
 import { ProcessDetailPage } from "@/pages/process-detail-page";
 import { ProcessesPage } from "@/pages/processes-page";
 import { RadarPage } from "@/pages/radar-page";
+import { WatchlistPage } from "@/pages/watchlist-page";
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { path: "jobs/:jobId", element: <JobDetailPage /> },
       { path: "processes", element: <ProcessesPage /> },
       { path: "processes/:processId", element: <ProcessDetailPage /> },
+      { path: "watchlist", element: <WatchlistPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

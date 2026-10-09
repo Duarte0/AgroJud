@@ -55,6 +55,8 @@ EXPECTED_TABLES = {
     "process_signals",
     "process_triage",
     "process_triage_history",
+    "process_watchlist_entries",
+    "process_watchlist_history",
     "quarantine_rejections",
     "quarantine_resolutions",
     "representation_subjects",

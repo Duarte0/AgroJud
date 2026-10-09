@@ -266,6 +266,12 @@ def test_refresh_number_is_normalized_and_executed_from_http(
     api_app: FastAPI,
     api_client: TestClient,
 ) -> None:
+    process_id = uuid4()
+    with Session(api_app.state.database_engine) as session, session.begin():
+        session.add(Process(id=process_id, numero_cnj="00000010020268090001"))
+    included = api_client.put(f"/api/v1/processes/{process_id}/watch")
+    assert included.status_code == 200
+
     created = api_client.post(
         "/api/v1/jobs",
         json={

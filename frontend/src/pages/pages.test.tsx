@@ -261,10 +261,19 @@ describe("ProcessDetailPage", () => {
     first_observed_at: "2026-10-09T13:00:00Z",
     ...overrides,
   });
+  const unwatched = {
+    process_id: processId,
+    active: false,
+    included_at: null,
+    removed_at: null,
+    history: [],
+    last_refresh: null,
+  };
 
   it("keeps origin, three dates, ambiguity and absent values explicit", async () => {
     mockApi({
       [`GET /api/v1/processes/${processId}`]: () => json(buildProcess()),
+      [`GET /api/v1/processes/${processId}/watch`]: () => json(unwatched),
       [`GET /api/v1/processes/${processId}/triage-history`]: () => json(page([])),
       [`GET /api/v1/processes/${processId}/signals`]: () =>
         json({ process_id: processId, items: [], latest_run: null }),
@@ -339,6 +348,7 @@ describe("ProcessDetailPage", () => {
     let submitted: unknown;
     const api = mockApi({
       [`GET /api/v1/processes/${processId}`]: () => json(buildProcess({ id: processId })),
+      [`GET /api/v1/processes/${processId}/watch`]: () => json(unwatched),
       [`GET /api/v1/processes/${processId}/triage-history`]: () => json(page([])),
       [`GET /api/v1/processes/${processId}/signals`]: () =>
         json({ process_id: processId, items: [], latest_run: latestRun }),
@@ -411,6 +421,7 @@ describe("ProcessDetailPage", () => {
     };
     mockApi({
       [`GET /api/v1/processes/${processId}`]: () => json(buildProcess({ id: processId })),
+      [`GET /api/v1/processes/${processId}/watch`]: () => json(unwatched),
       [`GET /api/v1/processes/${processId}/triage-history`]: () => json(page([])),
       [`GET /api/v1/processes/${processId}/signals`]: () =>
         json({ process_id: processId, items: [signal], latest_run: null }),

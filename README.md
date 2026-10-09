@@ -48,7 +48,7 @@ O contrato e o transporte foram validados com HTTPX MockTransport. Isso não com
 
 ## API operacional e OpenAPI (SPEC-011)
 
-A API expõe criação, listagem, detalhe e comandos de jobs em `/api/v1/jobs`, além de processos, representações, movimentos, presets e ambiente. Consultas usam paginação local estável; campos brutos completos e cursores remotos não são retornados por padrão. Erros têm estrutura uniforme e `X-Request-ID`. A documentação interativa fica em `http://127.0.0.1:8000/api/v1/docs`, e o contrato JSON em `/api/v1/openapi.json`.
+A API expõe criação, listagem, detalhe e comandos de jobs em `/api/v1/jobs`, além de processos, representações, movimentos, triagem, sinais, acompanhados, presets e ambiente. A lista `/api/v1/watchlist` é paginada; inclusão/remoção usa `/api/v1/processes/{id}/watch`, e a atualização por número em `/api/v1/processes/{id}/refresh` exige processo local acompanhado ativo. Consultas usam paginação local estável; campos brutos completos e cursores remotos não são retornados por padrão. Erros têm estrutura uniforme e `X-Request-ID`. A documentação interativa fica em `http://127.0.0.1:8000/api/v1/docs`, e o contrato JSON em `/api/v1/openapi.json`.
 
 Exemplo de criação de coleta sintética no ambiente demo:
 

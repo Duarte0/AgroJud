@@ -31,6 +31,7 @@ from agrojud.api.metadata import router as metadata_router
 from agrojud.api.processes import router as processes_router
 from agrojud.api.signals import router as signals_router
 from agrojud.api.triage import router as triage_router
+from agrojud.api.watchlist import router as watchlist_router
 from agrojud.config import Settings, get_settings
 from agrojud.db.engine import make_engine
 from agrojud.db.migrations_runner import make_alembic_config
@@ -62,8 +63,8 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         title="AgroJud Radar API",
         version="0.1.0",
         description=(
-            "API local de jobs, processos, representações, movimentos, triagem "
-            "e sinais explicáveis."
+            "API local de jobs, processos, representações, movimentos, triagem, "
+            "acompanhamento manual e sinais explicáveis."
         ),
         docs_url="/api/v1/docs",
         openapi_url="/api/v1/openapi.json",
@@ -240,6 +241,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.include_router(processes_router)
     app.include_router(signals_router)
     app.include_router(triage_router)
+    app.include_router(watchlist_router)
     app.include_router(metadata_router)
 
     return app

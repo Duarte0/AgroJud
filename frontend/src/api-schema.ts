@@ -226,6 +226,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/processes/{process_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enfileira atualização manual do processo acompanhado */
+        post: operations["refresh_process_api_v1_processes__process_id__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/processes/{process_id}/representations": {
         parameters: {
             query?: never;
@@ -294,6 +311,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/processes/{process_id}/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consulta o acompanhamento e seu histórico */
+        get: operations["get_process_watch_api_v1_processes__process_id__watch_get"];
+        /** Inclui ou reinclui um processo nos acompanhados */
+        put: operations["include_process_watch_api_v1_processes__process_id__watch_put"];
+        post?: never;
+        /** Remove um processo dos acompanhados sem apagar seus dados */
+        delete: operations["remove_process_watch_api_v1_processes__process_id__watch_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rule-runs": {
         parameters: {
             query?: never;
@@ -339,6 +375,23 @@ export interface paths {
         put?: never;
         /** Retoma execução local interrompida */
         post: operations["resume_rule_run_api_v1_rule_runs__job_id__resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/watchlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista os processos acompanhados */
+        get: operations["list_watchlist_api_v1_watchlist_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -767,6 +820,17 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** PaginationResponse[WatchlistItemResponse] */
+        PaginationResponse_WatchlistItemResponse_: {
+            /** Items */
+            items: components["schemas"]["WatchlistItemResponse"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
         /** PresetAvailabilityResponse */
         PresetAvailabilityResponse: {
             /** Enabled */
@@ -897,6 +961,31 @@ export interface components {
             process_id: string;
             /** Total */
             total: number;
+        };
+        /** ProcessRefreshResultResponse */
+        ProcessRefreshResultResponse: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Hit Count */
+            hit_count?: number | null;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Job Status
+             * @enum {string}
+             */
+            job_status: "queued" | "running" | "retry_wait" | "completed" | "partial" | "failed" | "cancelled";
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "found" | "absent_in_query" | "partial" | "failed" | "cancelled";
         };
         /** ProcessRepresentationResponse */
         ProcessRepresentationResponse: {
@@ -1105,6 +1194,41 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** ProcessWatchHistoryResponse */
+        ProcessWatchHistoryResponse: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "included" | "removed";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** ProcessWatchResponse */
+        ProcessWatchResponse: {
+            /** Active */
+            active: boolean;
+            /** History */
+            history: components["schemas"]["ProcessWatchHistoryResponse"][];
+            /** Included At */
+            included_at: string | null;
+            last_refresh: components["schemas"]["ProcessRefreshResultResponse"] | null;
+            /**
+             * Process Id
+             * Format: uuid
+             */
+            process_id: string;
+            /** Removed At */
+            removed_at: string | null;
+        };
         /** ReadyResponse */
         ReadyResponse: {
             /** Checks */
@@ -1223,6 +1347,22 @@ export interface components {
              * @enum {string}
              */
             status: "queued" | "running" | "retry_wait" | "completed" | "partial" | "failed" | "cancelled";
+        };
+        /** WatchlistItemResponse */
+        WatchlistItemResponse: {
+            /**
+             * Included At
+             * Format: date-time
+             */
+            included_at: string;
+            last_refresh: components["schemas"]["ProcessRefreshResultResponse"] | null;
+            /** Numero Cnj */
+            numero_cnj: string;
+            /**
+             * Process Id
+             * Format: uuid
+             */
+            process_id: string;
         };
     };
     responses: never;
@@ -1990,6 +2130,64 @@ export interface operations {
             };
         };
     };
+    refresh_process_api_v1_processes__process_id__refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                process_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobCreatedResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     list_representations_api_v1_processes__process_id__representations_get: {
         parameters: {
             query?: {
@@ -2234,6 +2432,180 @@ export interface operations {
             };
         };
     };
+    get_process_watch_api_v1_processes__process_id__watch_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                process_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessWatchResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    include_process_watch_api_v1_processes__process_id__watch_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                process_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessWatchResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_process_watch_api_v1_processes__process_id__watch_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                process_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessWatchResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     create_rule_run_api_v1_rule_runs_post: {
         parameters: {
             query?: never;
@@ -2370,6 +2742,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SignalRunAcceptedResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_watchlist_api_v1_watchlist_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginationResponse_WatchlistItemResponse_"];
                 };
             };
             /** @description Recurso não encontrado. */
