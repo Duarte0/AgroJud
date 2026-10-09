@@ -11,11 +11,13 @@ from datetime import datetime
 from threading import Event, Thread
 from typing import Literal
 
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from agrojud.domain.canonical_json import JSONValue
 from agrojud.services.jobs import (
     CheckpointSnapshot,
+    DatabaseUnavailableError,
     JobCancellationRequestedError,
     JobLease,
     JobService,
@@ -35,6 +37,8 @@ class JobOutcome:
     retry_at: datetime | None = None
     error_code: str | None = None
     error_summary: str | None = None
+    source_cooldown_until: datetime | None = None
+    cursor_invalid: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +93,22 @@ class JobExecutionContext:
             ownership_lost=self.ownership_lost,
         )
 
+    def record_persistence_attempt(
+        self,
+        lease: JobLease,
+        *,
+        expected_revision: int,
+    ) -> int:
+        """Count a bounded SQL page persistence attempt before writing the page."""
+
+        self.assert_active()
+        return self.jobs.record_persistence_attempt(
+            lease.job_id,
+            lease.possession_token,
+            expected_revision=expected_revision,
+            ownership_lost=self.ownership_lost,
+        )
+
     def commit_page(
         self,
         lease: JobLease,
@@ -114,6 +134,11 @@ class JobExecutionContext:
             raise LeaseLostError("O worker suspendeu a execução após falha no heartbeat.")
         if self.cancellation_requested.is_set():
             raise JobCancellationRequestedError("O cancelamento do job foi solicitado.")
+
+    def database_now(self) -> datetime:
+        """Use PostgreSQL's clock as the persistent retry schedule's time base."""
+
+        return self.jobs.current_database_time()
 
 
 type JobHandler = Callable[[JobLease, JobExecutionContext], JobOutcome]
@@ -161,6 +186,7 @@ class LeasedWorker:
 
         outcome: JobOutcome | None = None
         handler_error = False
+        persistence_unavailable = False
         context = JobExecutionContext(
             jobs=self.jobs,
             cancellation_requested=cancellation_requested,
@@ -173,6 +199,14 @@ class LeasedWorker:
                 raise TypeError("O handler deve retornar JobOutcome.")
             if outcome.status == "retry_wait" and outcome.retry_at is None:
                 raise ValueError("retry_wait exige retry_at definido pelo handler.")
+        except DatabaseUnavailableError as error:
+            persistence_unavailable = True
+            self._log(
+                "job_state_not_persisted",
+                job_id=str(lease.job_id),
+                attempt_number=lease.attempt_number,
+                error_type=type(error).__name__,
+            )
         except Exception as error:
             handler_error = True
             self._log(
@@ -195,6 +229,13 @@ class LeasedWorker:
         if ownership_lost.is_set():
             self._log(
                 "worker_ownership_lost",
+                job_id=str(lease.job_id),
+                attempt_number=lease.attempt_number,
+            )
+            return True
+        if persistence_unavailable:
+            self._log(
+                "job_lease_left_to_expire",
                 job_id=str(lease.job_id),
                 attempt_number=lease.attempt_number,
             )
@@ -225,14 +266,17 @@ class LeasedWorker:
                     retry_at=outcome.retry_at,
                     error_code=outcome.error_code,
                     error_summary=outcome.error_summary,
+                    source_cooldown_until=outcome.source_cooldown_until,
+                    cursor_invalid=outcome.cursor_invalid,
                 )
             else:  # pragma: no cover - handler paths above either return or set an error
                 return True
-        except LeaseLostError:
+        except (LeaseLostError, DatabaseUnavailableError, DBAPIError) as error:
             self._log(
-                "worker_ownership_lost",
+                "worker_state_not_confirmed",
                 job_id=str(lease.job_id),
                 attempt_number=lease.attempt_number,
+                error_type=type(error).__name__,
             )
             return True
 

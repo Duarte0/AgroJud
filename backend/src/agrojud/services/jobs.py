@@ -7,16 +7,23 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from threading import Event
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from agrojud.db.models import Job, JobAttempt, JobCheckpoint, JobEvent
+from agrojud.db.models import Job, JobAttempt, JobCheckpoint, JobEvent, SourceRateLimit
 from agrojud.domain.canonical_json import JSONValue, canonical_json_bytes, sha256_json
 from agrojud.services.ingestion import IngestPageResult, create_collection, ingest_page
+from agrojud.services.retry_policy import (
+    MAX_HTTP_ATTEMPTS_PER_PAGE,
+    MAX_LEASE_RECOVERIES_PER_CYCLE,
+    MAX_PERSISTENCE_ATTEMPTS_PER_PAGE,
+    MIN_REQUEST_INTERVAL,
+)
 from agrojud.sources.contracts import SourcePage
 
 type JobType = Literal["discovery", "refresh_number"]
@@ -54,6 +61,30 @@ class CheckpointRevisionConflict(JobError):
     """Raised when a stale checkpoint revision attempts to overwrite progress."""
 
 
+class CursorInvalidConflict(InvalidJobTransitionError):
+    """Raised when exact continuation is unsafe and a new scan is required."""
+
+
+class RequestDeferredError(JobError):
+    """The persistent per-source limiter has not granted an HTTP request slot."""
+
+    def __init__(self, retry_at: datetime) -> None:
+        super().__init__("A próxima requisição ainda aguarda o intervalo da fonte.")
+        self.retry_at = retry_at
+
+
+class PageRetryExhaustedError(JobError):
+    """The current page has consumed its five HTTP attempts for this cycle."""
+
+
+class PersistenceRetriesExhaustedError(JobError):
+    """The current page has consumed its five transient SQL persistence attempts."""
+
+
+class DatabaseUnavailableError(JobError):
+    """Persistence could not be confirmed; the current lease must expire naturally."""
+
+
 @dataclass(frozen=True, slots=True)
 class EnqueueRequest:
     mode: Literal["demo", "real"]
@@ -63,6 +94,7 @@ class EnqueueRequest:
     resolved_query: JSONValue
     sort: JSONValue
     parameters: dict[str, JSONValue]
+    predecessor_job_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,6 +115,9 @@ class JobLease:
     tribunal: str
     attempt_id: UUID
     attempt_number: int
+    page_attempt_count: int
+    persistence_attempt_count: int
+    retry_cycle: int
     worker_id: str
     possession_token: UUID
     lease_expires_at: datetime
@@ -146,6 +181,13 @@ class JobInspection:
     reason: str | None
     cancel_requested: bool
     attempt_count: int
+    retry_cycle: int
+    page_attempt_count: int
+    persistence_attempt_count: int
+    recovery_count: int
+    cursor_invalid: bool
+    predecessor_job_id: UUID | None
+    next_attempt_at: datetime
     lease_owner: str | None
     lease_expires_at: datetime | None
     heartbeat_at: datetime | None
@@ -195,11 +237,23 @@ class JobService:
 
         with self.sessions() as session, session.begin():
             savepoint = session.begin_nested()
+            predecessor: Job | None = None
+            previous_collection_id: UUID | None = None
+            if request.predecessor_job_id is not None:
+                predecessor = session.execute(
+                    select(Job).where(Job.id == request.predecessor_job_id).with_for_update()
+                ).scalar_one_or_none()
+                if predecessor is None:
+                    raise JobNotFoundError("A execução predecessora não existe.")
+                previous_collection_id = predecessor.collection_id
             collection = create_collection(
                 session,
                 mode=request.mode,
                 resolved_criteria=parameters_snapshot,
+                previous_collection_id=previous_collection_id,
             )
+            now = self._database_now(session)
+            available_at = self._source_not_before(session, request.source, now)
             job_id = session.execute(
                 pg_insert(Job)
                 .values(
@@ -212,7 +266,14 @@ class JobService:
                     operation_key=operation_key,
                     parameters_snapshot=parameters_snapshot,
                     status="queued",
+                    next_attempt_at=available_at,
                     attempt_count=0,
+                    retry_cycle=1,
+                    page_attempt_count=0,
+                    persistence_attempt_count=0,
+                    recovery_count=0,
+                    cursor_invalid=False,
+                    predecessor_job_id=request.predecessor_job_id,
                     event_count=0,
                 )
                 .on_conflict_do_nothing(
@@ -240,7 +301,6 @@ class JobService:
                     created=False,
                 )
 
-            now = self._database_now(session)
             session.add(
                 JobCheckpoint(
                     id=uuid4(),
@@ -260,6 +320,19 @@ class JobService:
                 "enqueued",
                 {"job_type": request.job_type, "operation_key": operation_key},
             )
+            if predecessor is not None:
+                self._append_event(
+                    session,
+                    job,
+                    "restart_scan_started",
+                    {"predecessor_job_id": str(predecessor.id)},
+                )
+                self._append_event(
+                    session,
+                    predecessor,
+                    "restart_scan_spawned",
+                    {"job_id": str(job.id)},
+                )
             savepoint.commit()
             return EnqueueResult(
                 job_id=job_id,
@@ -286,7 +359,7 @@ class JobService:
                 eligible = or_(
                     (
                         Job.status.in_(("queued", "retry_wait"))
-                        & (Job.available_at <= now_expression)
+                        & (Job.next_attempt_at <= now_expression)
                     ),
                     (Job.status == "running") & (Job.lease_expires_at <= now_expression),
                 )
@@ -339,11 +412,37 @@ class JobService:
                             now=now,
                             outcome="lease_expired",
                         )
+                    job.recovery_count += 1
+                    if job.recovery_count > MAX_LEASE_RECOVERIES_PER_CYCLE:
+                        job.status = "failed"
+                        job.reason = "recovery_exhausted"
+                        job.finished_at = now
+                        job.updated_at = now
+                        coverage = dict(job.coverage or {})
+                        coverage["query_status"] = "failed"
+                        coverage["has_persisted_data"] = bool(
+                            coverage.get("has_persisted_data", False)
+                        )
+                        job.coverage = coverage
+                        self._clear_lease(job)
+                        self._append_event(
+                            session,
+                            job,
+                            "recovery_exhausted",
+                            {
+                                "recovery_count": job.recovery_count,
+                                "limit": MAX_LEASE_RECOVERIES_PER_CYCLE,
+                            },
+                        )
+                        continue
                     self._append_event(
                         session,
                         job,
                         "lease_expired",
-                        {"attempt_number": job.attempt_count},
+                        {
+                            "attempt_number": job.attempt_count,
+                            "recovery_count": job.recovery_count,
+                        },
                     )
 
                 possession_token = uuid4()
@@ -383,6 +482,9 @@ class JobService:
                     tribunal=job.tribunal,
                     attempt_id=attempt.id,
                     attempt_number=job.attempt_count,
+                    page_attempt_count=job.page_attempt_count,
+                    persistence_attempt_count=job.persistence_attempt_count,
+                    retry_cycle=job.retry_cycle,
                     worker_id=worker_id,
                     possession_token=possession_token,
                     lease_expires_at=lease_expires_at,
@@ -461,9 +563,30 @@ class JobService:
             if checkpoint.revision != expected_revision:
                 raise CheckpointRevisionConflict("A revisão do checkpoint foi alterada.")
             job = self._lock_job(session, job_id, lock=False)
+            if job.page_attempt_count >= MAX_HTTP_ATTEMPTS_PER_PAGE:
+                raise PageRetryExhaustedError("A página consumiu as cinco tentativas HTTP.")
+            now = self._database_now(session)
+            if job.source == "synthetic":
+                source_limit = session.get(SourceRateLimit, job.source)
+                if source_limit is not None and source_limit.cooldown_until is not None:
+                    if source_limit.cooldown_until > now:
+                        raise RequestDeferredError(source_limit.cooldown_until)
+            else:
+                source_limit = self._get_source_rate_limit(session, job.source, now, lock=True)
+                allowed_at = max(
+                    source_limit.next_request_at,
+                    source_limit.cooldown_until or now,
+                )
+                if allowed_at > now:
+                    raise RequestDeferredError(allowed_at)
+
+                source_limit.next_request_at = now + MIN_REQUEST_INTERVAL
+                source_limit.updated_at = now
+            job.page_attempt_count += 1
             coverage = self._collection_progress(job.coverage, budget_limit=budget_limit)
             attempt_count = self._counter(coverage, "http_attempts") + 1
             coverage["http_attempts"] = attempt_count
+            coverage["current_page_attempts"] = job.page_attempt_count
             coverage["current_page"] = checkpoint.next_page
             coverage["checkpoint_revision"] = checkpoint.revision
             job.coverage = coverage
@@ -474,10 +597,63 @@ class JobService:
                 {
                     "page": checkpoint.next_page,
                     "http_attempt": attempt_count,
+                    "page_attempt": job.page_attempt_count,
+                    "retry_cycle": job.retry_cycle,
                     "checkpoint_revision": checkpoint.revision,
                 },
             )
             return attempt_count
+
+    def record_persistence_attempt(
+        self,
+        job_id: UUID,
+        possession_token: UUID,
+        *,
+        expected_revision: int,
+        ownership_lost: Event | None = None,
+    ) -> int:
+        """Persist one bounded SQL page-commit attempt before executing its writes."""
+
+        if expected_revision < 0:
+            raise ValueError("A revisão do checkpoint é inválida.")
+        with self.owned_transaction(
+            job_id,
+            possession_token,
+            ownership_lost=ownership_lost,
+        ) as session:
+            checkpoint = session.execute(
+                select(JobCheckpoint).where(JobCheckpoint.job_id == job_id).with_for_update()
+            ).scalar_one_or_none()
+            if checkpoint is None:
+                raise RuntimeError("O checkpoint inicial do job não foi encontrado.")
+            if checkpoint.revision != expected_revision:
+                raise CheckpointRevisionConflict("A revisão do checkpoint foi alterada.")
+            job = self._lock_job(session, job_id, lock=False)
+            if job.persistence_attempt_count >= MAX_PERSISTENCE_ATTEMPTS_PER_PAGE:
+                raise PersistenceRetriesExhaustedError(
+                    "A gravação da página consumiu as cinco tentativas SQL."
+                )
+            job.persistence_attempt_count += 1
+            coverage = self._collection_progress(
+                job.coverage,
+                budget_limit=max(1, self._counter(job.coverage or {}, "budget_limit")),
+            )
+            coverage["current_page_persistence_attempts"] = job.persistence_attempt_count
+            coverage["current_page"] = checkpoint.next_page
+            coverage["checkpoint_revision"] = checkpoint.revision
+            job.coverage = coverage
+            self._append_event(
+                session,
+                job,
+                "page_persistence_attempted",
+                {
+                    "page": checkpoint.next_page,
+                    "persistence_attempt": job.persistence_attempt_count,
+                    "retry_cycle": job.retry_cycle,
+                    "checkpoint_revision": checkpoint.revision,
+                },
+            )
+            return job.persistence_attempt_count
 
     def commit_page(
         self,
@@ -571,8 +747,16 @@ class JobService:
             )
             coverage["has_persisted_data"] = bool(coverage.get("has_persisted_data") or page.hits)
             coverage["current_page"] = checkpoint.next_page
+            coverage["last_page_http_attempts"] = job.page_attempt_count
+            coverage["current_page_attempts"] = 0
+            coverage["last_page_persistence_attempts"] = job.persistence_attempt_count
+            coverage["current_page_persistence_attempts"] = 0
             coverage["checkpoint_revision"] = result.revision
             coverage["query_status"] = "exhausted" if not page.hits else "running"
+            job.page_attempt_count = 0
+            job.persistence_attempt_count = 0
+            job.recovery_count = 0
+            job.next_attempt_at = now
             job.coverage = coverage
             self._append_event(
                 session,
@@ -583,6 +767,8 @@ class JobService:
                     "hits": len(page.hits),
                     "valid_hits": ingestion.valid_hit_count,
                     "rejected_hits": ingestion.rejected_hit_count,
+                    "http_attempts": coverage["last_page_http_attempts"],
+                    "persistence_attempts": coverage["last_page_persistence_attempts"],
                     "checkpoint_revision": result.revision,
                 },
             )
@@ -655,6 +841,9 @@ class JobService:
                 raise CheckpointRevisionConflict("A revisão do checkpoint foi alterada.")
 
             job = self._lock_job(session, job_id, lock=False)
+            job.page_attempt_count = 0
+            job.persistence_attempt_count = 0
+            job.recovery_count = 0
             self._append_event(
                 session,
                 job,
@@ -698,6 +887,153 @@ class JobService:
                 return False
             raise InvalidJobTransitionError("O job já terminou e não pode ser cancelado.")
 
+    def resume(self, job_id: UUID) -> UUID:
+        """Start a new retry cycle from a failed or cancelled job's saved cursor."""
+
+        try:
+            with self.sessions() as session, session.begin():
+                job = self._lock_job(session, job_id)
+                if job.cursor_invalid:
+                    raise CursorInvalidConflict(
+                        "O cursor foi rejeitado pela fonte; reinicie a coleta explicitamente."
+                    )
+                active = self._active_equivalent(session, job.operation_key)
+                if active is not None:
+                    return active.id
+                if job.status in ACTIVE_STATUSES:
+                    return job.id
+                if job.status not in ("failed", "cancelled"):
+                    raise InvalidJobTransitionError(
+                        "Somente jobs failed ou cancelled podem ser retomados."
+                    )
+
+                now = self._database_now(session)
+                job.status = "queued"
+                job.reason = None
+                job.cancel_requested = False
+                job.finished_at = None
+                job.next_attempt_at = self._source_not_before(session, job.source, now)
+                job.retry_cycle += 1
+                job.page_attempt_count = 0
+                job.persistence_attempt_count = 0
+                job.recovery_count = 0
+                coverage = dict(job.coverage or {})
+                coverage["current_page_attempts"] = 0
+                coverage["current_page_persistence_attempts"] = 0
+                job.coverage = coverage
+                job.updated_at = now
+                self._append_event(
+                    session,
+                    job,
+                    "resumed",
+                    {
+                        "retry_cycle": job.retry_cycle,
+                        "checkpoint_revision": self._checkpoint_revision(session, job.id),
+                        "next_attempt_at": job.next_attempt_at.isoformat(),
+                    },
+                )
+                return job.id
+        except IntegrityError as error:
+            if not self._is_active_operation_conflict(error):
+                raise
+            active_id = self._find_active_equivalent(job_id)
+            if active_id is None:
+                raise
+            return active_id
+
+    def continue_job(self, job_id: UUID, *, additional_budget: int = 2_000) -> UUID:
+        """Extend a partial/limit collection while preserving its checkpoint."""
+
+        try:
+            with self.sessions() as session, session.begin():
+                job = self._lock_job(session, job_id)
+                if job.cursor_invalid:
+                    raise CursorInvalidConflict(
+                        "O cursor foi rejeitado pela fonte; somente restart_scan é seguro."
+                    )
+                active = self._active_equivalent(session, job.operation_key)
+                if active is not None:
+                    return active.id
+                checkpoint = session.execute(
+                    select(JobCheckpoint).where(JobCheckpoint.job_id == job.id)
+                ).scalar_one()
+                # Import locally because the collection handler depends on this service.
+                from agrojud.services.collection import plan_limit_continuation
+
+                plan = plan_limit_continuation(
+                    status=job.status,
+                    reason=job.reason,
+                    cursor=checkpoint.cursor,
+                    checkpoint_revision=checkpoint.revision,
+                    coverage=job.coverage,
+                    additional_budget=additional_budget,
+                )
+                now = self._database_now(session)
+                previous_budget = int((job.coverage or {}).get("budget_limit", 0))
+                job.status = "queued"
+                job.reason = None
+                job.finished_at = None
+                job.next_attempt_at = self._source_not_before(session, job.source, now)
+                job.page_attempt_count = 0
+                job.persistence_attempt_count = 0
+                job.coverage = plan.coverage
+                job.coverage["current_page_attempts"] = 0
+                job.coverage["current_page_persistence_attempts"] = 0
+                job.updated_at = now
+                self._append_event(
+                    session,
+                    job,
+                    "continued",
+                    {
+                        "previous_budget": previous_budget,
+                        "new_budget": plan.coverage["budget_limit"],
+                        "checkpoint_revision": checkpoint.revision,
+                        "continuation": plan.coverage["continuations"],
+                        "next_attempt_at": job.next_attempt_at.isoformat(),
+                    },
+                )
+                return job.id
+        except IntegrityError as error:
+            if not self._is_active_operation_conflict(error):
+                raise
+            active_id = self._find_active_equivalent(job_id)
+            if active_id is None:
+                raise
+            return active_id
+
+    def restart_scan(self, job_id: UUID) -> EnqueueResult:
+        """Create a fresh collection linked to the previous job as its predecessor."""
+
+        with self.sessions() as session:
+            previous = session.get(Job, job_id)
+            if previous is None:
+                raise JobNotFoundError("O job solicitado não existe.")
+            snapshot = dict(previous.parameters_snapshot)
+            parameters = snapshot.get("parameters")
+            if not isinstance(parameters, dict):
+                raise InvalidJobTransitionError("O snapshot do job não contém limites válidos.")
+            request = EnqueueRequest(
+                mode=cast(Literal["demo", "real"], previous.mode),
+                job_type=cast(JobType, previous.job_type),
+                source=previous.source,
+                tribunal=previous.tribunal,
+                resolved_query=cast(JSONValue, snapshot.get("query")),
+                sort=cast(JSONValue, snapshot.get("sort")),
+                parameters=cast(dict[str, JSONValue], parameters),
+                predecessor_job_id=previous.id,
+            )
+        result = self.enqueue(request)
+        if not result.created:
+            with self.sessions() as session, session.begin():
+                previous = self._lock_job(session, job_id)
+                self._append_event(
+                    session,
+                    previous,
+                    "restart_scan_coalesced",
+                    {"job_id": str(result.job_id)},
+                )
+        return result
+
     def finish(
         self,
         job_id: UUID,
@@ -709,6 +1045,8 @@ class JobService:
         retry_at: datetime | None = None,
         error_code: str | None = None,
         error_summary: str | None = None,
+        source_cooldown_until: datetime | None = None,
+        cursor_invalid: bool = False,
         ownership_lost: Event | None = None,
     ) -> JobStatus:
         """Close an attempt or place it in retry_wait without embedding retry policy."""
@@ -727,8 +1065,35 @@ class JobService:
             if effective_status == "retry_wait":
                 if retry_at is None:
                     raise ValueError("retry_wait exige retry_at definido pelo chamador.")
+                if retry_at.tzinfo is None or retry_at.utcoffset() is None:
+                    raise ValueError("next_attempt_at precisa incluir fuso horário.")
             elif effective_status not in TERMINAL_STATUSES:
                 raise ValueError("Estado final de job inválido.")
+
+            effective_retry_at = retry_at
+            source_limit: SourceRateLimit | None = None
+            if source_cooldown_until is not None:
+                if (
+                    source_cooldown_until.tzinfo is None
+                    or source_cooldown_until.utcoffset() is None
+                ):
+                    raise ValueError("O cooldown da fonte precisa incluir fuso horário.")
+                source_limit = self._get_source_rate_limit(session, job.source, now, lock=True)
+                source_limit.cooldown_until = max(
+                    source_limit.cooldown_until or source_cooldown_until,
+                    source_cooldown_until,
+                )
+                source_limit.updated_at = now
+            if effective_status == "retry_wait":
+                if source_limit is None:
+                    source_limit = self._get_source_rate_limit(session, job.source, now, lock=True)
+                if retry_at is None:  # pragma: no cover - validated above
+                    raise ValueError("retry_wait exige retry_at definido pelo chamador.")
+                effective_retry_at = max(
+                    retry_at,
+                    source_limit.next_request_at,
+                    source_limit.cooldown_until or retry_at,
+                )
 
             attempt = session.execute(
                 select(JobAttempt)
@@ -742,19 +1107,24 @@ class JobService:
                 attempt,
                 now=now,
                 outcome=effective_status,
-                error_code=safe_error_code if effective_status == "failed" else None,
-                error_summary=safe_error_summary if effective_status == "failed" else None,
+                error_code=safe_error_code
+                if effective_status in ("failed", "retry_wait")
+                else None,
+                error_summary=safe_error_summary
+                if effective_status in ("failed", "retry_wait")
+                else None,
             )
 
             job.status = effective_status
             job.coverage = coverage
+            job.cursor_invalid = job.cursor_invalid or cursor_invalid
             job.reason = "cancel_requested" if effective_status == "cancelled" else safe_reason
             job.cancel_requested = False
             job.finished_at = None if effective_status == "retry_wait" else now
             if effective_status == "retry_wait":
-                if retry_at is None:  # pragma: no cover - validated above
+                if effective_retry_at is None:  # pragma: no cover - validated above
                     raise ValueError("retry_wait exige retry_at definido pelo chamador.")
-                job.available_at = retry_at
+                job.next_attempt_at = effective_retry_at
             job.updated_at = now
             self._clear_lease(job)
             event_type = (
@@ -768,7 +1138,20 @@ class JobService:
                 session,
                 job,
                 event_type,
-                {"attempt_number": attempt.attempt_number, "status": effective_status},
+                {
+                    "attempt_number": attempt.attempt_number,
+                    "status": effective_status,
+                    "retry_at": effective_retry_at.isoformat()
+                    if effective_retry_at is not None
+                    else None,
+                    "cursor_invalid": job.cursor_invalid,
+                    "error_code": safe_error_code
+                    if effective_status in ("failed", "retry_wait")
+                    else None,
+                    "error_summary": safe_error_summary
+                    if effective_status in ("failed", "retry_wait")
+                    else None,
+                },
             )
             return effective_status
 
@@ -804,6 +1187,13 @@ class JobService:
                 reason=job.reason,
                 cancel_requested=job.cancel_requested,
                 attempt_count=job.attempt_count,
+                retry_cycle=job.retry_cycle,
+                page_attempt_count=job.page_attempt_count,
+                persistence_attempt_count=job.persistence_attempt_count,
+                recovery_count=job.recovery_count,
+                cursor_invalid=job.cursor_invalid,
+                predecessor_job_id=job.predecessor_job_id,
+                next_attempt_at=job.next_attempt_at,
                 lease_owner=job.lease_owner,
                 lease_expires_at=job.lease_expires_at,
                 heartbeat_at=job.heartbeat_at,
@@ -888,6 +1278,10 @@ class JobService:
             "unchanged",
             "quarantine_records",
             "http_attempts",
+            "current_page_attempts",
+            "last_page_http_attempts",
+            "current_page_persistence_attempts",
+            "last_page_persistence_attempts",
         ):
             coverage.setdefault(name, 0)
             cls._counter(coverage, name)
@@ -923,6 +1317,73 @@ class JobService:
         if not isinstance(now, datetime):  # pragma: no cover - PostgreSQL returns timestamptz
             raise RuntimeError("O relógio do PostgreSQL não retornou um horário válido.")
         return now
+
+    def current_database_time(self) -> datetime:
+        """Read PostgreSQL's clock for deterministic, cross-process retry scheduling."""
+
+        with self.sessions() as session:
+            return self._database_now(session)
+
+    @staticmethod
+    def _source_not_before(session: Session, source: str, now: datetime) -> datetime:
+        source_limit = session.get(SourceRateLimit, source)
+        if source_limit is None:
+            return now
+        return max(
+            now,
+            source_limit.next_request_at,
+            source_limit.cooldown_until or now,
+        )
+
+    @staticmethod
+    def _get_source_rate_limit(
+        session: Session,
+        source: str,
+        now: datetime,
+        *,
+        lock: bool,
+    ) -> SourceRateLimit:
+        session.execute(
+            pg_insert(SourceRateLimit)
+            .values(source=source, next_request_at=now, updated_at=now)
+            .on_conflict_do_nothing(index_elements=[SourceRateLimit.source])
+        )
+        statement = select(SourceRateLimit).where(SourceRateLimit.source == source)
+        if lock:
+            statement = statement.with_for_update()
+        return session.execute(statement).scalar_one()
+
+    @staticmethod
+    def _active_equivalent(session: Session, operation_key: str) -> Job | None:
+        return session.execute(
+            select(Job)
+            .where(Job.operation_key == operation_key, Job.status.in_(ACTIVE_STATUSES))
+            .order_by(Job.created_at, Job.id)
+            .with_for_update()
+            .limit(1)
+        ).scalar_one_or_none()
+
+    def _find_active_equivalent(self, job_id: UUID) -> UUID | None:
+        with self.sessions() as session:
+            original = session.get(Job, job_id)
+            if original is None:
+                raise JobNotFoundError("O job solicitado não existe.")
+            active = self._active_equivalent(session, original.operation_key)
+            return active.id if active is not None else None
+
+    @staticmethod
+    def _checkpoint_revision(session: Session, job_id: UUID) -> int:
+        revision = session.scalar(
+            select(JobCheckpoint.revision).where(JobCheckpoint.job_id == job_id)
+        )
+        if not isinstance(revision, int):  # pragma: no cover - enqueue creates this row atomically
+            raise RuntimeError("A revisão do checkpoint não foi encontrada.")
+        return revision
+
+    @staticmethod
+    def _is_active_operation_conflict(error: IntegrityError) -> bool:
+        diagnostic = getattr(error.orig, "diag", None)
+        return getattr(diagnostic, "constraint_name", None) == "uq_jobs_active_operation_key"
 
     @staticmethod
     def _set_transaction_timeouts(session: Session) -> None:

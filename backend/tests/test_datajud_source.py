@@ -175,6 +175,37 @@ def test_http_status_errors_are_typed_and_sanitized(
     assert "Authorization" not in caplog.text
 
 
+def test_only_an_explicit_cursor_rejection_is_classified_as_cursor_invalid() -> None:
+    explicit = DataJudSourceAdapter(
+        make_settings(),
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(
+                400,
+                json={"error": {"reason": "search_after cursor is invalid"}},
+            )
+        ),
+    )
+    try:
+        with pytest.raises(SourceError) as captured:
+            explicit.fetch_page(query(), (1700000000000,), 10)
+    finally:
+        explicit.close()
+    assert captured.value.code is SourceErrorCode.CURSOR_INVALID
+
+    generic = DataJudSourceAdapter(
+        make_settings(),
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(400, json={"error": {"reason": "invalid query"}})
+        ),
+    )
+    try:
+        with pytest.raises(SourceError) as captured:
+            generic.fetch_page(query(), (1700000000000,), 10)
+    finally:
+        generic.close()
+    assert captured.value.code is SourceErrorCode.VALIDATION
+
+
 @pytest.mark.parametrize(
     "handler",
     [

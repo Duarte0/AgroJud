@@ -2,7 +2,7 @@
 
 Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3 e SPEC-008 foram concluídas localmente em 09/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2. M4/S4 permanece em andamento: a política persistente de retries e os comandos/ciclos de recuperação são escopo da SPEC-009. Paginação real segue bloqueada até validação de S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
 
 ## 1. Estado atual e orientação
 
@@ -70,7 +70,16 @@ Estado após a implementação de SPEC-008, confirmado em 09/10/2026:
 - Os handlers `discovery` e `refresh_number` implementam paginação, congelamento de consulta/sort, cursor integral, orçamento inicial de 2.000 hits, página padrão 100 e término por página vazia. Página curta não prova exaustão; falha posterior preserva cobertura parcial e sinaliza dados persistidos. Busca por número percorre todas as representações.
 - O contrato interno de continuação permite até 2.000 hits adicionais preservando cursor, revisão e contadores. Comandos e ciclos de retomada, retries persistentes e invalidação de cursor permanecem na SPEC-009.
 - Ruff check/format, mypy, 153 testes PostgreSQL, Compose demo/real/test, build de produção API/worker, `agrojud-worker --check` e import runtime do handler passaram. Evidência e rastreabilidade de critérios em [SPEC-008](specs/SPEC-008-paginacao-e-checkpoints.md).
-- A validação usa PostgreSQL isolado e HTTP simulado. A fonte real continua bloqueada porque S2 não foi validado; não houve chamada ao DataJud. M4 e S4 permanecem abertos até SPEC-009 e as evidências integradas previstas.
+- Naquele ponto, a validação usava PostgreSQL isolado e HTTP simulado. A implementação de retries, recuperação e S4 está registrada a seguir; nenhuma chamada ao DataJud foi feita.
+
+Estado após a implementação de SPEC-009, confirmado em 09/10/2026:
+
+- A migration `20261009_0005` persiste ciclo/tentativas por página, recuperações, invalidação de cursor, predecessor e limitador/cooldown global por fonte. O agendamento usa `next_attempt_at`; migrations aplicam em banco vazio e sobre SPEC-007/008 sem apagar jobs existentes.
+- HTTP consome até cinco tentativas por página, registra cada uma antes da chamada, faz retry apenas para falhas transitórias permitidas, aplica full jitter/`Retry-After` e agenda sem manter lease. Persistência transitória é limitada a cinco tentativas por página e reconcilia revisão para commit de resultado desconhecido. Integridade não é retry transitório.
+- `resume`, `continue` e `restart_scan` preservam suas semânticas distintas e eventos. Cursor rejeitado requer reinício explícito. Cooldown fica compartilhado entre jobs da mesma fonte. Recuperações por lease expirada falham com `recovery_exhausted` após cinco recuperações sem progresso; indisponibilidade de banco deixa a lease expirar sem declarar falha não confirmada.
+- S4 foi comprovado por testes concorrentes com duas sessões/barreira e subprocessos encerrados pelo sistema antes/depois da confirmação da página. Checksums, contagens, cursor e revisão após recuperação foram comparados à execução contínua. A suíte completa passou: 173 testes; Ruff check/format e mypy passaram.
+- `docker compose config --quiet` passou nos ambientes demo/real/test, a imagem de produção API/worker foi compilada e `agrojud-worker --check` passou. Evidência detalhada em [SPEC-009](specs/SPEC-009-retries-e-recuperacao.md).
+- Toda a validação local usa PostgreSQL isolado e fonte/HTTP sintéticos. Nenhuma requisição DataJud foi feita. S2 continua inconclusivo, portanto modo/paginação reais permanecem bloqueados.
 
 A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 estabelece a fundação local; SPEC-005/006 completam M2; SPEC-007 entrega a infraestrutura de M3; as próximas etapas introduzirão processamento conforme suas SPECs.
 
@@ -279,8 +288,8 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 **Implementar em três entregas:**
 
 1. [x] Paginação, limites e contrato interno de continuação com commit atômico de página/checkpoint (SPEC-008 concluída localmente).
-2. [ ] Retries persistentes e recuperação (SPEC-009).
-3. [ ] Execução dos comandos/ciclos de continuação e invalidação segura de cursor (SPEC-009).
+2. [x] Retries persistentes, limite por página, backoff/cooldown e recuperação por lease (SPEC-009 concluída localmente).
+3. [x] Comandos/ciclos de retomada, continuação e reinício explícito após invalidação segura de cursor (SPEC-009 concluída localmente).
 
 **Definições:**
 
@@ -299,11 +308,11 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 
 **Concluir quando:**
 
-- Passar S4.
-- Interrupções antes e depois do commit não perdem nem duplicam efeitos locais.
-- 429, timeout, 5xx, 401/403 e falha de banco seguem políticas distintas.
-- Reinício preserva backoff e checkpoint.
-- Consulta real multipágina é demonstrada ou permanece explicitamente pendente.
+- [x] Passar S4 localmente com PostgreSQL isolado e fonte HTTP simulada.
+- [x] Interrupções antes e depois do commit não perdem nem duplicam efeitos locais.
+- [x] 429, timeout/rede, 5xx, 401/403, erro contratual e falha de banco seguem políticas distintas.
+- [x] Reinício de serviço preserva agendamento, cooldown e checkpoint.
+- [x] Consulta real multipágina permanece explicitamente pendente até S2 liberar o modo real.
 
 **Demonstração:** coleta interrompida, retomada e comparada à execução sem interrupção.
 
@@ -490,8 +499,8 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] M2 — Persistência de página idempotente (SPEC-005 e SPEC-006 concluídas localmente).
 - [x] M3 — Fila, lease e posse (SPEC-007 DONE localmente).
 - [x] SPEC-008 — Paginação e checkpoints localmente concluídos; fonte real permanece bloqueada por S2.
-- [ ] S4 — Atomicidade e recuperação comprovadas.
-- [ ] M4 — Coleta recuperável demonstrada.
+- [x] S4 — Atomicidade e recuperação comprovadas localmente; integração real permanece bloqueada por S2.
+- [x] M4 — Coleta recuperável demonstrada localmente; consulta real multipágina segue pendente.
 - [ ] M5 — API e OpenAPI estáveis.
 - [ ] M6 — Fluxo visual completo.
 - [ ] S5 — Catálogo temático validado.
@@ -505,7 +514,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-008 estão DONE; SPEC-009 e SPEC-010 estão READY; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-009 estão DONE; SPEC-010 está READY; as demais permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |

@@ -535,7 +535,18 @@ class Job(Base):
         CheckConstraint("length(btrim(tribunal)) > 0", name="ck_jobs_tribunal_nonempty"),
         CheckConstraint("operation_key ~ '^[0-9a-f]{64}$'", name="ck_jobs_operation_key_hex"),
         CheckConstraint("attempt_count >= 0", name="ck_jobs_attempt_count_nonnegative"),
+        CheckConstraint("retry_cycle >= 1", name="ck_jobs_retry_cycle_positive"),
+        CheckConstraint("page_attempt_count between 0 and 5", name="ck_jobs_page_attempt_count"),
+        CheckConstraint(
+            "persistence_attempt_count between 0 and 5",
+            name="ck_jobs_persistence_attempt_count",
+        ),
+        CheckConstraint("recovery_count >= 0", name="ck_jobs_recovery_count_nonnegative"),
         CheckConstraint("event_count >= 0", name="ck_jobs_event_count_nonnegative"),
+        CheckConstraint(
+            "predecessor_job_id is null or predecessor_job_id <> id",
+            name="ck_jobs_predecessor_not_self",
+        ),
         CheckConstraint(
             "(status = 'running' and lease_token is not null and lease_owner is not null "
             "and lease_expires_at is not null and heartbeat_at is not null) or "
@@ -552,6 +563,12 @@ class Job(Base):
             name="fk_jobs_collection_id_collections",
             ondelete="RESTRICT",
         ),
+        ForeignKeyConstraint(
+            ["predecessor_job_id"],
+            ["jobs.id"],
+            name="fk_jobs_predecessor_job_id_jobs",
+            ondelete="RESTRICT",
+        ),
         UniqueConstraint("collection_id", name="uq_jobs_collection_id"),
         Index(
             "uq_jobs_active_operation_key",
@@ -560,9 +577,9 @@ class Job(Base):
             postgresql_where=text("status in ('queued', 'running', 'retry_wait')"),
         ),
         Index(
-            "ix_jobs_available_claim",
+            "ix_jobs_next_attempt_claim",
             "status",
-            "available_at",
+            "next_attempt_at",
             "created_at",
             postgresql_where=text("status in ('queued', 'retry_wait')"),
         ),
@@ -590,7 +607,7 @@ class Job(Base):
     cancel_requested: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
-    available_at: Mapped[datetime] = mapped_column(
+    next_attempt_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     lease_token: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
@@ -600,6 +617,20 @@ class Job(Base):
     attempt_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
+    retry_cycle: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    page_attempt_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    persistence_attempt_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    recovery_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    cursor_invalid: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    predecessor_job_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
     event_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -609,6 +640,22 @@ class Job(Base):
     )
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SourceRateLimit(Base):
+    """Persistent request spacing and server cooldown shared by jobs per source."""
+
+    __tablename__ = "source_rate_limits"
+    __table_args__ = (
+        CheckConstraint("length(btrim(source)) > 0", name="ck_source_rate_limits_source_nonempty"),
+    )
+
+    source: Mapped[str] = mapped_column(String(80), primary_key=True)
+    next_request_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    cooldown_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
 
 
 class JobAttempt(Base):

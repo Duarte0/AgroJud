@@ -1,6 +1,6 @@
 # SPEC-009 — Retries e recuperação
 
-Status: READY
+Status: DONE (implementação local; integração real permanece bloqueada por S2)
 
 Milestone/Spike: M4/S4
 
@@ -56,5 +56,23 @@ Retry-After inválido usa backoff local; passado não gera atraso negativo; futu
 Scheduler, circuit breaker distribuído, multiworker operacional e reparação automática de dados inválidos.
 
 ## Evidência e conclusão
-Comparar contagens, checksums e checkpoints da execução contínua/recuperada; registrar S4. Aceite de fonte real permanece dependente de SPEC-003.
+
+Migration `20261009_0005` aplica em banco vazio e sobre `20261009_0004`; também preserva um job `retry_wait` criado no schema anterior. Counters HTTP/SQL, ciclo de retry, recuperações, cursor inválido e predecessor são persistidos em `jobs`; `source_rate_limits` persiste o próximo início permitido e cooldown compartilhado por jobs.
+
+Critérios de aceitação:
+
+- **AC1 — PASSOU:** backoff com full jitter, `Retry-After` em segundos/data HTTP e cooldown permanecem no PostgreSQL. Um novo `JobService` retomou um job `retry_wait`; dois consumidores disputaram o limitador persistido e somente uma reserva imediata foi liberada.
+- **AC2 — PASSOU:** 503 consumiu exatamente cinco chamadas HTTP; 400, 401, 403 e erros contratuais encerraram em uma chamada cada e não entraram em retry automático.
+- **AC3 — PASSOU:** subprocessos foram encerrados pelo sistema antes e depois do commit da página. Após recuperação com PostgreSQL, revisão, cursor, cobertura, quantidade e hashes das observações coincidiram com a execução contínua; o commit confirmado não duplicou observações.
+- **AC4 — PASSOU:** testes de posse vencida, resposta HTTP tardia e cancelamento concorrente impedem confirmar página sem lease válida; a revisão permanece inalterada. Falha transitória de banco sem estado confirmável deixa a lease expirar, sem gravar `failed`.
+- **AC5 — PASSOU:** `resume` preserva checkpoint/histórico e inicia novo ciclo; `continue` amplia somente o orçamento de execução parcial por limite; `restart_scan` cria nova collection/job com predecessor. Cursor inválido retorna conflito no `resume`; trabalhos equivalentes ativos são coalescidos.
+
+Validação local em 09/10/2026:
+
+- Suíte PostgreSQL isolada, HTTP simulado: `173 passed` (inclui crashes de subprocesso antes/depois do commit, dois consumidores com barreira, banco indisponível antes da leitura/início da gravação e upgrade desde revisões anteriores).
+- Ruff check: passou; Ruff format check: 57 arquivos formatados; mypy: sem erros em 40 arquivos de código.
+- `docker compose config --quiet` passou para demo, real e teste; imagem de produção API/worker compilada; `agrojud-worker --check` passou em configuração demo.
+- `graphify update .` atualizou o grafo local. O comando reportou aviso de rótulos de comunidades desatualizados; o grafo foi atualizado sem reclassificação semântica.
+
+Os testes usam PostgreSQL isolado e fonte/HTTP sintéticos. Nenhuma chamada ao DataJud ou banco operacional foi realizada. A integração e paginação reais continuam bloqueadas até a evidência exigida por S2 na SPEC-003; esta dependência não impede concluir a política local de recuperação desta SPEC.
 

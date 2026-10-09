@@ -570,7 +570,7 @@ def test_refresh_number_paginates_every_representation_for_the_same_cnj(
         assert session.scalar(select(func.count()).select_from(Representation)) == 3
 
 
-def test_error_after_confirmed_page_finishes_failed_with_partial_coverage(
+def test_error_after_confirmed_page_schedules_retry_with_progress_preserved(
     migrated_engine: Engine,
 ) -> None:
     query = discovery_query()
@@ -594,12 +594,12 @@ def test_error_after_confirmed_page_finishes_failed_with_partial_coverage(
     run_worker(jobs, "discovery", make_handler(FailingAdapter()))
 
     inspection = jobs.inspect(job_id)
-    assert inspection.status == "failed"
-    assert inspection.reason == "source_error"
+    assert inspection.status == "retry_wait"
+    assert inspection.reason == "source_retry"
     assert inspection.attempts[-1].error_code == SourceErrorCode.NETWORK.value
     assert inspection.coverage is not None
     assert inspection.coverage["has_persisted_data"] is True
-    assert inspection.coverage["coverage"] == "partial"
+    assert inspection.coverage["query_status"] == "running"
     assert inspection.coverage["hits_confirmed"] == 1
     assert inspection.coverage["http_attempts"] == 2
 

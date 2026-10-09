@@ -2,19 +2,38 @@
 
 from __future__ import annotations
 
+import logging
+import random
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, cast
+from typing import Any, Literal, cast
+
+from sqlalchemy.exc import DBAPIError
 
 from agrojud.config import Settings
 from agrojud.domain.canonical_json import JSONValue
 from agrojud.services.job_worker import JobExecutionContext, JobOutcome
 from agrojud.services.jobs import (
+    CheckpointRevisionConflict,
+    CheckpointSnapshot,
+    DatabaseUnavailableError,
     EnqueueRequest,
     JobCancellationRequestedError,
     JobLease,
     LeaseLostError,
+    PageRetryExhaustedError,
+    PersistenceRetriesExhaustedError,
+    RequestDeferredError,
+)
+from agrojud.services.retry_policy import (
+    MAX_HTTP_ATTEMPTS_PER_PAGE,
+    MAX_PERSISTENCE_ATTEMPTS_PER_PAGE,
+    Clock,
+    RandomValue,
+    is_retryable_source_error,
+    is_transient_persistence_error,
+    retry_deadline,
 )
 from agrojud.sources.contracts import (
     Cursor,
@@ -34,6 +53,7 @@ DEFAULT_PAGE_SIZE = 100
 MAX_CONTINUATION_BUDGET = 2_000
 # SPEC-003 has not validated remote sorting or pagination for TJGO.
 DATAJUD_PAGINATION_APPROVED = False
+LOGGER = logging.getLogger(__name__)
 
 type SourceAdapterFactory = Callable[[JobLease], SourceAdapter]
 
@@ -43,6 +63,12 @@ class LimitContinuationPlan:
     cursor: Cursor
     checkpoint_revision: int
     coverage: dict[str, JSONValue]
+
+
+@dataclass(frozen=True, slots=True)
+class PageCommitState:
+    checkpoint: CheckpointSnapshot
+    coverage: dict[str, Any]
 
 
 def build_collection_request(
@@ -214,24 +240,33 @@ def plan_limit_continuation(
 class CollectionJobHandler:
     """Execute every page for one claimed discovery or refresh_number job."""
 
-    def __init__(self, source_factory: SourceAdapterFactory) -> None:
+    def __init__(
+        self,
+        source_factory: SourceAdapterFactory,
+        *,
+        clock: Clock | None = None,
+        random_value: RandomValue = random.random,
+    ) -> None:
         self.source_factory = source_factory
+        self.clock = clock
+        self.random_value = random_value
 
     def __call__(self, lease: JobLease, context: JobExecutionContext) -> JobOutcome:
-        coverage = self._read_coverage(context, lease)
-        if lease.mode == "real" and not DATAJUD_PAGINATION_APPROVED:
-            blocked = dict(coverage)
-            blocked["query_status"] = "blocked"
-            blocked["has_persisted_data"] = bool(blocked.get("has_persisted_data", False))
-            return JobOutcome(
-                status="failed",
-                coverage=cast(dict[str, JSONValue], blocked),
-                reason="capability_not_approved",
-                error_code="DATAJUD_PAGINATION_NOT_APPROVED",
-                error_summary="A paginação TJGO aguarda validação de S2 na SPEC-003.",
-            )
-
+        coverage: dict[str, Any] = {}
         try:
+            coverage = self._read_coverage(context, lease)
+            if lease.mode == "real" and not DATAJUD_PAGINATION_APPROVED:
+                blocked = dict(coverage)
+                blocked["query_status"] = "blocked"
+                blocked["has_persisted_data"] = bool(blocked.get("has_persisted_data", False))
+                return JobOutcome(
+                    status="failed",
+                    coverage=cast(dict[str, JSONValue], blocked),
+                    reason="capability_not_approved",
+                    error_code="DATAJUD_PAGINATION_NOT_APPROVED",
+                    error_summary="A paginação TJGO aguarda validação de S2 na SPEC-003.",
+                )
+
             query = source_query_from_snapshot(
                 lease.parameters_snapshot.get("query"),
                 lease.parameters_snapshot.get("sort"),
@@ -267,19 +302,24 @@ class CollectionJobHandler:
                     budget_limit=budget_limit,
                 )
                 coverage["http_attempts"] = attempt_number
+                coverage["current_page_attempts"] = (
+                    _int_field(coverage.get("current_page_attempts", 0), "current_page_attempts")
+                    + 1
+                )
                 coverage["current_page"] = checkpoint.next_page
                 coverage["checkpoint_revision"] = revision
                 page = self._fetch(adapter, lease, query, cursor, request_size)
                 context.assert_active()
                 self._validate_page(query, cursor, request_size, page)
-                committed = context.commit_page(
+                committed = self._commit_page_with_recovery(
+                    context,
                     lease,
                     expected_revision=revision,
                     budget_limit=budget_limit,
                     source=lease.source,  # type: ignore[arg-type]
                     page=page,
                 )
-                coverage = cast(dict[str, Any], committed.coverage)
+                coverage = committed.coverage
                 checkpoint = committed.checkpoint
                 cursor = _cursor_from_json(checkpoint.cursor)
                 revision = checkpoint.revision
@@ -292,8 +332,43 @@ class CollectionJobHandler:
             return JobOutcome(status="cancelled", coverage=self._coverage_json(coverage))
         except LeaseLostError:
             raise
+        except RequestDeferredError as deferred:
+            return JobOutcome(
+                status="retry_wait",
+                coverage=self._coverage_json(coverage),
+                reason="source_cooldown",
+                retry_at=deferred.retry_at,
+            )
+        except PageRetryExhaustedError:
+            return self._failure_outcome(
+                coverage,
+                "http_retry_exhausted",
+                "A página consumiu cinco tentativas HTTP sem confirmação.",
+                reason="retry_exhausted",
+            )
+        except PersistenceRetriesExhaustedError:
+            coverage = self._read_coverage(context, lease)
+            return self._failure_outcome(
+                coverage,
+                "persistence_retry_exhausted",
+                "A página consumiu cinco tentativas transitórias de persistência.",
+                reason="persistence_retry_exhausted",
+            )
+        except DatabaseUnavailableError:
+            raise
         except SourceError as error:
-            return self._failure_outcome(coverage, error.code.value, error.message)
+            return self._source_error_outcome(context, lease, coverage, error)
+        except DBAPIError as error:
+            if is_transient_persistence_error(error):
+                raise DatabaseUnavailableError(
+                    "O estado da coleta não pôde ser confirmado no banco."
+                ) from error
+            coverage = self._read_coverage(context, lease)
+            return self._failure_outcome(
+                coverage,
+                "persistence_error",
+                "Falha SQL não transitória ao persistir a página.",
+            )
         except Exception:
             if context.ownership_lost.is_set():
                 raise LeaseLostError("A posse do job foi perdida durante a coleta.") from None
@@ -304,6 +379,169 @@ class CollectionJobHandler:
                 "persistence_error",
                 "Falha ao persistir a página da coleta.",
             )
+
+    def _source_error_outcome(
+        self,
+        context: JobExecutionContext,
+        lease: JobLease,
+        coverage: Mapping[str, Any],
+        error: SourceError,
+    ) -> JobOutcome:
+        if error.code is SourceErrorCode.CURSOR_INVALID:
+            return self._failure_outcome(
+                coverage,
+                error.code.value,
+                error.message,
+                reason="cursor_invalid",
+                cursor_invalid=True,
+            )
+        if not is_retryable_source_error(error):
+            return self._failure_outcome(coverage, error.code.value, error.message)
+
+        attempts = _int_field(
+            coverage.get("current_page_attempts", lease.page_attempt_count),
+            "current_page_attempts",
+        )
+        try:
+            now = self.clock() if self.clock is not None else context.database_now()
+        except DBAPIError as database_error:
+            if is_transient_persistence_error(database_error):
+                raise DatabaseUnavailableError(
+                    "O horário do próximo retry não pôde ser confirmado no banco."
+                ) from database_error
+            raise
+        retry_at = retry_deadline(
+            now,
+            attempt_number=max(1, min(attempts, MAX_HTTP_ATTEMPTS_PER_PAGE)),
+            retry_after=error.retry_after,
+            random_value=self.random_value,
+        )
+        if attempts >= MAX_HTTP_ATTEMPTS_PER_PAGE:
+            failure = self._failure_outcome(
+                coverage,
+                "source_retry_exhausted",
+                error.message,
+                reason="retry_exhausted",
+            )
+            if error.code is SourceErrorCode.RATE_LIMIT:
+                return JobOutcome(
+                    status=failure.status,
+                    coverage=failure.coverage,
+                    reason=failure.reason,
+                    error_code=failure.error_code,
+                    error_summary=failure.error_summary,
+                    source_cooldown_until=retry_at,
+                )
+            return failure
+        return JobOutcome(
+            status="retry_wait",
+            coverage=self._coverage_json(coverage),
+            reason="source_retry",
+            retry_at=retry_at,
+            error_code=error.code.value,
+            error_summary=error.message,
+            source_cooldown_until=retry_at if error.code is SourceErrorCode.RATE_LIMIT else None,
+        )
+
+    def _commit_page_with_recovery(
+        self,
+        context: JobExecutionContext,
+        lease: JobLease,
+        *,
+        expected_revision: int,
+        budget_limit: int,
+        source: Literal["datajud", "synthetic"],
+        page: SourcePage,
+    ) -> PageCommitState:
+        """Retry transient SQL failures and reconcile an ambiguous commit by revision."""
+
+        for persistence_attempt in range(1, MAX_PERSISTENCE_ATTEMPTS_PER_PAGE + 1):
+            try:
+                before = context.jobs.inspect(lease.job_id)
+            except DBAPIError as error:
+                if not is_transient_persistence_error(error):
+                    raise
+                if persistence_attempt == MAX_PERSISTENCE_ATTEMPTS_PER_PAGE:
+                    raise DatabaseUnavailableError(
+                        "O checkpoint não pôde ser consultado após falha SQL transitória."
+                    ) from error
+                LOGGER.warning(
+                    "page_commit_reconciliation_unavailable",
+                    extra={"event": "page_commit_reconciliation_unavailable"},
+                )
+                continue
+
+            if before.checkpoint.revision == expected_revision + 1:
+                if (
+                    before.coverage is None
+                    or before.coverage.get("checkpoint_revision") != expected_revision + 1
+                ):
+                    raise CheckpointRevisionConflict(
+                        "O checkpoint avançou sem cobertura correspondente."
+                    )
+                return PageCommitState(before.checkpoint, dict(before.coverage))
+            if before.checkpoint.revision != expected_revision:
+                raise CheckpointRevisionConflict(
+                    "A revisão do checkpoint mudou durante a confirmação do commit."
+                )
+
+            try:
+                context.record_persistence_attempt(
+                    lease,
+                    expected_revision=expected_revision,
+                )
+                committed = context.commit_page(
+                    lease,
+                    expected_revision=expected_revision,
+                    budget_limit=budget_limit,
+                    source=source,
+                    page=page,
+                )
+                return PageCommitState(
+                    committed.checkpoint,
+                    cast(dict[str, Any], committed.coverage),
+                )
+            except PersistenceRetriesExhaustedError:
+                raise
+            except DBAPIError as error:
+                if not is_transient_persistence_error(error):
+                    raise
+                LOGGER.warning(
+                    "page_commit_transient_failure",
+                    extra={
+                        "event": "page_commit_transient_failure",
+                        "attempt": persistence_attempt,
+                        "error_type": type(error).__name__,
+                    },
+                )
+                try:
+                    after = context.jobs.inspect(lease.job_id)
+                except DBAPIError as inspect_error:
+                    if not is_transient_persistence_error(inspect_error):
+                        raise
+                    if persistence_attempt == MAX_PERSISTENCE_ATTEMPTS_PER_PAGE:
+                        raise DatabaseUnavailableError(
+                            "O resultado do commit continua desconhecido."
+                        ) from inspect_error
+                    continue
+                if after.checkpoint.revision == expected_revision + 1:
+                    if (
+                        after.coverage is None
+                        or after.coverage.get("checkpoint_revision") != expected_revision + 1
+                    ):
+                        raise CheckpointRevisionConflict(
+                            "O checkpoint avançou sem cobertura correspondente."
+                        ) from error
+                    return PageCommitState(after.checkpoint, dict(after.coverage))
+                if after.checkpoint.revision != expected_revision:
+                    raise CheckpointRevisionConflict(
+                        "A revisão do checkpoint mudou durante a recuperação do commit."
+                    ) from error
+                if persistence_attempt == MAX_PERSISTENCE_ATTEMPTS_PER_PAGE:
+                    raise PersistenceRetriesExhaustedError(
+                        "A página consumiu cinco tentativas SQL transitórias."
+                    ) from error
+        raise PersistenceRetriesExhaustedError("As tentativas SQL da página foram esgotadas.")
 
     @staticmethod
     def _validate_job_query(lease: JobLease, query: SourceQuery) -> None:
@@ -427,6 +665,9 @@ class CollectionJobHandler:
         coverage: Mapping[str, Any],
         error_code: str,
         summary: str,
+        *,
+        reason: str | None = None,
+        cursor_invalid: bool = False,
     ) -> JobOutcome:
         final = dict(coverage)
         has_data = bool(final.get("has_persisted_data", False))
@@ -437,9 +678,13 @@ class CollectionJobHandler:
         return JobOutcome(
             status="failed",
             coverage=CollectionJobHandler._coverage_json(final),
-            reason="source_error" if error_code != "persistence_error" else "persistence_error",
+            reason=reason
+            or (
+                "persistence_error" if error_code.endswith("persistence_error") else "source_error"
+            ),
             error_code=error_code,
             error_summary=summary,
+            cursor_invalid=cursor_invalid,
         )
 
     @staticmethod
@@ -460,6 +705,10 @@ class CollectionJobHandler:
                 "unchanged": 0,
                 "quarantine_records": 0,
                 "http_attempts": 0,
+                "current_page_attempts": 0,
+                "last_page_http_attempts": 0,
+                "current_page_persistence_attempts": 0,
+                "last_page_persistence_attempts": 0,
                 "has_persisted_data": False,
             }
         if not isinstance(inspection.coverage, dict):

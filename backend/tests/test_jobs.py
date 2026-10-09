@@ -6,9 +6,9 @@ import logging
 import time
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from threading import Barrier, Event
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from alembic import command
@@ -48,6 +48,7 @@ EXPECTED_JOB_TABLES = {
     "representation_subjects",
     "representation_versions",
     "representations",
+    "source_rate_limits",
 }
 
 
@@ -107,6 +108,108 @@ def test_jobs_migration_upgrades_empty_and_spec006_database(scratch_database_url
 
         with Session(engine) as session:
             assert session.get(Collection, prior_collection_id) is not None
+    finally:
+        engine.dispose()
+
+
+def test_retry_migration_preserves_a_retry_wait_job_from_spec007(
+    scratch_database_url: URL,
+) -> None:
+    engine = make_engine(scratch_database_url.render_as_string(hide_password=False))
+    job_id = uuid4()
+    due_at = datetime.now(UTC) + timedelta(minutes=3)
+    try:
+        with engine.begin() as connection:
+            command.upgrade(make_alembic_config(connection), "20261009_0004")
+        with Session(engine) as session, session.begin():
+            from agrojud.services.ingestion import create_collection
+
+            collection = create_collection(
+                session,
+                mode="demo",
+                resolved_criteria={"criteria": "preserve retry wait"},
+            )
+            collection_id = collection.id
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO jobs (
+                        id, collection_id, job_type, mode, source, tribunal,
+                        operation_key, parameters_snapshot, status, available_at
+                    ) VALUES (
+                        :id, :collection_id, 'discovery', 'demo', 'synthetic', 'TJGO',
+                        :operation_key, CAST(:snapshot AS jsonb), 'retry_wait', :available_at
+                    )
+                    """
+                ),
+                {
+                    "id": job_id,
+                    "collection_id": collection_id,
+                    "operation_key": "a" * 64,
+                    "snapshot": '{"type":"discovery","parameters":{"page_size":100}}',
+                    "available_at": due_at,
+                },
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO job_checkpoints (
+                        id, job_id, cursor, next_page, revision, updated_at
+                    ) VALUES (
+                        :id, :job_id, CAST(:cursor AS jsonb), 3, 2, :updated_at
+                    )
+                    """
+                ),
+                {
+                    "id": uuid4(),
+                    "job_id": job_id,
+                    "cursor": '["2026-01-01T00:00:02Z"]',
+                    "updated_at": due_at,
+                },
+            )
+
+        with engine.begin() as connection:
+            upgrade_database(connection)
+            columns = {column["name"] for column in inspect(connection).get_columns("jobs")}
+            assert "next_attempt_at" in columns
+            assert "available_at" not in columns
+            row = (
+                connection.execute(
+                    text(
+                        """
+                    SELECT status, next_attempt_at, retry_cycle, page_attempt_count,
+                           persistence_attempt_count, recovery_count, cursor_invalid,
+                           predecessor_job_id
+                    FROM jobs WHERE id = :job_id
+                    """
+                    ),
+                    {"job_id": job_id},
+                )
+                .mappings()
+                .one()
+            )
+            assert row["status"] == "retry_wait"
+            assert row["next_attempt_at"] == due_at
+            assert row["retry_cycle"] == 1
+            assert row["page_attempt_count"] == 0
+            assert row["persistence_attempt_count"] == 0
+            assert row["recovery_count"] == 0
+            assert not row["cursor_invalid"]
+            assert row["predecessor_job_id"] is None
+            checkpoint = (
+                connection.execute(
+                    text(
+                        "SELECT cursor, next_page, revision FROM job_checkpoints WHERE job_id=:id"
+                    ),
+                    {"id": job_id},
+                )
+                .mappings()
+                .one()
+            )
+            assert checkpoint["cursor"] == ["2026-01-01T00:00:02Z"]
+            assert checkpoint["next_page"] == 3
+            assert checkpoint["revision"] == 2
     finally:
         engine.dispose()
 
@@ -445,7 +548,7 @@ def test_retry_wait_is_claimed_only_when_due_and_terminal_key_can_be_reused(
 
     with Session(migrated_engine) as session, session.begin():
         due_at = session.scalar(select(func.clock_timestamp() - text("interval '1 second'")))
-        session.execute(update(Job).where(Job.id == created.job_id).values(available_at=due_at))
+        session.execute(update(Job).where(Job.id == created.job_id).values(next_attempt_at=due_at))
     second_lease = jobs.claim("worker-retry-second")
     assert second_lease is not None
     assert second_lease.attempt_number == 2

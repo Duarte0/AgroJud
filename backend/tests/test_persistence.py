@@ -54,6 +54,7 @@ EXPECTED_TABLES = {
     "representation_subjects",
     "representation_versions",
     "representations",
+    "source_rate_limits",
 }
 
 

@@ -79,7 +79,7 @@ class DataJudSourceAdapter:
     ) -> SourcePage:
         normalized_cursor = validate_fetch_arguments(query, cursor, page_size)
         payload = build_datajud_payload(query, normalized_cursor, page_size)
-        return self._fetch_payload(payload, len(query.sort)).page
+        return self._fetch_payload(payload, len(query.sort), cursor_present=cursor is not None).page
 
     def fetch_probe_page(
         self,
@@ -100,12 +100,14 @@ class DataJudSourceAdapter:
                 {"id.keyword": {"order": "asc"}},
             ]
             expected_sort_count = 2
-        return self._fetch_payload(payload, expected_sort_count)
+        return self._fetch_payload(payload, expected_sort_count, cursor_present=cursor is not None)
 
     def _fetch_payload(
         self,
         payload: dict[str, object],
         expected_sort_count: int,
+        *,
+        cursor_present: bool = False,
     ) -> DataJudProbeResponse:
         try:
             response = self._client.post(
@@ -128,7 +130,7 @@ class DataJudSourceAdapter:
             self._log_failure(error)
             raise error from None
 
-        status_error = self._status_error(response)
+        status_error = self._status_error(response, cursor_present=cursor_present)
         if status_error is not None:
             self._log_failure(status_error)
             raise status_error
@@ -186,7 +188,11 @@ class DataJudSourceAdapter:
         self.close()
 
     @staticmethod
-    def _status_error(response: httpx.Response) -> SourceError | None:
+    def _status_error(
+        response: httpx.Response,
+        *,
+        cursor_present: bool = False,
+    ) -> SourceError | None:
         status = response.status_code
         if 200 <= status < 300:
             return None
@@ -213,6 +219,12 @@ class DataJudSourceAdapter:
                 retry_after=retry_after,
             )
         if status in (400, 422):
+            if cursor_present and DataJudSourceAdapter._explicitly_rejects_cursor(response):
+                return SourceError(
+                    SourceErrorCode.CURSOR_INVALID,
+                    "O DataJud rejeitou o cursor usado nesta coleta.",
+                    status_code=status,
+                )
             return SourceError(
                 SourceErrorCode.VALIDATION,
                 "O DataJud rejeitou os critérios da consulta.",
@@ -229,6 +241,17 @@ class DataJudSourceAdapter:
             "O DataJud respondeu com um status HTTP fora do contrato.",
             status_code=status,
         )
+
+    @staticmethod
+    def _explicitly_rejects_cursor(response: httpx.Response) -> bool:
+        """Classify cursor errors only when the source body names the cursor field."""
+
+        body = response.text[:4_096].casefold()
+        names_cursor = "search_after" in body or "cursor" in body
+        rejects_value = any(
+            marker in body for marker in ("invalid", "malformed", "expired", "invalido", "inválido")
+        )
+        return names_cursor and rejects_value
 
     @staticmethod
     def _log_failure(error: SourceError) -> None:

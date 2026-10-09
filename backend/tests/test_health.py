@@ -97,6 +97,7 @@ def test_ready_is_200_at_alembic_head_with_domain_tables(scratch_database_url: U
             "representation_subjects",
             "representation_versions",
             "representations",
+            "source_rate_limits",
         }
     finally:
         engine.dispose()
