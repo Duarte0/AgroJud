@@ -1,6 +1,6 @@
 # SPECs — AgroJud Radar
 
-Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001 e SPEC-002 foram concluídas em 08/10/2026. As sucessoras diretas de SPEC-002 estão READY; nenhuma foi implementada nesta entrega.
+Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e SPEC-003 foram concluídas em 08/10/2026. A execução remota da SPEC-003 ficou inconclusiva; isso não aprova S1/S2 nem habilita a fonte real.
 
 ## Como executar uma unidade
 
@@ -20,13 +20,13 @@ Uma SPEC contém objetivo, contexto, dependências, escopo, requisitos/contratos
 - **IN_PROGRESS:** execução iniciada.
 - **DONE:** todos os critérios desta unidade foram atendidos e registrados.
 
-SPEC-001 e SPEC-002 estão DONE. SPEC-003, SPEC-004, SPEC-005 e SPEC-010 estão READY porque sua dependência direta agora está entregue; READY autoriza iniciar cada unidade, sem validar capacidades externas. As demais seguem BLOCKED_DEPENDENCY. SPEC-003 continua responsável pela compatibilidade real, e SPEC-010 pelo catálogo versionado.
+SPEC-001, SPEC-002 e SPEC-003 estão DONE. SPEC-004, SPEC-005 e SPEC-010 estão READY porque suas dependências diretas estão entregues; READY autoriza iniciar cada unidade, sem validar capacidades externas. As demais seguem BLOCKED_DEPENDENCY. SPEC-003 entregou probe/testes/relatório; suas capacidades reais S1/S2 permanecem INCONCLUSIVE conforme a evidência registrada. SPEC-010 continua responsável pelo catálogo versionado.
 
 ### Dois controles distintos
 
 Status da SPEC mede a entrega da unidade. Capacidades externas têm estado VALIDATED, INCOMPATIBLE ou INCONCLUSIVE, com evidência e data.
 
-SPEC-003 pode entregar probe e relatório sem aprovar S1/S2. SPEC-010 pode entregar catálogo/investigação com itens inconclusivos sem aprovar S5 por completo. DONE nesses documentos não libera capacidades reais pendentes.
+SPEC-003 está DONE como unidade de implementação, mas todas as capacidades reais da matriz estão INCONCLUSIVE após timeout; S1/S2 seguem pendentes. SPEC-010 pode entregar catálogo/investigação com itens inconclusivos sem aprovar S5 por completo. DONE nesses documentos não libera capacidades reais pendentes.
 
 SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus critérios; isso não encerra os aceites reais. SPEC-020 exige os aceites reais pertinentes para DONE integral e fica BLOCKED_VALIDATION se faltar essa evidência. Nunca substituir erro externo por fonte sintética dentro de uma execução real.
 
@@ -36,7 +36,7 @@ SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus c
 | --- | --- | --- | --- |
 | [SPEC-001 — Fundação local](SPEC-001-fundacao-local.md) | M0 | Nenhuma | DONE |
 | [SPEC-002 — Contratos e adaptadores de fonte](SPEC-002-contratos-e-adaptadores-de-fonte.md) | M1 | [SPEC-001](SPEC-001-fundacao-local.md) | DONE |
-| [SPEC-003 — Validação DataJud/TJGO](SPEC-003-validacao-datajud-tjgo.md) | S1/S2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | READY |
+| [SPEC-003 — Validação DataJud/TJGO](SPEC-003-validacao-datajud-tjgo.md) | S1/S2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | DONE |
 | [SPEC-004 — Identidade e reconciliação](SPEC-004-identidade-e-reconciliacao.md) | S3 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | READY |
 | [SPEC-005 — Persistência de capas e payloads](SPEC-005-persistencia-de-capas-e-payloads.md) | M2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | READY |
 | [SPEC-006 — Movimentos e quarentena](SPEC-006-movimentos-e-quarentena.md) | M2 | [SPEC-004](SPEC-004-identidade-e-reconciliacao.md), [SPEC-005](SPEC-005-persistencia-de-capas-e-payloads.md) | BLOCKED_DEPENDENCY |

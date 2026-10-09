@@ -46,6 +46,19 @@ O seletor de fonte exige escolha explícita compatível com o ambiente: `demo` u
 
 O contrato e o transporte foram validados com HTTPX MockTransport. Isso não comprova o shape real dos hits, a correspondência histórica entre IDs, a ordenação composta ou a paginação do TJGO; esses pontos seguem sob SPEC-003.
 
+## Probe limitada DataJud/TJGO (SPEC-003)
+
+O comando `agrojud-datajud-probe` executa uma consulta diagnóstica sem gravar no banco de produto. Exige `AGROJUD_ENV=real` e `DATAJUD_API_KEY` no ambiente do backend. Faz até seis requisições, limita cada página a 100 hits, não repete automaticamente e grava um JSON sanitizado no caminho indicado. Por padrão consulta os últimos 365 dias; `--from-date` e `--to-date` definem outro intervalo semiaberto.
+
+Com `.env.real` configurado, monte a pasta de evidências para guardar o relatório no repositório:
+
+```sh
+mkdir -p docs/evidence
+docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm --no-deps -v "$PWD/docs/evidence:/evidence" api uv run --no-sync agrojud-datajud-probe --output /evidence/datajud-tjgo-validacao.json
+```
+
+Timeout ou indisponibilidade gera diagnóstico `INCONCLUSIVE`, nunca resultado vazio nem habilitação da fonte real. O comando só pesquisa por CNJ depois de observar o número em um hit público. A SPEC-003 registra a matriz e os limites atuais em [sua evidência](docs/evidence/datajud-tjgo-validacao-2026-10-08.json); o uso da API também permanece sujeito ao termo registrado no [PRD](PRD.md#2-decisões-e-premissas).
+
 ## Ambientes separados
 
 Crie `.env.real` a partir de `.env.real.example`, substitua os valores de exemplo por credenciais locais e escolha `API_PORT` disponível. Suba com um projeto Compose e um volume próprios:

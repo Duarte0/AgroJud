@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 import httpx
@@ -22,6 +23,14 @@ from agrojud.sources.contracts import (
 
 LOGGER = logging.getLogger(__name__)
 DATAJUD_TJGO_ENDPOINT = "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search"
+
+
+@dataclass(frozen=True, slots=True)
+class DataJudProbeResponse:
+    """One successful response with transport status for the validation report."""
+
+    page: SourcePage
+    status_code: int
 
 
 class DataJudSourceAdapter:
@@ -70,6 +79,34 @@ class DataJudSourceAdapter:
     ) -> SourcePage:
         normalized_cursor = validate_fetch_arguments(query, cursor, page_size)
         payload = build_datajud_payload(query, normalized_cursor, page_size)
+        return self._fetch_payload(payload, len(query.sort)).page
+
+    def fetch_probe_page(
+        self,
+        query: SourceQuery,
+        cursor: Cursor | None,
+        page_size: int,
+        *,
+        include_source_id_tiebreaker: bool = False,
+    ) -> DataJudProbeResponse:
+        """Fetch one allowlisted validation page using the documented or candidate sort."""
+
+        normalized_cursor = validate_fetch_arguments(query, cursor, page_size)
+        payload = build_datajud_payload(query, normalized_cursor, page_size)
+        expected_sort_count = len(query.sort)
+        if include_source_id_tiebreaker:
+            payload["sort"] = [
+                {"@timestamp": {"order": "asc"}},
+                {"id.keyword": {"order": "asc"}},
+            ]
+            expected_sort_count = 2
+        return self._fetch_payload(payload, expected_sort_count)
+
+    def _fetch_payload(
+        self,
+        payload: dict[str, object],
+        expected_sort_count: int,
+    ) -> DataJudProbeResponse:
         try:
             response = self._client.post(
                 DATAJUD_TJGO_ENDPOINT,
@@ -117,7 +154,7 @@ class DataJudSourceAdapter:
             )
             self._log_failure(error)
             raise error from None
-        if any(len(hit.sort_values) != len(query.sort) for hit in page.hits):
+        if any(len(hit.sort_values) != expected_sort_count for hit in page.hits):
             error = SourceError(
                 SourceErrorCode.CONTRACT,
                 "A resposta do DataJud não corresponde à ordenação solicitada.",
@@ -125,7 +162,7 @@ class DataJudSourceAdapter:
             )
             self._log_failure(error)
             raise error
-        return page
+        return DataJudProbeResponse(page=page, status_code=response.status_code)
 
     def fetch_by_case_number(
         self,

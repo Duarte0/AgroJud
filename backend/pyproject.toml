@@ -17,6 +17,7 @@ dependencies = [
 [project.scripts]
 agrojud-worker = "agrojud.worker:main"
 agrojud-persistence-probe = "agrojud.testing.persistence_probe:main"
+agrojud-datajud-probe = "agrojud.sources.datajud_validation:main"
 
 [dependency-groups]
 dev = [

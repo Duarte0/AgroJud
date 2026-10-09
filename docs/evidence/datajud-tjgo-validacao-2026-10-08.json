@@ -1,0 +1,149 @@
+{
+  "capabilities": {
+    "compound_sort": {
+      "evidence": {
+        "error_code": "NETWORK",
+        "http_status": null,
+        "reason": "A consulta ao DataJud expirou."
+      },
+      "state": "INCONCLUSIVE"
+    },
+    "envelope": {
+      "evidence": {
+        "error_code": "NETWORK",
+        "http_status": null,
+        "reason": "A consulta ao DataJud expirou."
+      },
+      "state": "INCONCLUSIVE"
+    },
+    "essential_fields": {
+      "evidence": {
+        "error_code": "NETWORK",
+        "http_status": null,
+        "reason": "A consulta ao DataJud expirou."
+      },
+      "state": "INCONCLUSIVE"
+    },
+    "filters": {
+      "evidence": {
+        "error_code": "NETWORK",
+        "http_status": null,
+        "reason": "A consulta ao DataJud expirou."
+      },
+      "state": "INCONCLUSIVE"
+    },
+    "pagination": {
+      "evidence": {
+        "error_code": "NETWORK",
+        "http_status": null,
+        "reason": "A consulta ao DataJud expirou."
+      },
+      "state": "INCONCLUSIVE"
+    },
+    "query_by_case_number": {
+      "evidence": {
+        "error_code": "NETWORK",
+        "http_status": null,
+        "reason": "A consulta ao DataJud expirou."
+      },
+      "state": "INCONCLUSIVE"
+    },
+    "sort_timestamp": {
+      "evidence": {
+        "error_code": "NETWORK",
+        "http_status": null,
+        "reason": "A consulta ao DataJud expirou."
+      },
+      "state": "INCONCLUSIVE"
+    },
+    "source_identity": {
+      "evidence": {
+        "error_code": "NETWORK",
+        "http_status": null,
+        "reason": "A consulta ao DataJud expirou."
+      },
+      "state": "INCONCLUSIVE"
+    }
+  },
+  "conclusion": "INCONCLUSIVE",
+  "duration_ms": 20187,
+  "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+  "planned_recorte_query": {
+    "query": {
+      "bool": {
+        "filter": [
+          {
+            "match": {
+              "tribunal": "TJGO"
+            }
+          },
+          {
+            "range": {
+              "dataAjuizamento": {
+                "gte": "2025-10-09",
+                "lt": "2026-10-09"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "size": 100,
+    "sort": [
+      {
+        "@timestamp": {
+          "order": "asc"
+        }
+      }
+    ]
+  },
+  "repeat_comparison": null,
+  "report_version": 1,
+  "request_budget": {
+    "automatic_retries": false,
+    "max_requests": 6,
+    "page_size": 100,
+    "writes_to_product_database": false
+  },
+  "requests": [
+    {
+      "diagnostic": "A consulta ao DataJud expirou.",
+      "duration_ms": 20187,
+      "error_code": "NETWORK",
+      "http_status": null,
+      "name": "recorte_timestamp_pagina_1",
+      "outcome": "ERROR",
+      "query": {
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "match": {
+                  "tribunal": "TJGO"
+                }
+              },
+              {
+                "range": {
+                  "dataAjuizamento": {
+                    "gte": "2025-10-09",
+                    "lt": "2026-10-09"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "size": 100,
+        "sort": [
+          {
+            "@timestamp": {
+              "order": "asc"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "requests_made": 1,
+  "started_at": "2026-10-09T02:55:32.740602+00:00"
+}

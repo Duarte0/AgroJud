@@ -2,7 +2,7 @@
 
 Data: 08/10/2026.
 
-Status: M0 concluído em 08/10/2026. A unidade SPEC-002 de M1 foi concluída em 08/10/2026; M1 segue parcial até o catálogo da SPEC-010 e a evidência S1/S2 da SPEC-003.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. M1 segue parcial até o catálogo da SPEC-010 e evidência externa S1/S2, que permanece INCONCLUSIVE.
 
 ## 1. Estado atual e orientação
 
@@ -26,6 +26,12 @@ Estado após a implementação de SPEC-002, confirmado em 08/10/2026:
 - Testes HTTP usam MockTransport; fixtures e payload bruto são locais e sintéticos. API e worker ainda não iniciam consultas nem persistem resultados.
 - O ambiente demo seleciona somente fonte sintética; o ambiente real seleciona somente DataJud e exige `DATAJUD_API_KEY`; teste exige transporte simulado. Não há fallback entre fontes.
 - Nenhuma chamada real ao CNJ foi executada. Shape do TJGO, identidade de origem e paginação permanecem sem validação externa em SPEC-003; catálogo e presets seguem com SPEC-010.
+
+Estado após a implementação de SPEC-003, confirmado em 08/10/2026:
+
+- `agrojud-datajud-probe` limita cada execução a seis requisições, cem hits por página e nenhuma repetição automática; escreve relatório sanitizado e não acessa o banco de produto.
+- A execução real ao endpoint TJGO expirou após 20.187 ms na primeira requisição, sem status HTTP. O relatório em `docs/evidence/datajud-tjgo-validacao-2026-10-08.json` mantém envelope, campos, filtros, identidade, consultas, sort e paginação como INCONCLUSIVE. Nenhuma capacidade real foi aprovada ou habilitada.
+- SPEC-003 está DONE para ferramenta, testes e relatório. S1/S2 continuam pendentes; não repetir a probe sem novo motivo. SPEC-010 ainda entrega catálogo e presets.
 
 A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 prova a base local e persistência; as próximas etapas introduzirão adaptadores e processamento conforme suas SPECs.
 
@@ -132,7 +138,7 @@ Regras para os spikes:
 
 **Dependência:** M0.
 
-**Status em 08/10/2026:** parcial. SPEC-002 está DONE para contratos e adaptadores locais; o milestone não está concluído. SPEC-010 ainda entrega o catálogo e SPEC-003 mantém os aceites externos S1/S2.
+**Status em 08/10/2026:** parcial. SPEC-002 está DONE para contratos/adaptadores e SPEC-003 está DONE para probe/testes/relatório. O milestone não está concluído: SPEC-010 ainda entrega o catálogo e os aceites externos S1/S2 da SPEC-003 permanecem INCONCLUSIVE.
 
 **Implementar:**
 
@@ -141,11 +147,13 @@ Regras para os spikes:
 - DTOs tolerantes a campos opcionais, com validação dos campos essenciais.
 - Categorias de erro: consulta inválida, autenticação, limite remoto, rede, indisponibilidade e contrato inesperado.
 - Catálogo versionado de presets; itens não validados permanecem desativados no modo real.
-- Ferramenta limitada de diagnóstico para S1/S2.
+- Ferramenta limitada de diagnóstico para S1/S2 (`agrojud-datajud-probe`, entregue na SPEC-003).
 
 **Entregue pela SPEC-002:** consulta imutável TJGO com filtros allowlisted e intervalo semiaberto; busca exata por CNJ; DTOs que preservam hit bruto, metadados, sort e cursor; erros tipados; HTTPX síncrono com timeouts 5/20/20/5 segundos, redirects desativados e sem retry; fixtures sintéticas explícitas e mutáveis entre execuções; isolamento de fonte por ambiente.
 
-**Pendências mantidas nas unidades próprias:** catálogo e estados de habilitação em SPEC-010; probe, validação de campos/IDs e evidência de sort/paginação real em SPEC-003. A conclusão local de SPEC-002 não habilita coleta real.
+**Pendências mantidas nas unidades próprias:** catálogo e estados de habilitação em SPEC-010; a execução remota, validação observada de campos/IDs e evidência de sort/paginação real continuam pendentes na matriz da SPEC-003. O probe está entregue, mas sua chamada real expirou antes de receber resposta; nenhuma capacidade foi habilitada.
+
+**Evidência da SPEC-003:** 66 testes passaram, com Ruff, formatação e mypy aprovados. Os testes HTTP usam MockTransport. Uma chamada remota limitada expirou em 20.187 ms sem status HTTP; consulta, orçamento, duração e matriz estão em `docs/evidence/datajud-tjgo-validacao-2026-10-08.json`. O timeout é indisponibilidade, não consulta vazia. Assim, S1/S2 continuam pendentes e não liberam coleta real.
 
 **Concluir quando:**
 
