@@ -2,7 +2,7 @@
 
 Data: 08/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 foi concluída localmente em 09/10/2026. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 foi concluída localmente em 09/10/2026. SPEC-005 entregou a primeira parte de M2 em 09/10/2026; movimentos e quarentena permanecem na SPEC-006. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
 
 ## 1. Estado atual e orientação
 
@@ -41,7 +41,14 @@ Estado após a implementação de SPEC-004/S3, confirmado em 09/10/2026:
 - Fixtures sintéticas e decisão estão em `backend/tests/fixtures/occurrence_reconciliation.json` e `docs/decisions/S3-identidade-e-reconciliacao.md`. Não houve schema, migration, persistência nem chamada ao DataJud.
 - Ruff, formatação, mypy e 92 testes passaram em container Python 3.14.8. A imagem de produção API/worker foi construída e importou os novos módulos; evidência integral em [SPEC-004](specs/SPEC-004-identidade-e-reconciliacao.md). Isso comprova o algoritmo local, não a forma ou estabilidade de movimentos reais.
 
-A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 prova a base local e persistência; as próximas etapas introduzirão adaptadores e processamento conforme suas SPECs.
+Estado após a implementação de SPEC-005, confirmado em 09/10/2026:
+
+- A migration `20261009_0002` adiciona processos, representações, versões de payload, coletas, observações, resultados e assuntos pesquisáveis. Aplicou em PostgreSQL vazio e após a revisão SPEC-001.
+- `agrojud.services.ingestion.ingest_page` persiste páginas sem HTTP ou commit próprio, com savepoint, identidade de origem estável, hash canônico, replay idempotente e detecção de conflito/colisão. A representação aponta para sua versão local mais recente e registra regressões de data de ajuizamento separadamente.
+- Ruff, formatação, mypy e os 104 testes passaram em PostgreSQL de teste isolado. Configurações Compose demo/real/test e build de produção API/worker passaram; evidência e contagens de replay/rollback em [SPEC-005](specs/SPEC-005-persistencia-de-capas-e-payloads.md).
+- A validação usa somente fixtures sintéticas; nenhuma chamada ao DataJud ou acesso ao banco operacional ocorreu. M2 continua parcialmente aberto para movimentos e quarentena, que pertencem à SPEC-006. Jobs, checkpoints, API e frontend não foram antecipados.
+
+A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 estabelece a fundação local; SPEC-005 entrega a primeira parte de M2; as próximas etapas introduzirão processamento conforme suas SPECs.
 
 Cada etapa deverá registrar comandos executados, resultados, limitações e evidências. Implementação local, integração real e prontidão para uso profissional são conclusões distintas. Nenhuma etapa de aplicação deve ser considerada concluída pela existência deste documento.
 
@@ -178,10 +185,10 @@ Regras para os spikes:
 
 **Dependência:** M1; S3 para política de movimentos.
 
-**Implementar em duas entregas:**
+**Entregas:**
 
-1. Processo, representação, versão de payload e observação de coleta.
-2. Movimentos normalizados, associação à versão e quarentena.
+1. [x] Processo, representação, versão de payload, coleta, observação e resultado — entregue pela SPEC-005.
+2. [ ] Movimentos normalizados, associação à versão e quarentena — permanece sob SPEC-006.
 
 **Política de identidade:**
 
@@ -204,6 +211,8 @@ Regras para os spikes:
 - Migration funciona em banco vazio e no banco da etapa anterior.
 
 **Demonstração:** ingerir, repetir e comparar contagens e versões.
+
+SPEC-005 conclui somente a primeira entrega. M2 permanece aberto até a conclusão independente da SPEC-006.
 
 ### M3 — Fila persistente e posse do job
 

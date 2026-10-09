@@ -61,7 +61,7 @@ def test_ready_reports_pending_migration_without_writing(scratch_database_url: U
         engine.dispose()
 
 
-def test_ready_is_200_at_alembic_head_without_domain_tables(scratch_database_url: URL) -> None:
+def test_ready_is_200_at_alembic_head_with_domain_tables(scratch_database_url: URL) -> None:
     settings = Settings(
         environment="test",
         database_url="postgresql+psycopg://agrojud:secret@localhost:5432/agrojud_demo",
@@ -79,7 +79,16 @@ def test_ready_is_200_at_alembic_head_without_domain_tables(scratch_database_url
             "status": "ready",
             "checks": {"database": "ok", "migrations": "ok"},
         }
-        assert inspect(engine).get_table_names() == ["alembic_version"]
+        assert set(inspect(engine).get_table_names()) == {
+            "alembic_version",
+            "collection_observations",
+            "collection_results",
+            "collections",
+            "processes",
+            "representation_subjects",
+            "representation_versions",
+            "representations",
+        }
     finally:
         engine.dispose()
 
