@@ -197,6 +197,8 @@ def reconcile_snapshot(
     representation: RepresentationRef,
     movements: Iterable[NormalizedMovement],
     history: OccurrenceHistory | None = None,
+    *,
+    algorithm_version: str | None = None,
 ) -> ReconciliationResult:
     """Reconcile a complete snapshot as a multiset against retained history.
 
@@ -206,16 +208,20 @@ def reconcile_snapshot(
     """
 
     current_movements = tuple(movements)
-    algorithm_version = (
-        current_movements[0].algorithm_version if current_movements else NORMALIZER_VERSION
+    selected_version = (
+        algorithm_version
+        if algorithm_version is not None
+        else current_movements[0].algorithm_version
+        if current_movements
+        else NORMALIZER_VERSION
     )
-    if any(item.algorithm_version != algorithm_version for item in current_movements):
+    if any(item.algorithm_version != selected_version for item in current_movements):
         raise NormalizerVersionMismatch("Um snapshot não pode misturar versões do normalizador.")
 
-    previous = history or OccurrenceHistory(representation, algorithm_version)
+    previous = history or OccurrenceHistory(representation, selected_version)
     if previous.representation != representation:
         raise ValueError("O histórico pertence a outra representação.")
-    if previous.algorithm_version != algorithm_version:
+    if previous.algorithm_version != selected_version:
         raise NormalizerVersionMismatch(
             "A comparação exige reprocessamento explícito com uma única versão do normalizador."
         )
@@ -223,7 +229,7 @@ def reconcile_snapshot(
     historical_by_identity: dict[OccurrenceIdentity, ObservedOccurrence] = {}
     historical_content_by_hash: dict[str, bytes] = {}
     for occurrence in previous.occurrences:
-        _validate_occurrence(occurrence, representation, algorithm_version)
+        _validate_occurrence(occurrence, representation, selected_version)
         existing = historical_by_identity.get(occurrence.identity)
         if existing is not None:
             raise ValueError("O histórico contém uma identidade repetida.")
@@ -237,7 +243,7 @@ def reconcile_snapshot(
     counts: Counter[str] = Counter()
     current_by_hash: dict[str, NormalizedMovement] = {}
     for movement in current_movements:
-        _validate_movement(movement, algorithm_version)
+        _validate_movement(movement, selected_version)
         _check_digest_content(
             historical_content_by_hash, movement.content_sha256, movement.canonical_content
         )
@@ -333,7 +339,7 @@ def reconcile_snapshot(
     updated_records.update(current_by_identity)
     updated_history = OccurrenceHistory(
         representation=representation,
-        algorithm_version=algorithm_version,
+        algorithm_version=selected_version,
         occurrences=tuple(updated_records[key] for key in sorted(updated_records)),
     )
     return ReconciliationResult(tuple(observations), tuple(alterations), updated_history)

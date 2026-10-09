@@ -14,6 +14,7 @@ from agrojud.db.models import (
     CollectionObservation,
     CollectionResult,
     Process,
+    QuarantineRejection,
     Representation,
     RepresentationSubject,
     RepresentationVersion,
@@ -263,16 +264,19 @@ class CollectionRepository:
         ).scalar_one_or_none()
 
     def page_ordinals(self, collection_id: UUID, page_key: str) -> tuple[int, ...]:
-        return tuple(
-            self.session.scalars(
-                select(CollectionObservation.hit_ordinal)
-                .where(
-                    CollectionObservation.collection_id == collection_id,
-                    CollectionObservation.page_key == page_key,
-                )
-                .order_by(CollectionObservation.hit_ordinal)
-            ).all()
-        )
+        observations = self.session.scalars(
+            select(CollectionObservation.hit_ordinal).where(
+                CollectionObservation.collection_id == collection_id,
+                CollectionObservation.page_key == page_key,
+            )
+        ).all()
+        rejections = self.session.scalars(
+            select(QuarantineRejection.hit_ordinal).where(
+                QuarantineRejection.collection_id == collection_id,
+                QuarantineRejection.page_key == page_key,
+            )
+        ).all()
+        return tuple(sorted(set(observations).union(rejections)))
 
 
 class ObservationRepository:

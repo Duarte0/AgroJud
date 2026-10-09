@@ -38,12 +38,16 @@ class SourceError(Exception):
         *,
         status_code: int | None = None,
         retry_after: str | None = None,
+        field_path: str | None = None,
+        validation_code: str | None = None,
     ) -> None:
         super().__init__(message)
         self.code = code
         self.message = message
         self.status_code = status_code
         self.retry_after = retry_after
+        self.field_path = field_path
+        self.validation_code = validation_code
 
     def __str__(self) -> str:
         return self.message
@@ -367,22 +371,33 @@ def normalize_source_cover(hit: SourceHit) -> NormalizedSourceCover:
     source = hit.source
     if not isinstance(source, Mapping):
         raise SourceError(
-            SourceErrorCode.VALIDATION, "O payload do hit não contém uma capa em objeto."
+            SourceErrorCode.VALIDATION,
+            "O payload do hit não contém uma capa em objeto.",
+            field_path="_source",
+            validation_code="COVER_NOT_OBJECT",
         )
 
     source_id = source.get("id")
     if not isinstance(source_id, str) or not source_id.strip():
         raise SourceError(
-            SourceErrorCode.VALIDATION, "A capa não contém identificador de origem textual."
+            SourceErrorCode.VALIDATION,
+            "A capa não contém identificador de origem textual.",
+            field_path="_source.id",
+            validation_code="SOURCE_ID_INVALID",
         )
     if not isinstance(hit.source_id, str) or not hit.source_id.strip():
         raise SourceError(
-            SourceErrorCode.VALIDATION, "O hit não contém identificador de origem textual."
+            SourceErrorCode.VALIDATION,
+            "O hit não contém identificador de origem textual.",
+            field_path="_id",
+            validation_code="HIT_SOURCE_ID_INVALID",
         )
     if source_id != hit.source_id:
         raise SourceError(
             SourceErrorCode.VALIDATION,
             "Os identificadores do hit e da capa divergem; a representação foi rejeitada.",
+            field_path="_source.id",
+            validation_code="SOURCE_ID_MISMATCH",
         )
 
     process_number = source.get("numeroProcesso")
@@ -390,9 +405,16 @@ def normalize_source_cover(hit: SourceHit) -> NormalizedSourceCover:
         raise SourceError(
             SourceErrorCode.VALIDATION,
             "A capa não contém número CNJ com exatamente 20 dígitos.",
+            field_path="_source.numeroProcesso",
+            validation_code="CNJ_INVALID",
         )
     if source.get("tribunal") != "TJGO":
-        raise SourceError(SourceErrorCode.VALIDATION, "A capa não pertence ao tribunal TJGO.")
+        raise SourceError(
+            SourceErrorCode.VALIDATION,
+            "A capa não pertence ao tribunal TJGO.",
+            field_path="_source.tribunal",
+            validation_code="TRIBUNAL_INVALID",
+        )
 
     raw_source = copy_json(dict(source))
     if not isinstance(raw_source, dict):  # pragma: no cover - source is already a mapping

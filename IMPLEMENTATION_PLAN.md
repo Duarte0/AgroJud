@@ -2,7 +2,7 @@
 
 Data: 08/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 foi concluída localmente em 09/10/2026. SPEC-005 entregou a primeira parte de M2 em 09/10/2026; movimentos e quarentena permanecem na SPEC-006. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. Uma amostra manual confirmou acesso e envelope; M1 segue parcial até o catálogo da SPEC-010 e a validação externa restante de S1/S2.
 
 ## 1. Estado atual e orientação
 
@@ -48,7 +48,15 @@ Estado após a implementação de SPEC-005, confirmado em 09/10/2026:
 - Ruff, formatação, mypy e os 104 testes passaram em PostgreSQL de teste isolado. Configurações Compose demo/real/test e build de produção API/worker passaram; evidência e contagens de replay/rollback em [SPEC-005](specs/SPEC-005-persistencia-de-capas-e-payloads.md).
 - A validação usa somente fixtures sintéticas; nenhuma chamada ao DataJud ou acesso ao banco operacional ocorreu. M2 continua parcialmente aberto para movimentos e quarentena, que pertencem à SPEC-006. Jobs, checkpoints, API e frontend não foram antecipados.
 
-A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 estabelece a fundação local; SPEC-005 entrega a primeira parte de M2; as próximas etapas introduzirão processamento conforme suas SPECs.
+Estado após a implementação de SPEC-006, confirmado em 09/10/2026:
+
+- A migration `20261009_0003` adiciona ocorrências versionadas por representação e multiplicidade, snapshots de normalização associados a versões de payload, presença/comparação por snapshot, rejeições localizadas e histórico de resolução.
+- `ingest_page` grava capas, ocorrências e rejeições na mesma transação de página. Listas ausentes, `null`, inválidas ou parcialmente rejeitadas ficam incompletas; lista vazia explícita é válida. Reordenação não muda identidades e ausência em snapshot incompleto não é registrada como desaparecimento.
+- `agrojud-quarantine-reprocess` exige IDs explícitos, abre uma transação por hit e usa apenas conteúdo local. Resolução é auditada sem reescrever a observação nem o resultado original da coleta; ocorrências derivadas preservam a primeira observação original e snapshots guardam o horário do reprocessamento.
+- Ruff, formatação, mypy e 126 testes passaram em PostgreSQL 18.6 isolado. As migrations foram aplicadas em banco vazio e sobre revisões anteriores; Compose demo/real/test e build da imagem API/worker passaram. Evidência completa em [SPEC-006](specs/SPEC-006-movimentos-e-quarentena.md).
+- A validação usa somente fixtures sintéticas; nenhuma chamada ao DataJud ou acesso ao banco operacional ocorreu. SPEC-007, API, frontend, checkpoint e baseline não foram antecipados.
+
+A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 estabelece a fundação local; SPEC-005 e SPEC-006 completam M2; as próximas etapas introduzirão processamento conforme suas SPECs.
 
 Cada etapa deverá registrar comandos executados, resultados, limitações e evidências. Implementação local, integração real e prontidão para uso profissional são conclusões distintas. Nenhuma etapa de aplicação deve ser considerada concluída pela existência deste documento.
 
@@ -188,7 +196,7 @@ Regras para os spikes:
 **Entregas:**
 
 1. [x] Processo, representação, versão de payload, coleta, observação e resultado — entregue pela SPEC-005.
-2. [ ] Movimentos normalizados, associação à versão e quarentena — permanece sob SPEC-006.
+2. [x] Movimentos normalizados, associação à versão e quarentena — entregue pela SPEC-006.
 
 **Política de identidade:**
 
@@ -212,7 +220,7 @@ Regras para os spikes:
 
 **Demonstração:** ingerir, repetir e comparar contagens e versões.
 
-SPEC-005 conclui somente a primeira entrega. M2 permanece aberto até a conclusão independente da SPEC-006.
+SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram validados com fixtures sintéticas; isso não valida movimentos reais do DataJud.
 
 ### M3 — Fila persistente e posse do job
 
@@ -459,7 +467,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [ ] S2 — Paginação real verificada.
 - [x] S3 — Reconciliação documentada e testada (SPEC-004 DONE; fixtures sintéticas, sem validação da fonte real).
 - [ ] M1 — Adaptadores e erros tipados.
-- [ ] M2 — Persistência de página idempotente.
+- [x] M2 — Persistência de página idempotente (SPEC-005 e SPEC-006 concluídas localmente).
 - [ ] M3 — Fila, lease e posse.
 - [ ] S4 — Atomicidade e recuperação comprovadas.
 - [ ] M4 — Coleta recuperável demonstrada.

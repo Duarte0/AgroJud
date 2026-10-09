@@ -15,3 +15,15 @@ class PayloadHashCollisionError(ValueError):
 
 class CollectionNotFoundError(LookupError):
     """A page was submitted for a collection that is not persisted."""
+
+
+class QuarantinePositionConflict(ValueError):
+    """A quarantined page position was replayed with different raw content."""
+
+
+class QuarantineRejectionNotFoundError(LookupError):
+    """An explicitly requested quarantine identifier does not exist."""
+
+
+class MovementHashCollisionError(ValueError):
+    """One normalized movement fingerprint was claimed by incompatible content."""

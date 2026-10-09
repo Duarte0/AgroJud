@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal, cast
@@ -15,9 +15,11 @@ from agrojud.db.models import (
     Collection,
     CollectionObservation,
     Process,
+    QuarantineRejection,
     Representation,
     RepresentationVersion,
 )
+from agrojud.db.movement_repositories import QuarantineRepository
 from agrojud.db.repositories import (
     CollectionRepository,
     ObservationRepository,
@@ -32,7 +34,15 @@ from agrojud.domain.persistence import (
     PayloadHashCollisionError,
     SourceIdentityConflict,
 )
-from agrojud.sources.contracts import SourceHit, SourcePage, copy_json, normalize_source_cover
+from agrojud.services.movement_ingestion import persist_movement_snapshot
+from agrojud.sources.contracts import (
+    SourceError,
+    SourceErrorCode,
+    SourceHit,
+    SourcePage,
+    copy_json,
+    normalize_source_cover,
+)
 
 NORMALIZER_VERSION = "cover-normalizer-v1"
 _COMPACT_TIMESTAMP = re.compile(r"^\d{14}$")
@@ -73,6 +83,15 @@ class IngestPageResult:
     observation_ids: tuple[UUID, ...]
     versions: tuple[IngestedVersion, ...]
     date_regressions: tuple[SourceDateRegression, ...]
+    quarantine_ids: tuple[UUID, ...]
+    incomplete_representation_ids: tuple[UUID, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _RecordIssue:
+    error_path: str
+    validation_code: str
+    normalizer_version: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +113,13 @@ class _PreparedHit:
     source_updated_at: datetime | None
     source_updated_at_timezone_ambiguous: bool
     subjects: tuple[tuple[str | None, str | None], ...]
+    raw_hit: dict[str, JSONValue]
+
+
+@dataclass(frozen=True, slots=True)
+class _RejectedHit:
+    raw_hit: dict[str, JSONValue]
+    issue: _RecordIssue
 
 
 def create_collection(
@@ -145,9 +171,12 @@ def ingest_page(
     process_repository = ProcessRepository(session)
     representation_repository = RepresentationRepository(session)
     version_repository = VersionRepository(session)
+    quarantine_repository = QuarantineRepository(session)
 
     observation_ids: list[UUID] = []
     representation_ids: list[UUID] = []
+    quarantine_ids: list[UUID] = []
+    incomplete_representation_ids: list[UUID] = []
     version_by_id: dict[UUID, IngestedVersion] = {}
     first_outcome_by_representation: dict[UUID, CaptureOutcome] = {}
     regressions: list[SourceDateRegression] = []
@@ -168,6 +197,34 @@ def ingest_page(
 
         for hit_ordinal, prepared in enumerate(prepared_hits, start=1):
             existing = observation_repository.by_position(collection_id, page_key, hit_ordinal)
+            existing_rejections = quarantine_repository.by_position(
+                collection_id, page_key, hit_ordinal
+            )
+            raw_hit = prepared.raw_hit
+
+            if existing_rejections:
+                _assert_quarantine_replay_matches(existing_rejections, raw_hit)
+            if existing is None and existing_rejections:
+                quarantine_ids.extend(item.id for item in existing_rejections)
+                continue
+            if isinstance(prepared, _RejectedHit):
+                if existing is not None:
+                    raise ObservationPositionConflict(
+                        "A posição já persistida como observação não pode virar rejeição."
+                    )
+                rejection = quarantine_repository.create_or_get(
+                    collection_id=collection_id,
+                    page_key=page_key,
+                    hit_ordinal=hit_ordinal,
+                    error_path=prepared.issue.error_path,
+                    raw_hit=prepared.raw_hit,
+                    validation_code=prepared.issue.validation_code,
+                    normalizer_version=prepared.issue.normalizer_version,
+                    observed_at=observed_at,
+                )
+                quarantine_ids.append(rejection.id)
+                continue
+
             outcome: CaptureOutcome
             if existing is not None:
                 observation, representation, process, version = existing
@@ -317,6 +374,29 @@ def ingest_page(
                         )
                     )
 
+            movement_snapshot = persist_movement_snapshot(
+                session,
+                representation_id=representation.id,
+                version_id=version.id,
+                raw_source=prepared.raw_payload,
+                observed_at=observed_at,
+            )
+            for issue in movement_snapshot.issues:
+                rejection = quarantine_repository.create_or_get(
+                    collection_id=collection_id,
+                    page_key=page_key,
+                    hit_ordinal=hit_ordinal,
+                    error_path=issue.error_path,
+                    raw_hit=raw_hit,
+                    validation_code=issue.validation_code,
+                    normalizer_version=movement_snapshot.snapshot.normalizer_version,
+                    observed_at=observed_at,
+                )
+                quarantine_ids.append(rejection.id)
+            if not movement_snapshot.snapshot.is_complete:
+                if representation.id not in incomplete_representation_ids:
+                    incomplete_representation_ids.append(representation.id)
+
             observation_ids.append(observation_id)
             if representation_id not in first_outcome_by_representation:
                 representation_ids.append(representation_id)
@@ -343,11 +423,31 @@ def ingest_page(
         observation_ids=tuple(observation_ids),
         versions=tuple(version_by_id.values()),
         date_regressions=tuple(regressions),
+        quarantine_ids=tuple(dict.fromkeys(quarantine_ids)),
+        incomplete_representation_ids=tuple(incomplete_representation_ids),
     )
 
 
-def _prepare_hit(hit: SourceHit) -> _PreparedHit:
-    cover = normalize_source_cover(hit)
+def _prepare_hit(hit: SourceHit) -> _PreparedHit | _RejectedHit:
+    raw_hit = _serialize_source_hit(hit)
+    try:
+        cover = normalize_source_cover(hit)
+    except SourceError as error:
+        if error.code != SourceErrorCode.VALIDATION:
+            raise
+        if error.field_path is None or error.validation_code is None:
+            raise RuntimeError(
+                "A validação da capa não informou caminho e código estáveis."
+            ) from error
+        return _RejectedHit(
+            raw_hit=raw_hit,
+            issue=_RecordIssue(
+                error_path=error.field_path,
+                validation_code=error.validation_code,
+                normalizer_version=NORMALIZER_VERSION,
+            ),
+        )
+
     copied_payload = copy_json(dict(cover.raw_source))
     if not isinstance(copied_payload, dict):  # pragma: no cover - normalized source is an object
         raise ValueError("O payload bruto da capa precisa ser um objeto JSON.")
@@ -386,7 +486,29 @@ def _prepare_hit(hit: SourceHit) -> _PreparedHit:
         source_updated_at=updated_parsed,
         source_updated_at_timezone_ambiguous=_has_ambiguous_timezone(updated_original),
         subjects=tuple(subjects),
+        raw_hit=raw_hit,
     )
+
+
+def _serialize_source_hit(hit: SourceHit) -> dict[str, JSONValue]:
+    raw_hit = {
+        "source_id": copy_json(hit.source_id),
+        "source": copy_json(hit.source),
+        "sort_values": copy_json(list(hit.sort_values)),
+        "raw": copy_json(dict(hit.raw)),
+    }
+    return raw_hit
+
+
+def _assert_quarantine_replay_matches(
+    rejections: Sequence[QuarantineRejection], raw_hit: dict[str, JSONValue]
+) -> None:
+    expected = canonical_json_bytes(raw_hit)
+    for rejection in rejections:
+        if canonical_json_bytes(cast(JSONValue, rejection.raw_hit)) != expected:
+            raise ObservationPositionConflict(
+                "A posição da página já foi rejeitada com outro conteúdo bruto."
+            )
 
 
 def _object_field(source: Mapping[str, JSONValue], name: str) -> Mapping[str, JSONValue]:

@@ -298,3 +298,221 @@ class CollectionResult(Base):
     first_observation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
     included_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     capture_outcome: Mapped[str] = mapped_column(String(12), nullable=False)
+
+
+class MovementOccurrence(Base):
+    """One immutable movement identity and multiplicity for a representation."""
+
+    __tablename__ = "movement_occurrences"
+    __table_args__ = (
+        UniqueConstraint(
+            "representation_id",
+            "normalizer_version",
+            "content_sha256",
+            "multiplicity_ordinal",
+            name="uq_movement_occurrences_identity",
+        ),
+        UniqueConstraint(
+            "id", "representation_id", name="uq_movement_occurrences_id_representation"
+        ),
+        CheckConstraint(
+            "content_sha256 ~ '^[0-9a-f]{64}$'", name="ck_movement_occurrences_hash_hex"
+        ),
+        CheckConstraint(
+            "length(btrim(normalizer_version)) > 0",
+            name="ck_movement_occurrences_normalizer_nonempty",
+        ),
+        CheckConstraint(
+            "multiplicity_ordinal >= 1", name="ck_movement_occurrences_ordinal_positive"
+        ),
+        CheckConstraint(
+            "source_date_status in "
+            "('missing', 'null', 'timezone_aware', 'timezone_ambiguous', 'unparseable')",
+            name="ck_movement_occurrences_date_status",
+        ),
+        Index(
+            "ix_movement_occurrences_representation_date",
+            "representation_id",
+            "source_date_normalized",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    representation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey("representations.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    normalizer_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    multiplicity_ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    raw_movement: Mapped[Any] = mapped_column(JSONB, nullable=False)
+    normalized_content: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    auxiliary_key: Mapped[str | None] = mapped_column(Text)
+    source_date_present: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    source_date_original: Mapped[Any | None] = mapped_column(JSONB)
+    source_date_status: Mapped[str] = mapped_column(String(24), nullable=False)
+    source_date_normalized: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    first_observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class MovementSnapshot(Base):
+    """Completeness and normalization result for one payload version and algorithm."""
+
+    __tablename__ = "movement_snapshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "version_id", "normalizer_version", name="uq_movement_snapshots_version_normalizer"
+        ),
+        UniqueConstraint("id", "representation_id", name="uq_movement_snapshots_id_representation"),
+        CheckConstraint(
+            "length(btrim(normalizer_version)) > 0",
+            name="ck_movement_snapshots_normalizer_nonempty",
+        ),
+        CheckConstraint(
+            "rejection_count >= 0", name="ck_movement_snapshots_rejections_nonnegative"
+        ),
+        CheckConstraint(
+            "is_complete = (rejection_count = 0)",
+            name="ck_movement_snapshots_completeness_consistent",
+        ),
+        CheckConstraint("result_sha256 ~ '^[0-9a-f]{64}$'", name="ck_movement_snapshots_hash_hex"),
+        ForeignKeyConstraint(
+            ["representation_id", "version_id"],
+            ["representation_versions.representation_id", "representation_versions.id"],
+            name="fk_movement_snapshots_representation_version",
+        ),
+        Index("ix_movement_snapshots_representation", "representation_id", "processed_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    representation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    version_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    normalizer_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    is_complete: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    rejection_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    result_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class MovementSnapshotOccurrence(Base):
+    """Presence and comparison status of an occurrence for one payload snapshot."""
+
+    __tablename__ = "movement_snapshot_occurrences"
+    __table_args__ = (
+        UniqueConstraint(
+            "snapshot_id", "occurrence_id", name="uq_movement_snapshot_occurrences_pair"
+        ),
+        CheckConstraint(
+            "(present and comparison_result in "
+            "('FIRST_OBSERVED', 'KNOWN', 'ALTERATION_OBSERVED')) or "
+            "(not present and comparison_result = 'NOT_PRESENT_IN_SNAPSHOT')",
+            name="ck_movement_snapshot_occurrences_result_presence",
+        ),
+        ForeignKeyConstraint(
+            ["snapshot_id", "representation_id"],
+            ["movement_snapshots.id", "movement_snapshots.representation_id"],
+            name="fk_movement_snapshot_occurrences_snapshot_representation",
+        ),
+        ForeignKeyConstraint(
+            ["occurrence_id", "representation_id"],
+            ["movement_occurrences.id", "movement_occurrences.representation_id"],
+            name="fk_movement_snapshot_occurrences_occurrence_representation",
+        ),
+        Index("ix_movement_snapshot_occurrences_occurrence", "occurrence_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    snapshot_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    representation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    occurrence_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    present: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    comparison_result: Mapped[str] = mapped_column(String(32), nullable=False)
+    comparison_detail: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+
+
+class QuarantineRejection(Base):
+    """Immutable source hit and localized diagnostic awaiting local reprocessing."""
+
+    __tablename__ = "quarantine_rejections"
+    __table_args__ = (
+        UniqueConstraint(
+            "collection_id",
+            "page_key",
+            "hit_ordinal",
+            "error_path",
+            "validation_code",
+            "normalizer_version",
+            name="uq_quarantine_rejections_location_diagnostic",
+        ),
+        CheckConstraint("length(btrim(page_key)) > 0", name="ck_quarantine_page_key_nonempty"),
+        CheckConstraint("hit_ordinal >= 1", name="ck_quarantine_hit_ordinal_positive"),
+        CheckConstraint("length(btrim(error_path)) > 0", name="ck_quarantine_error_path_nonempty"),
+        CheckConstraint(
+            "length(btrim(validation_code)) > 0", name="ck_quarantine_validation_code_nonempty"
+        ),
+        CheckConstraint(
+            "length(btrim(normalizer_version)) > 0",
+            name="ck_quarantine_normalizer_nonempty",
+        ),
+        CheckConstraint("status in ('pending', 'resolved')", name="ck_quarantine_status"),
+        CheckConstraint(
+            "(status = 'pending' and resolved_at is null) or "
+            "(status = 'resolved' and resolved_at is not null)",
+            name="ck_quarantine_resolution_status_consistent",
+        ),
+        Index("ix_quarantine_status_observed", "status", "first_observed_at"),
+        Index("ix_quarantine_page_position", "collection_id", "page_key", "hit_ordinal"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    collection_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey("collections.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    page_key: Mapped[str] = mapped_column(Text, nullable=False)
+    hit_ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    error_path: Mapped[str] = mapped_column(Text, nullable=False)
+    raw_hit: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    validation_code: Mapped[str] = mapped_column(String(80), nullable=False)
+    normalizer_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    first_observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(8), nullable=False, default="pending", server_default="pending"
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class QuarantineResolution(Base):
+    """Append-only audit event for a quarantine item resolved by a normalizer."""
+
+    __tablename__ = "quarantine_resolutions"
+    __table_args__ = (
+        UniqueConstraint(
+            "rejection_id", "normalizer_version", name="uq_quarantine_resolutions_normalizer"
+        ),
+        CheckConstraint(
+            "length(btrim(normalizer_version)) > 0",
+            name="ck_quarantine_resolutions_normalizer_nonempty",
+        ),
+        ForeignKeyConstraint(
+            ["representation_id", "version_id"],
+            ["representation_versions.representation_id", "representation_versions.id"],
+            name="fk_quarantine_resolutions_representation_version",
+        ),
+        ForeignKeyConstraint(
+            ["rejection_id"],
+            ["quarantine_rejections.id"],
+            name="fk_quarantine_resolutions_rejection",
+            ondelete="RESTRICT",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    rejection_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    normalizer_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    resolved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    representation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    version_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    resolution_detail: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
