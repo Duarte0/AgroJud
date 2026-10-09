@@ -1,6 +1,7 @@
 """Validated environment configuration for backend processes."""
 
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,6 +22,9 @@ def _parse_database_url(value: str | None, name: str) -> URL | None:
         raise ValueError(f"{name} must use postgresql+psycopg and include a host and database.")
 
     return url
+
+
+_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
 
 class Settings(BaseSettings):
@@ -55,6 +59,35 @@ class Settings(BaseSettings):
         default=20, ge=1, le=86_399, validation_alias="JOB_HEARTBEAT_SECONDS"
     )
     job_poll_seconds: float = Field(default=2, gt=0, le=300, validation_alias="JOB_POLL_SECONDS")
+    frontend_origin: str = Field(
+        default="http://127.0.0.1:5173",
+        validation_alias="FRONTEND_ORIGIN",
+    )
+
+    @field_validator("frontend_origin")
+    @classmethod
+    def validate_frontend_origin(cls, value: str) -> str:
+        """Accept one loopback browser origin, the only CORS origin the API allows."""
+
+        parts = urlsplit(value)
+        try:
+            port = parts.port
+        except ValueError:
+            raise ValueError("FRONTEND_ORIGIN must include a valid port.") from None
+        if (
+            parts.scheme not in ("http", "https")
+            or parts.hostname not in _LOOPBACK_HOSTS
+            or port is None
+            or parts.username is not None
+            or parts.password is not None
+            or parts.path not in ("", "/")
+            or parts.query
+            or parts.fragment
+        ):
+            raise ValueError(
+                "FRONTEND_ORIGIN must be an http(s) loopback origin with an explicit port."
+            )
+        return f"{parts.scheme}://{parts.netloc}"
 
     @field_validator("database_url")
     @classmethod

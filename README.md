@@ -62,6 +62,18 @@ A resposta HTTP 202 inclui o identificador persistido do job e o cabeçalho `Loc
 
 Para gerar ou conferir o contrato e os tipos TypeScript, consulte [frontend/README.md](frontend/README.md). A CI executa `npm run openapi:check` sem chamadas ao DataJud.
 
+## Interface de coleta e consulta (SPEC-012)
+
+Com a API demo e o worker em execução, inicie a interface em `http://127.0.0.1:5173`:
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+A interface tem radar, coletas e processos, com barra permanente indicando demo/real. O servidor Vite publica somente em `127.0.0.1` e encaminha `/api` para a API local. A API restringe CORS à origem em `FRONTEND_ORIGIN` (padrão `http://127.0.0.1:5173`; somente loopback). O fluxo de navegador roda contra uma stack demo isolada e efêmera com `cp .env.e2e.example .env.e2e && ./scripts/e2e.sh`; detalhes em [frontend/README.md](frontend/README.md).
+
 ## Probe limitada DataJud/TJGO (SPEC-003)
 
 O comando `agrojud-datajud-probe` executa uma consulta diagnóstica sem gravar no banco de produto. Exige `AGROJUD_ENV=real` e `DATAJUD_API_KEY` no ambiente do backend. Faz até seis requisições, limita cada página a 100 hits, não repete automaticamente e grava um JSON sanitizado no caminho indicado. Por padrão consulta os últimos 365 dias; `--from-date` e `--to-date` definem outro intervalo semiaberto.

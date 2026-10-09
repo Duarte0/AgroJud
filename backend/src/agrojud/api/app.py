@@ -9,6 +9,7 @@ from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -70,6 +71,14 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.state.jobs = JobService(
         app.state.session_factory,
         lease_duration=timedelta(seconds=runtime_settings.job_lease_seconds),
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[runtime_settings.frontend_origin],
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+        expose_headers=["Location", "X-Request-ID"],
     )
 
     @app.middleware("http")

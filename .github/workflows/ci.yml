@@ -32,6 +32,10 @@ jobs:
         working-directory: frontend
         run: npm ci && npm run openapi:check
 
+      - name: Lint, typecheck, unit test, and build the frontend
+        working-directory: frontend
+        run: npm run lint && npm run typecheck && npm test && npm run build
+
       - name: Create local-only environment files
         run: |
           cp .env.demo.example .env.demo
@@ -46,3 +50,9 @@ jobs:
 
       - name: Verify PostgreSQL persistence across restart
         run: ./scripts/verify-persistence.sh
+
+      - name: Browser flow against the isolated demo stack
+        run: |
+          cp .env.e2e.example .env.e2e
+          (cd frontend && npx playwright install --with-deps chromium)
+          ./scripts/e2e.sh

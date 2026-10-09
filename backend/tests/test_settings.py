@@ -77,3 +77,38 @@ def test_job_heartbeat_must_be_shorter_than_lease() -> None:
             job_lease_seconds=20,
             job_heartbeat_seconds=20,
         )
+
+
+def test_frontend_origin_defaults_to_local_vite_server() -> None:
+    assert Settings(database_url=OPERATIONAL_URL).frontend_origin == "http://127.0.0.1:5173"
+
+
+@pytest.mark.parametrize(
+    ("configured", "expected"),
+    [
+        ("http://localhost:4173", "http://localhost:4173"),
+        ("http://127.0.0.1:5173/", "http://127.0.0.1:5173"),
+        ("http://[::1]:5173", "http://[::1]:5173"),
+    ],
+)
+def test_frontend_origin_accepts_loopback_origins(configured: str, expected: str) -> None:
+    settings = Settings(database_url=OPERATIONAL_URL, frontend_origin=configured)
+
+    assert settings.frontend_origin == expected
+
+
+@pytest.mark.parametrize(
+    "configured",
+    [
+        "http://192.168.0.10:5173",
+        "http://example.com:5173",
+        "http://127.0.0.1",
+        "ftp://127.0.0.1:5173",
+        "http://127.0.0.1:5173/app",
+        "http://user:pass@127.0.0.1:5173",
+        "*",
+    ],
+)
+def test_frontend_origin_rejects_non_loopback_or_partial_origins(configured: str) -> None:
+    with pytest.raises(ValidationError, match="FRONTEND_ORIGIN"):
+        Settings(database_url=OPERATIONAL_URL, frontend_origin=configured)

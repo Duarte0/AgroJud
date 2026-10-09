@@ -1,0 +1,7 @@
+# Browser-test override: the demo stack runs with an ephemeral database that
+# lives only while the containers exist, so no operational volume is touched.
+services:
+  db:
+    volumes: !reset []
+    tmpfs:
+      - /var/lib/postgresql

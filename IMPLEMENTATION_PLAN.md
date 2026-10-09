@@ -2,7 +2,7 @@
 
 Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. Uma amostra manual confirmou acesso e envelope; M1 segue parcial enquanto S1/S2 externos permanecem INCONCLUSIVE. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. Uma amostra manual confirmou acesso e envelope; M1 segue parcial enquanto S1/S2 externos permanecem INCONCLUSIVE. A paginação e o aceite da fonte real seguem bloqueados até validação de S2.
 
 ## 1. Estado atual e orientação
 
@@ -367,6 +367,8 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 
 **Demonstração:** primeira jornada visual completa, ainda sem dashboard.
 
+**Estado em 09/10/2026 — DONE localmente (SPEC-012):** a aplicação React/Vite consome o contrato OpenAPI por `openapi-fetch` e tipos gerados. Ela entrega radar com presets versionados e motivos de indisponibilidade, lista/detalhe de coletas com polling de 3 s e comandos confirmados, e lista/detalhe de processos com capas por origem e timeline de três datas. Filtros e páginas ficam na URL, e o cache é segregado por ambiente. A API passou a aceitar CORS somente de `FRONTEND_ORIGIN` (loopback). Lint, typecheck, 39 testes Vitest, build, 214 testes backend em PostgreSQL isolado e 8 cenários Playwright (duas rodadas) passaram em stack `agrojud-e2e` efêmera. Falhas foram simuladas no navegador porque a fonte demo não falha; isso não valida o TJGO. Evidências em [SPEC-012](specs/SPEC-012-frontend-de-coleta-e-consulta.md).
+
 ### M7 — Triagem e classificação explicável
 
 **Dependência:** M6; S5 para regras reais.
@@ -507,7 +509,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] M4 — Coleta recuperável demonstrada localmente; consulta real multipágina segue pendente.
 - [x] SPEC-010 — Catálogo versionado e investigação TPU concluídos localmente; gates de evidência real preservados.
 - [x] M5 — API e OpenAPI estáveis (SPEC-011 DONE localmente; fonte real continua bloqueada por evidência externa).
-- [ ] M6 — Fluxo visual completo.
+- [x] M6 — Fluxo visual completo (SPEC-012 DONE localmente; dados demo sintéticos, fonte real segue bloqueada).
 - [ ] S5 — Catálogo temático validado.
 - [ ] M7 — Triagem e regras.
 - [ ] M8 — Acompanhamento, novidades e agendamento.
