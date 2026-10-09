@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+
+      - name: Create local-only environment files
+        run: |
+          cp .env.demo.example .env.demo
+          cp .env.test.example .env.test
+
+      - name: Build and smoke the API with PostgreSQL
+        run: ./scripts/smoke-compose.sh demo
+
+      - name: Lint, typecheck, and test with PostgreSQL
+        run: |
+          docker compose --project-name agrojud-ci-test --env-file .env.test -f compose.test.yaml --profile test run --rm --build tests sh -lc 'uv run --no-sync ruff check src tests && uv run --no-sync ruff format --check src tests && uv run --no-sync mypy src && uv run --no-sync pytest'
+
+      - name: Verify PostgreSQL persistence across restart
+        run: ./scripts/verify-persistence.sh

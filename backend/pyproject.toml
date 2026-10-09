@@ -1,0 +1,51 @@
+[project]
+name = "agrojud-radar"
+version = "0.1.0"
+description = "Fundação local do AgroJud Radar"
+requires-python = "==3.14.*"
+dependencies = [
+    "alembic==1.20.0",
+    "fastapi==0.143.0",
+    "httpx==0.28.1",
+    "psycopg[binary]==3.3.6",
+    "pydantic==2.14.0",
+    "pydantic-settings==2.15.0",
+    "sqlalchemy==2.1.4",
+    "uvicorn==0.54.0",
+]
+
+[project.scripts]
+agrojud-worker = "agrojud.worker:main"
+agrojud-persistence-probe = "agrojud.testing.persistence_probe:main"
+
+[dependency-groups]
+dev = [
+    "hatchling==1.32.4",
+    "mypy==1.20.2",
+    "pytest==9.1.1",
+    "ruff==0.16.10",
+]
+
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agrojud"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-config --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+mypy_path = "src"
+packages = ["agrojud"]

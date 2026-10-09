@@ -1,0 +1,1 @@
+"""AgroJud Radar backend package."""

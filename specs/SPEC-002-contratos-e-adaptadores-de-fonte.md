@@ -1,6 +1,6 @@
 # SPEC-002 — Contratos e adaptadores de fonte
 
-Status: BLOCKED_DEPENDENCY
+Status: READY
 
 Milestone/Spike: M1
 

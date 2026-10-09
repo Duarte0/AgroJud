@@ -2,18 +2,25 @@
 
 Data: 08/10/2026.
 
-Status: planejamento técnico aprovado; implementação não iniciada.
+Status: M0 concluído em 08/10/2026; milestones seguintes não iniciados.
 
 ## 1. Estado atual e orientação
 
-Estado inspecionado durante o planejamento e confirmado antes da criação deste documento:
+Estado inspecionado durante o planejamento, antes da criação deste documento:
 
 - `PRD.md` lido integralmente.
 - Repositório continha somente o PRD, versionado no commit `21e2fec`.
 - Árvore de trabalho limpa antes desta entrega documental.
-- Não há aplicação, testes, migrations, Docker ou `AGENTS.md` aplicável.
+- Naquele momento não havia aplicação, testes, migrations, Docker ou `AGENTS.md` aplicável.
 
-A implementação seguirá entregas pequenas, verificáveis e cumulativas. Primeiro provar persistência e recuperação; depois integrar o fluxo de trabalho jurídico; por último acrescentar indicadores e acabamento.
+Estado após a implementação de SPEC-001, confirmado em 08/10/2026:
+
+- Backend FastAPI e worker compartilham o pacote e a imagem; PostgreSQL 18.6 é persistente e não publica porta nos ambientes demo/real.
+- Alembic registra a revisão inicial sem tabelas de produto. A migration é explícita; readiness compara revisões sem alterar o banco.
+- `.env.demo.example`, `.env.real.example` e `.env.test.example` orientam projetos Compose e bancos isolados; testes recusam banco sem sufixo `_test` ou URL idêntica à operacional.
+- O frontend contém somente documentação para SPEC-012. DataJud, domínios processuais, fila e coleta continuam fora de M0.
+
+A implementação continuará em entregas pequenas, verificáveis e cumulativas. M0 prova a base local e persistência; as próximas etapas introduzirão adaptadores e processamento conforme suas SPECs.
 
 Cada etapa deverá registrar comandos executados, resultados, limitações e evidências. Implementação local, integração real e prontidão para uso profissional são conclusões distintas. Nenhuma etapa de aplicação deve ser considerada concluída pela existência deste documento.
 
@@ -90,6 +97,8 @@ Regras para os spikes:
 
 **Dependência:** nenhuma.
 
+**Status:** concluído em 08/10/2026; ver [SPEC-001](specs/SPEC-001-fundacao-local.md).
+
 **Implementar:**
 
 - Estrutura `backend/`, `frontend/` e documentação técnica.
@@ -102,13 +111,15 @@ Regras para os spikes:
 
 **Concluir quando:**
 
-- Ambiente sobe seguindo o README.
-- API acessa PostgreSQL.
-- Migration inicial executa em banco vazio.
-- Reinício preserva um dado de teste.
-- Testes de banco não acessam o banco de operação.
+- [x] Ambiente sobe seguindo o README e os Compose demo/real/test são válidos.
+- [x] API acessa PostgreSQL; liveness independe do banco e readiness exige revisão no head.
+- [x] Migration inicial executa em banco vazio e cria somente `alembic_version`.
+- [x] Reinício do PostgreSQL de teste preserva o registro de diagnóstico; a tabela é removida após a prova.
+- [x] Testes criam bancos temporários com sufixo `_test` e não acessam banco operacional.
 
 **Demonstração:** subir serviços, verificar saúde, reiniciar e comprovar persistência.
+
+**Evidências:** `./scripts/smoke-compose.sh demo`; `./scripts/verify-persistence.sh`; Ruff check e format, mypy e 10 testes passaram em container Python 3.14.8 com PostgreSQL 18.6. O workflow `.github/workflows/ci.yml` executa PostgreSQL real sem acesso ao CNJ. A porta 8000 já estava ocupada no host, então o smoke local usou a porta documentada por override (`API_PORT=18002`).
 
 ### M1 — Adaptador DataJud e contrato verificável
 
@@ -402,7 +413,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] Ler integralmente o PRD.
 - [x] Inspecionar estado atual do repositório.
 - [x] Materializar este conteúdo em `IMPLEMENTATION_PLAN.md`.
-- [ ] M0 — Fundação e PostgreSQL executáveis.
+- [x] M0 — Fundação e PostgreSQL executáveis (SPEC-001 DONE).
 - [ ] S1 — Contrato real TJGO verificado.
 - [ ] S2 — Paginação real verificada.
 - [ ] S3 — Reconciliação documentada e testada.

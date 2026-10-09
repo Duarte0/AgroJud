@@ -1,6 +1,6 @@
 # SPECs — AgroJud Radar
 
-Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. Nenhuma SPEC foi implementada nesta entrega.
+Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001 foi concluída em 08/10/2026; SPEC-002 ficou READY após reavaliação da dependência. Nenhuma sucessora foi implementada.
 
 ## Como executar uma unidade
 
@@ -20,7 +20,7 @@ Uma SPEC contém objetivo, contexto, dependências, escopo, requisitos/contratos
 - **IN_PROGRESS:** execução iniciada.
 - **DONE:** todos os critérios desta unidade foram atendidos e registrados.
 
-Somente SPEC-001 começa READY. As demais têm bloqueio inicial de dependência. Ao concluir predecessoras, promover a unidade apenas se as validações requeridas para seu escopo também estiverem satisfeitas.
+SPEC-001 está DONE. SPEC-002 está READY porque sua dependência local foi concluída e sua especificação permite validar o cliente HTTP por transporte simulado; compatibilidade real continua sob SPEC-003. As demais seguem BLOCKED_DEPENDENCY. A conclusão de SPEC-001 não promove unidades além da dependência direta reavaliada.
 
 ### Dois controles distintos
 
@@ -32,10 +32,10 @@ SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus c
 
 ## Índice e dependências de implementação
 
-| SPEC | Milestone/Spike | Dependências diretas | Status inicial |
+| SPEC | Milestone/Spike | Dependências diretas | Status atual |
 | --- | --- | --- | --- |
-| [SPEC-001 — Fundação local](SPEC-001-fundacao-local.md) | M0 | Nenhuma | READY |
-| [SPEC-002 — Contratos e adaptadores de fonte](SPEC-002-contratos-e-adaptadores-de-fonte.md) | M1 | [SPEC-001](SPEC-001-fundacao-local.md) | BLOCKED_DEPENDENCY |
+| [SPEC-001 — Fundação local](SPEC-001-fundacao-local.md) | M0 | Nenhuma | DONE |
+| [SPEC-002 — Contratos e adaptadores de fonte](SPEC-002-contratos-e-adaptadores-de-fonte.md) | M1 | [SPEC-001](SPEC-001-fundacao-local.md) | READY |
 | [SPEC-003 — Validação DataJud/TJGO](SPEC-003-validacao-datajud-tjgo.md) | S1/S2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | BLOCKED_DEPENDENCY |
 | [SPEC-004 — Identidade e reconciliação](SPEC-004-identidade-e-reconciliacao.md) | S3 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | BLOCKED_DEPENDENCY |
 | [SPEC-005 — Persistência de capas e payloads](SPEC-005-persistencia-de-capas-e-payloads.md) | M2 | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md) | BLOCKED_DEPENDENCY |
