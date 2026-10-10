@@ -1,8 +1,8 @@
 # IMPLEMENTATION_PLAN — AgroJud Radar
 
-Data: 09/10/2026.
+Data: 10/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada com PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. SPEC-014/M7 concluiu localmente regras estruturadas, sinais e reprocessamento em 09/10/2026, com 227 testes backend, 44 testes frontend, build e 10 cenários Playwright. SPEC-015 concluiu localmente a primeira entrega de M8 em 09/10/2026, com acompanhamento auditável, atualização manual por CNJ, 237 testes backend, 47 frontend, build e 11 cenários Playwright. SPEC-016 concluiu localmente baselines por representação, novidades idempotentes/revisáveis e evidências API/UI em 09/10/2026, com 245 testes backend, 49 testes frontend, build e 12 cenários Playwright aprovados. SPEC-017 concluiu localmente buscas salvas versionadas, agendas recuperáveis e alternância persistente da fila em 09/10/2026, com 261 testes backend, 49 testes frontend, build e 13 cenários Playwright aprovados. SPEC-019/M9 concluiu exportação CSV local em 09/10/2026, com 280 testes backend, 55 testes frontend, 15 cenários Playwright, Ruff, mypy, lint, typecheck, build e OpenAPI aprovados. M8 está completo localmente; M9 segue aberto para SPEC-020 e operação integrada. Regras reais e integração DataJud/TJGO permanecem desabilitadas enquanto S5/S1/S2 não tiverem validação externa.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada com PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. SPEC-014/M7 concluiu localmente regras estruturadas, sinais e reprocessamento em 09/10/2026, com 227 testes backend, 44 testes frontend, build e 10 cenários Playwright. SPEC-015 concluiu localmente a primeira entrega de M8 em 09/10/2026, com acompanhamento auditável, atualização manual por CNJ, 237 testes backend, 47 frontend, build e 11 cenários Playwright. SPEC-016 concluiu localmente baselines por representação, novidades idempotentes/revisáveis e evidências API/UI em 09/10/2026, com 245 testes backend, 49 testes frontend, build e 12 cenários Playwright aprovados. SPEC-017 concluiu localmente buscas salvas versionadas, agendas recuperáveis e alternância persistente da fila em 09/10/2026, com 261 testes backend, 49 testes frontend, build e 13 cenários Playwright aprovados. SPEC-019/M9 concluiu exportação CSV local em 09/10/2026, com 280 testes backend, 55 testes frontend, 15 cenários Playwright, Ruff, mypy, lint, typecheck, build e OpenAPI aprovados. M8 está completo localmente; em 10/10/2026, SPEC-020 concluiu a operação e o aceite locais AC1, AC2, AC3, AC5 e AC6. M9 segue aberto exclusivamente pelo AC4, que depende dos aceites reais S1/S2 e das evidências necessárias ao S5. Regras reais e integração DataJud/TJGO permanecem desabilitadas enquanto esses gates não tiverem validação externa.
 
 ## 1. Estado atual e orientação
 
@@ -129,7 +129,7 @@ A fila utilizará reserva transacional com `FOR UPDATE SKIP LOCKED`. Esse mecani
 
 A fonte indisponível permite avançar com o adaptador sintético e contratos provisórios documentados. Os testes locais não encerram S1/S2, e o modo real permanece sem aceite.
 
-A visão geral da base local foi entregue depois do gate de recuperação do núcleo na SPEC-018. A exportação foi concluída localmente na SPEC-019; a operação integrada segue na SPEC-020.
+A visão geral da base local foi entregue depois do gate de recuperação do núcleo na SPEC-018. A exportação foi concluída localmente na SPEC-019; a operação integrada da SPEC-020 passou localmente, com aceite real ainda bloqueado pelo AC4.
 
 ## 4. Validation Spikes
 
@@ -432,30 +432,32 @@ M8 está concluído localmente. A automação usa dados sintéticos; os gates de
 
 **Dependência:** M8.
 
-**Estado local:** SPEC-018 e SPEC-019 implementadas e validadas em 09/10/2026. A operação integrada e o aceite real (SPEC-020) permanecem pendentes; M9 não está concluído.
+**Estado local:** SPEC-018 e SPEC-019 foram validadas em 09/10/2026. A SPEC-020 concluiu a implementação e os aceites locais AC1, AC2, AC3, AC5 e AC6 em 10/10/2026. M9 não está concluído porque AC4 depende da aprovação externa S1/S2 e das evidências reais necessárias ao S5.
 
 **Validação da SPEC-018:** 266 testes backend, 54 frontend e 14 cenários Playwright aprovados; Ruff, formatação, mypy, ESLint, typecheck, build e OpenAPI aprovados. Planos das quatro consultas foram inspecionados com `EXPLAIN ANALYZE` em amostra de 102 processos/103 representações. A evidência detalhada e os limites locais estão na [SPEC-018](specs/SPEC-018-indicadores-da-base-local.md); isso não altera os gates externos DataJud/TJGO.
 
 **Validação da SPEC-019:** 280 testes backend, 55 frontend e 15 cenários Playwright aprovados; Ruff, formatação, mypy, ESLint, typecheck, build e OpenAPI aprovados. A exportação filtrada passou também isoladamente, incluindo verificação de console e captura em navegador. A evidência detalhada e os limites locais estão na [SPEC-019](specs/SPEC-019-exportacao-csv.md); isso não altera os gates externos DataJud/TJGO.
+
+**Validação local da SPEC-020:** 280 testes backend, 55 testes frontend, 17 cenários Playwright, lint, formatação, mypy, typecheck, build e OpenAPI passaram. O backup/restauração em projetos descartáveis preservou contagens e digests; Compose completo, migration explícita, worker `--check`, health checks, SPA e proxy `/api` passaram. AC4 continua pendente porque S1/S2 e os exemplos reais necessários ao S5 estão inconclusivos. A [matriz de aceitação](specs/SPEC-020-operacao-e-aceite-integrado.md#evidência-e-conclusão) contém resultados e limites. Nenhuma chamada ao DataJud foi feita para esta validação.
 
 **Implementar:**
 
 - [x] Contadores locais e distribuições simples — SPEC-018 DONE localmente, com amostra sintética.
 - [x] CSV reutilizando os filtros da consulta de processos — SPEC-019 DONE localmente.
 - [x] Neutralização de fórmulas, encoding e escape testados — SPEC-019 DONE localmente.
-- [ ] Compose completo, incluindo frontend.
-- [ ] Procedimentos de backup/restauração e reset somente do ambiente demonstrativo.
-- [ ] README, arquitetura, operação de jobs e roteiro de demonstração.
-- [ ] Medição de uma coleta controlada: duração, páginas, retries, volume e crescimento do banco.
+- [x] Compose completo, incluindo frontend.
+- [x] Procedimentos de backup/restauração e reset somente do ambiente demonstrativo.
+- [x] README, arquitetura, operação de jobs e roteiro de demonstração.
+- [x] Medição de uma coleta controlada: duração, páginas, retries, volume e crescimento do banco.
 
 **Concluir quando:**
 
-- Indicadores não duplicam processos por junções com assuntos/movimentos.
+- [x] Indicadores não duplicam processos por junções com assuntos/movimentos — SPEC-018.
 - [x] Exportação corresponde aos filtros e identifica a origem dos dados — validado localmente pela SPEC-019.
-- Instalação a partir de checkout limpo funciona.
-- Backup restaurado preserva processos, triagem e acompanhamento.
+- [x] Instalação Compose documentada passa em stack descartável com banco vazio e migration explícita.
+- [x] Backup restaurado preserva processos, triagem e acompanhamento.
 - [x] Testes unitários, PostgreSQL, contratos, frontend e navegador passam.
-- Aceite real registra evidências específicas de TJGO e paginação; não pode ser substituído pelo aceite sintético.
+- [ ] Aceite real registra evidências específicas de TJGO e paginação; não pode ser substituído pelo aceite sintético (AC4/S1/S2/S5).
 
 **Demonstração final:** coletar → interromper → recuperar → revisar → acompanhar → atualizar → exportar.
 
@@ -522,14 +524,14 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] M8 — Acompanhamento, novidades e agendamento estão concluídos localmente (SPEC-015/016/017); fonte real continua condicionada a S5/S1/S2.
 - [x] SPEC-018 — Indicadores da base local concluídos localmente; amostra sintética e não representativa do universo TJGO.
 - [ ] M9 — Indicadores, CSV e operação documentada.
-- [ ] Aceite sintético completo.
+- [x] Aceite sintético completo, conforme matriz da SPEC-020.
 - [ ] Aceite real TJGO registrado separadamente.
-- [ ] Instalação limpa e restauração verificadas.
-- [ ] Limitações remanescentes documentadas.
+- [x] Instalação em Compose descartável e restauração verificadas.
+- [x] Limitações remanescentes documentadas.
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-019 estão DONE localmente; SPEC-020 permanece pendente. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-019 estão DONE localmente; SPEC-020 está BLOCKED_VALIDATION após passar seus critérios locais e aguarda AC4. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |
@@ -566,7 +568,7 @@ Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 �
 6. **Cancelamento e posse:** cancelamento é serializado com commit; página já confirmada é preservada. Após cancelamento confirmado, nenhuma nova página pode confirmar.
 7. **Defaults operacionais:** SPEC-002 fixa timeouts HTTP (connect 5s, read/write 20s, pool 5s); SPEC-007 mantém lease 120s/heartbeat 20s e limita transações (statement 30s, lock 5s); SPEC-009 fixa espaçamento 1s, backoff com jitter até 60s e orçamentos de recuperação. São parâmetros configuráveis locais, não limites oficiais DataJud.
 8. **Exportação síncrona:** SPEC-019 acrescenta limite configurável de 50.000 processos, retorno explícito de excesso e geração temporária antes do download para evitar CSV truncado apresentado como sucesso. Não modifica o limite de 2.000 hits por coleta.
-9. **Aceite final:** SPEC-020 permanece BLOCKED_VALIDATION se faltarem evidências reais exigidas, mesmo com demonstração sintética aprovada.
+9. **Aceite final:** SPEC-020 passou AC1/AC2/AC3/AC5/AC6 localmente em 10/10/2026; permanece BLOCKED_VALIDATION pelo AC4/S1/S2/S5, mesmo com demonstração sintética aprovada.
 
 Esses pontos detalham ambiguidades do plano; não ampliam o domínio funcional nem alteram o PRD. A checklist de milestones permanece pendente até implementação e evidência correspondentes.
 

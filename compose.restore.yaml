@@ -1,0 +1,6 @@
+# Disposable restore databases live in tmpfs and never start API or worker.
+services:
+  db:
+    volumes: !reset []
+    tmpfs:
+      - /var/lib/postgresql

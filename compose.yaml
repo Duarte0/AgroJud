@@ -16,6 +16,7 @@ services:
       retries: 12
       start_period: 5s
     restart: unless-stopped
+    stop_grace_period: 60s
 
   api:
     build:
@@ -48,6 +49,26 @@ services:
       retries: 12
       start_period: 45s
     restart: unless-stopped
+    stop_grace_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: agrojud-frontend:local
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    restart: unless-stopped
+    stop_grace_period: 10s
 
   worker:
     image: agrojud-backend:local
@@ -61,8 +82,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      api:
+        condition: service_healthy
     profiles: ["worker"]
     command: ["uv", "run", "--no-sync", "agrojud-worker"]
+    restart: unless-stopped
+    stop_grace_period: 45s
 
 volumes:
   database-data:

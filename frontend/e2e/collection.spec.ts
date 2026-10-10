@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import {
   evidence,
   expectJobStatus,
+  restartApi,
   startCollection,
   startWorker,
   stopWorker,
@@ -103,4 +104,19 @@ test("resultado parcial por limite pode ser continuado", async ({ page }) => {
   await page.getByRole("button", { name: "Continuar coleta" }).click();
   await expectJobStatus(page, "Concluído");
   expect(requests.count("POST", /\/continue$/)).toBe(1);
+});
+
+test("job em fila sobrevive ao reinício da API e é processado pelo worker", async ({ page }) => {
+  stopWorker();
+  const jobId = await startCollection(page);
+  await expect(page).toHaveURL(new RegExp(`/jobs/${jobId}$`));
+  await expectJobStatus(page, "Na fila");
+
+  restartApi();
+  await page.reload();
+  await expectJobStatus(page, "Na fila");
+
+  startWorker();
+  await expectJobStatus(page, "Concluído");
+  await expect(page.getByTestId("coverage")).toHaveText("Completa para a consulta");
 });

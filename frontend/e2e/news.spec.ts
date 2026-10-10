@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-import { expectJobStatus, seedPendingNews, setProcessNumber, startCollection } from "./support";
+import {
+  expectJobStatus,
+  seedPendingNews,
+  setProcessNumber,
+  startCollection,
+  uniqueProcessNumber,
+} from "./support";
 
 test.describe.configure({ mode: "serial" });
 
@@ -13,7 +19,7 @@ test("exibe baseline pendente, separa as datas e permite revisar e reabrir novid
   await page.getByRole("link", { name: "0000001-00.2026.8.09.0001" }).click();
 
   const processId = page.url().split("/").pop()!;
-  setProcessNumber(processId, "00000020020268090002");
+  setProcessNumber(processId, uniqueProcessNumber());
   await page.reload();
   await page.getByRole("button", { name: "Acompanhar processo" }).click();
   await expect(page.getByText("Acompanhamento ativo")).toBeVisible();

@@ -26,7 +26,11 @@ test("visão geral local abre a lista pelo indicador", async ({ page }) => {
   );
 
   await page.goto("/");
-  const themeLink = page.getByRole("table").first().getByRole("link").first();
+  const themeLink = page
+    .getByRole("table")
+    .filter({ has: page.getByRole("columnheader", { name: "Tema" }) })
+    .getByRole("link")
+    .first();
   await expect(themeLink).toHaveAttribute("href", /\/processes\?subject_code=/);
   await themeLink.click();
   await expect(page).toHaveURL(/\/processes\?subject_code=/);

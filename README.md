@@ -1,12 +1,13 @@
 # AgroJud Radar
 
-Fundação local do monitor de contencioso do produtor rural. A SPEC-001 entrega PostgreSQL, migrations, saúde e CI; as SPECs seguintes acrescentam contratos de fonte, persistência, fila recuperável e API operacional. A SPEC-011 expõe jobs e dados locais com OpenAPI; a coleta DataJud de produção continua desabilitada enquanto as capacidades externas necessárias não forem aprovadas.
+Aplicação local de monitoramento e triagem de processos públicos relacionados ao agronegócio. O Compose completo inclui frontend, API, worker e PostgreSQL persistente. A demonstração usa fixtures sintéticas; DataJud/TJGO permanece desabilitado enquanto as capacidades externas necessárias não forem aprovadas. Consulte o [runbook de operação e aceite](docs/operacao-e-aceite-integrado.md) para arquitetura, semântica dos dados, backup/restauração, reset demo e limites.
 
 ## Requisitos locais
 
 - Docker Engine e Docker Compose v2.
 - `curl` para os probes HTTP documentados.
 - Para comandos Python no host: uv **0.12.22** e CPython **3.14.8**. O fluxo Compose usa a mesma versão fixada e não depende do Python global.
+- Node.js **26.8.1** para os testes/build frontend executados no host; o container de produção constrói os assets sem instalar Node no host.
 
 Instale a versão documentada do uv pelo instalador oficial:
 
@@ -21,19 +22,21 @@ As versões escolhidas foram conferidas em 08/10/2026: Python 3.14.8 está em ma
 ## Configurar e subir a demonstração
 
 ```sh
-cp .env.demo.example .env.demo
-docker compose --project-name agrojud-demo --profile worker --env-file .env.demo -f compose.yaml up --build --detach db api worker
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml run --rm api uv run --no-sync alembic upgrade head
+if [ ! -f .env.demo ]; then cp .env.demo.example .env.demo; fi
+docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml up --detach --wait db
+docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml run --rm --no-deps api uv run --no-sync alembic upgrade head
+docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml --profile worker up --build --detach --wait api frontend worker
+curl --fail http://127.0.0.1:5173/
 curl --fail http://127.0.0.1:8000/api/v1/health/live
 curl --fail http://127.0.0.1:8000/api/v1/health/ready
 ```
 
-API publica apenas em `127.0.0.1:8000`; o banco não publica porta no host por padrão. `API_PORT` permite escolher outra porta quando 8000 estiver ocupada. Migrações são explícitas e devem ser aplicadas após subir o banco. A imagem API e o comando worker usam o mesmo Dockerfile e pacote.
+Frontend publica apenas em `127.0.0.1:5173` e API em `127.0.0.1:8000`; PostgreSQL fica somente na rede interna. `FRONTEND_PORT` e `API_PORT` permitem escolher outras portas. O Nginx encaminha `/api/` à API e serve o fallback SPA para rotas como `/processes`. Migrações são explícitas e devem ser aplicadas após subir o banco. API e worker usam a mesma imagem backend.
 
 O worker executa um loop persistente com handlers para jobs `discovery` e `refresh_number`. No ambiente `demo`, as consultas usam fixtures determinísticas marcadas como sintéticas. O ambiente `real` permanece bloqueado pela API enquanto S1/S2 não forem aprovados. Para validar configuração e encerrar sem iniciar o loop:
 
 ```sh
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml run --rm worker uv run --no-sync agrojud-worker --check
+docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml --profile worker run --rm --no-deps worker uv run --no-sync agrojud-worker --check
 ```
 
 O worker lê as opções `JOB_LEASE_SECONDS` (120), `JOB_HEARTBEAT_SECONDS` (20) e `JOB_POLL_SECONDS` (2) do ambiente. Heartbeats usam uma sessão PostgreSQL própria. O modo `--check` valida configuração sem acessar o banco.
@@ -64,7 +67,7 @@ Para gerar ou conferir o contrato e os tipos TypeScript, consulte [frontend/READ
 
 ## Interface de coleta e consulta (SPEC-012)
 
-Com a API demo e o worker em execução, inicie a interface em `http://127.0.0.1:5173`:
+O container frontend serve a interface em `http://127.0.0.1:5173`. Para desenvolvimento fora do Compose, a API demo deve estar em `127.0.0.1:8000`:
 
 ```sh
 cd frontend
@@ -72,7 +75,7 @@ npm ci
 npm run dev
 ```
 
-A interface tem radar, coletas e processos, com barra permanente indicando demo/real. O servidor Vite publica somente em `127.0.0.1` e encaminha `/api` para a API local. A API restringe CORS à origem em `FRONTEND_ORIGIN` (padrão `http://127.0.0.1:5173`; somente loopback). O fluxo de navegador roda contra uma stack demo isolada e efêmera com `cp .env.e2e.example .env.e2e && ./scripts/e2e.sh`; detalhes em [frontend/README.md](frontend/README.md).
+A interface tem radar, coletas e processos, com barra permanente indicando demo/real. O servidor Vite de desenvolvimento publica somente em `127.0.0.1` e encaminha `/api` para a API local. O fluxo Playwright sobe a imagem frontend e valida proxy/fallback em stack demo isolada com banco efêmero. Detalhes em [frontend/README.md](frontend/README.md).
 
 ## Probe limitada DataJud/TJGO (SPEC-003)
 
@@ -89,22 +92,20 @@ Timeout ou indisponibilidade gera diagnóstico `INCONCLUSIVE`, nunca resultado v
 
 ## Ambientes separados
 
-Crie `.env.real` a partir de `.env.real.example`, substitua os valores de exemplo por credenciais locais e escolha `API_PORT` disponível. Suba com um projeto Compose e um volume próprios:
+Crie `.env.real` a partir de `.env.real.example`, configure credenciais somente localmente e escolha `API_PORT` e `FRONTEND_PORT` disponíveis. Suba projeto e volume próprios; migrations continuam explícitas:
 
 ```sh
-cp .env.real.example .env.real
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml up --build --detach db api
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm api uv run --no-sync alembic upgrade head
+if [ ! -f .env.real ]; then cp .env.real.example .env.real; fi
+docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml up --detach --wait db
+docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm --no-deps api uv run --no-sync alembic upgrade head
+docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml up --build --detach --wait api frontend
 ```
 
-Para acessar o PostgreSQL `agrojud_real` por um cliente no host, mantenha `POSTGRES_HOST_PORT=55433` em `.env.real` e use o override que publica a porta somente em `127.0.0.1`:
+O frontend real fica em `http://127.0.0.1:5174`; a API em `http://127.0.0.1:8001`. O PostgreSQL não publica porta no host. Para uma inspeção administrativa local, use o próprio container:
 
 ```sh
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml -f compose.db-access.yaml up --build --detach db api
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml -f compose.db-access.yaml run --rm api uv run --no-sync alembic upgrade head
+docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml exec -T db sh -lc 'psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"'
 ```
-
-No cliente PostgreSQL, use host `127.0.0.1`, porta `55433`, banco `agrojud_real` e o usuário/senha definidos em `.env.real`. A porta local deve ser exclusiva; não use `5432` quando outro serviço já a ocupa. O override não expõe o banco em outras interfaces de rede.
 
 O projeto `agrojud-demo` usa o banco `agrojud_demo` e o projeto `agrojud-real` usa `agrojud_real`; os nomes Compose distintos isolam rede e volume. Os arquivos locais `.env.*` não são versionados. `DATAJUD_API_KEY` é lida somente no backend e usada pelo adaptador DataJud no ambiente `real`; não é exposta ao frontend nem registrada nos logs.
 
@@ -115,12 +116,14 @@ docker compose --project-name agrojud-demo --profile worker --env-file .env.demo
 docker compose --project-name agrojud-demo --profile worker --env-file .env.demo -f compose.yaml start
 ```
 
+O fluxo de backup, restore descartável e reset explícito da demo está em [operação e aceite integrado](docs/operacao-e-aceite-integrado.md#backup-restauração-e-reset). Nunca remova volumes para resolver migration pendente.
+
 ## Testes, lint e typecheck
 
 O banco de teste é um projeto independente, usa o banco `agrojud_test` e publica PostgreSQL apenas em `127.0.0.1:55432`. Seu volume não é compartilhado com demo ou real.
 
 ```sh
-cp .env.test.example .env.test
+if [ ! -f .env.test ]; then cp .env.test.example .env.test; fi
 docker compose --project-name agrojud-test --env-file .env.test -f compose.test.yaml --profile test run --rm --build tests uv run --no-sync ruff check src tests
 docker compose --project-name agrojud-test --env-file .env.test -f compose.test.yaml --profile test run --rm tests uv run --no-sync ruff format --check src tests
 docker compose --project-name agrojud-test --env-file .env.test -f compose.test.yaml --profile test run --rm tests uv run --no-sync mypy src
@@ -146,4 +149,4 @@ docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml 
 docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml start
 ```
 
-`./scripts/smoke-compose.sh demo` sobe a API, aplica a migration, valida liveness/readiness e executa o worker inicial. Passe `real` para validar a configuração do ambiente real. Nenhum comando de reset ou exclusão de volume é necessário para desenvolvimento ou validação.
+`./scripts/smoke-compose.sh demo` constrói e valida frontend, proxy SPA/API, API, worker e PostgreSQL demo. Passe `real` somente para validar o stack real sem iniciar worker ou executar coleta. O reset demo exige `./scripts/reset-demo.sh --target demo --confirm`; não existe reset para o ambiente real.

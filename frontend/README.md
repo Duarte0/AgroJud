@@ -6,7 +6,9 @@ Aplicação React do AgroJud Radar: radar de coleta, listas/detalhes de jobs e p
 
 React 19, TypeScript 6.0, Vite 8, React Router 8, TanStack Query 5, Tailwind CSS 4 e componentes no padrão shadcn/ui (`src/components/ui`, primitivas Radix). O cliente HTTP é `openapi-fetch` tipado por [src/api-schema.ts](src/api-schema.ts); [src/api/types.ts](src/api/types.ts) contém apenas aliases dos tipos gerados. TypeScript fica em 6.0 porque o typescript-eslint 8.71 ainda não suporta a linha 7.
 
-## Desenvolvimento
+## Produção local e desenvolvimento
+
+O Compose constrói uma imagem Nginx com os assets Vite. Ela atende o fallback SPA e encaminha `/api/` para o serviço `api:8000`; a credencial DataJud não entra no build nem no container frontend. O host publica apenas `127.0.0.1:${FRONTEND_PORT}`.
 
 Use Node.js na versão de [.nvmrc](.nvmrc). Com a API demo em `127.0.0.1:8000`:
 
@@ -37,15 +39,17 @@ npm run build
 npm run openapi:check
 ```
 
-O fluxo de navegador usa uma stack demo isolada (projeto Compose `agrojud-e2e`, banco em tmpfs descartado ao final, API em `127.0.0.1:18765` e preview em `127.0.0.1:4173`):
+O fluxo de navegador usa a imagem frontend numa stack demo isolada (projeto Compose cujo nome inclui `e2e`, banco em tmpfs descartado ao final, API em `127.0.0.1:18765` e frontend Nginx em `127.0.0.1:18766`). O browser envia `/api` pela mesma origem e valida também o fallback SPA:
 
 ```sh
-cp .env.e2e.example .env.e2e
+if [ ! -f .env.e2e ]; then cp .env.e2e.example .env.e2e; fi
 ./scripts/e2e.sh
 E2E_EVIDENCE_DIR="$PWD/docs/evidence/spec-012" ./scripts/e2e.sh   # também grava screenshots
 ```
 
-Os testes Playwright param e reiniciam o worker para observar jobs em fila. Falhas de rede e um job `failed` são simulados por interceptação de requisições no navegador, porque a fonte demo não produz falhas; isso não valida a fonte real.
+Se um projeto anterior estiver ativo ou tiver dados de outro ensaio, escolha outro nome com `E2E_COMPOSE_PROJECT`; portas podem ser substituídas por `E2E_API_PORT` e `E2E_FRONTEND_PORT`.
+
+Os testes Playwright param e reiniciam API/worker para observar jobs persistidos e recuperação. Falhas de rede e um job `failed` são simulados por interceptação de requisições no navegador, porque a fonte demo não produz falhas; isso não valida a fonte real. A jornada `e2e/operation.spec.ts` mede uma coleta sintética e percorre revisão, acompanhamento, atualização e CSV.
 
 ## Contrato de API
 

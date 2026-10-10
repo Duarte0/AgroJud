@@ -1,6 +1,6 @@
 # SPEC-020 — Operação e aceite integrado
 
-Status: BLOCKED_DEPENDENCY
+Status: BLOCKED_VALIDATION
 
 Milestone/Spike: M9
 
@@ -55,5 +55,30 @@ Migrations pendentes impedem readiness. Restore com versões incompatíveis falh
 Deploy público, autorização de uso comercial, escalabilidade distribuída, novos recursos e correções que ampliem silenciosamente o MVP.
 
 ## Evidência e conclusão
-Tabela final de critérios, comandos, resultados e pendências. Não marcar milestones anteriores concluídos sem suas evidências. Entrega técnica não equivale a autorização de operação profissional.
+
+Validação local concluída em 10/10/2026. O aceite real permanece condicionado às evidências externas requeridas; nenhuma consulta real foi executada nesta unidade.
+
+### Matriz de aceite por capacidade
+
+| Capacidade | Estado | Evidência e efeito |
+| --- | --- | --- |
+| Operação sintética local | VALIDATED | Compose descartável, migration explícita, interface Nginx, proxy `/api`, jobs, revisão, acompanhamento, atualização e CSV passaram; não valida a fonte externa. |
+| Transporte real, autenticação e resposta do endpoint | INCONCLUSIVE | A probe S1 expirou sem status HTTP após 20.187 ms. A [amostra manual posterior](../docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json) confirma somente envelope/campos essenciais e igualdade `_id`/`_source.id` para um hit, sem aprovar o transporte completo. |
+| Filtros reais e busca exata por CNJ | INCONCLUSIVE | Sem evidência de consulta DataJud/TJGO que valide filtros ou busca exata; criação de jobs reais permanece bloqueada. |
+| Ordenação e paginação real em duas páginas | INCONCLUSIVE | Não foi observado segundo cursor/página, desempate estável ou ausência de lacunas; nenhuma alegação de paginação real é aprovada. |
+| Taxonomia oficial dos códigos TPU pesquisados e aplicabilidade ao TJGO | VALIDATED | Consulta ao SGT e detalhes de aplicabilidade constam em [`catalogo-tematico-tpu-2026-10-09.json`](../docs/evidence/catalogo-tematico-tpu-2026-10-09.json); valida apenas os códigos pesquisados. |
+| Semântica dos filtros DataJud e exemplos estruturados reais para presets/sinais (S5) | INCONCLUSIVE | Não há amostras reais que provem os filtros nem payloads de movimentos correspondentes. Presets reais e regras de sinais seguem desabilitados. |
+
+| Critério | Estado | Evidência registrada |
+| --- | --- | --- |
+| AC1 | PASSOU localmente | `./scripts/e2e.sh` construiu e subiu PostgreSQL, API, worker e frontend Nginx em projeto E2E isolado, aplicou migration explicitamente, validou fallback SPA e proxy `/api`; 17 cenários Playwright passaram. O smoke adicional confirmou `agrojud-worker --check`, liveness/readiness da API e rotas frontend/proxy. `docker compose config --quiet` passou para demo, real, test e restore. |
+| AC2 | PASSOU localmente | `backup-db.sh` gerou `pg_dump` custom e manifesto `0600`; SHA-256 e `pg_restore --list` passaram. Contagens e digests de 32 tabelas foram comparados antes/depois na origem e no restore descartável, sem mutação observada na origem. Foram preservados 3 processos, 16 representações, 16 versões, 2 triagens, 5 entradas de histórico de triagem, 3 entradas de acompanhamento, 6 eventos de acompanhamento, 18 jobs, 18 tentativas e checkpoints, 3 novidades e 1 sinal; revisão `20261009_0010`. O restore usou projeto `agrojud-restore-spec020`, PostgreSQL em `tmpfs`, sem API/frontend/worker, e foi removido ao final. |
+| AC3 | PASSOU localmente | 280 testes backend passaram em PostgreSQL isolado (incluindo interrupção real por subprocesso antes/depois do commit em `test_real_subprocess_crash_before_and_after_commit_matches_continuous_run`); 55 testes frontend passaram; lint, typecheck, build e OpenAPI passaram; Playwright passou 17/17. A jornada integrada cobriu reinício da API com job na fila, coleta sintética, triagem, acompanhamento, atualização e CSV. |
+| AC4 | PENDENTE externo | A matriz por capacidade acima mostra S1/S2 e a parte DataJud de S5 como INCONCLUSIVE. A taxonomia TPU pesquisada tem validação oficial, mas isso não aprova filtros, respostas ou exemplos reais necessários ao aceite. |
+| AC5 | PASSOU localmente | UI e job identificam `demo`/`synthetic`; exportação inclui origem. A chave DataJud fica na configuração do backend, não no build/container frontend. Testes verificam que mensagens/logs não expõem senha e que a falha real não aciona fixture. |
+| AC6 | PASSOU localmente | Este runbook e o README cobrem instalação, configuração, portas, migrations, jobs, testes, tipos OpenAPI, diagnóstico, semântica dos dados e limites de uso. A medição sintética reproduzível está registrada no runbook e não faz alegação de throughput. |
+
+Comandos executados: suíte backend serial em Compose com Ruff, formatação, mypy e pytest (`280 passed`, um aviso de depreciação Starlette); `npm run lint`, `npm run typecheck`, `npm test` (`55 passed`), `npm run build`, `npm run openapi:check`; `scripts/e2e.sh` (`17 passed`); smoke de imagens/serviços; `scripts/backup-db.sh demo ...`; `scripts/restore-backup.sh demo ...`. O escopo e as saídas locais são sintéticos; as falhas de fonte foram testadas por simulação e não substituem S1/S2/S5.
+
+**Conclusão:** entregas locais e AC1, AC2, AC3, AC5 e AC6 concluídos. A SPEC permanece `BLOCKED_VALIDATION` pelo AC4 e só poderá passar a `DONE` após aprovação das evidências reais requeridas. Entrega técnica não equivale a autorização de operação profissional ou comercial. Não marcar milestones anteriores concluídos sem suas evidências.
 

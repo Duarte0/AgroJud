@@ -1,6 +1,6 @@
 # SPECs — AgroJud Radar
 
-Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004 a SPEC-019 foram concluídas localmente em 09/10/2026, incluindo reconciliação, persistência, fila/leases, paginação/checkpoints, retries/recuperação, catálogo temático, API/OpenAPI, frontend, triagem/histórico, sinais/reprocessamento, acompanhamento manual, baselines por representação, novidades revisáveis, buscas versionadas, agendamento diário, indicadores da base local e exportação CSV filtrada. As evidências locais usam fixtures/HTTP sintéticos; filtros, exemplos, sort, paginação e regras reais do DataJud/TJGO seguem sem validação externa.
+Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004 a SPEC-019 foram concluídas localmente em 09/10/2026, incluindo reconciliação, persistência, fila/leases, paginação/checkpoints, retries/recuperação, catálogo temático, API/OpenAPI, frontend, triagem/histórico, sinais/reprocessamento, acompanhamento manual, baselines por representação, novidades revisáveis, buscas versionadas, agendamento diário, indicadores da base local e exportação CSV filtrada. SPEC-020 concluiu sua implementação e aceite local em 10/10/2026; permanece BLOCKED_VALIDATION porque os aceites reais de S1/S2 e exemplos de DataJud necessários ao S5 seguem inconclusivos. As evidências locais usam fixtures/HTTP sintéticos; filtros, exemplos, sort, paginação e regras reais do DataJud/TJGO seguem sem validação externa.
 
 ## Como executar uma unidade
 
@@ -30,6 +30,8 @@ SPEC-003 está DONE como unidade de implementação. A probe limitada expirou; u
 
 SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus critérios; isso não encerra os aceites reais. SPEC-020 exige os aceites reais pertinentes para DONE integral e fica BLOCKED_VALIDATION se faltar essa evidência. Nunca substituir erro externo por fonte sintética dentro de uma execução real.
 
+SPEC-020 passou localmente em AC1, AC2, AC3, AC5 e AC6: Compose com frontend Nginx, backup/restauração isolados, jornada Playwright 17/17, suites backend/frontend, build e documentação/mensuração. AC4 segue pendente: S1/S2 e as consultas/exemplos reais necessários ao S5 não foram aprovados. A [matriz e os resultados locais](SPEC-020-operacao-e-aceite-integrado.md#evidência-e-conclusão) registram comandos, contagens e limites. Assim, o status é BLOCKED_VALIDATION e não DONE.
+
 ## Índice e dependências de implementação
 
 | SPEC | Milestone/Spike | Dependências diretas | Status atual |
@@ -53,7 +55,7 @@ SPEC-005 a SPEC-019 podem comprovar seus efeitos locais em demo, conforme seus c
 | [SPEC-017 — Buscas salvas e agendamento](SPEC-017-buscas-salvas-e-agendamento.md) | M8 | [SPEC-016](SPEC-016-referencia-historica-e-novidades.md) | DONE |
 | [SPEC-018 — Indicadores da base local](SPEC-018-indicadores-da-base-local.md) | M9 | [SPEC-017](SPEC-017-buscas-salvas-e-agendamento.md) | DONE |
 | [SPEC-019 — Exportação CSV](SPEC-019-exportacao-csv.md) | M9 | [SPEC-017](SPEC-017-buscas-salvas-e-agendamento.md) | DONE |
-| [SPEC-020 — Operação e aceite integrado](SPEC-020-operacao-e-aceite-integrado.md) | M9 | [SPEC-018](SPEC-018-indicadores-da-base-local.md), [SPEC-019](SPEC-019-exportacao-csv.md) | BLOCKED_DEPENDENCY |
+| [SPEC-020 — Operação e aceite integrado](SPEC-020-operacao-e-aceite-integrado.md) | M9 | [SPEC-018](SPEC-018-indicadores-da-base-local.md), [SPEC-019](SPEC-019-exportacao-csv.md) | BLOCKED_VALIDATION |
 
 As dependências transitivas estão implícitas no grafo acima. Dependências de capacidades reais são adicionais: identidade/consultas/sort por SPEC-003 e presets/regras por SPEC-010. Não há dependência circular entre transporte, catálogo e persistência.
 

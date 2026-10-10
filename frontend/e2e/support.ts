@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import { expect, type Page, type Request } from "@playwright/test";
@@ -40,6 +41,63 @@ export function stopWorker() {
 
 export function startWorker() {
   compose("up", "--detach", "worker");
+}
+
+/** Restarts only the API while preserving the isolated E2E database and pending jobs. */
+export function restartApi() {
+  compose("restart", "api");
+  compose("up", "--detach", "--wait", "api");
+}
+
+function queryDemoDatabase(sql: string): string {
+  return compose(
+    "exec",
+    "-T",
+    "--env",
+    `SPEC020_SQL=${sql}`,
+    "db",
+    "sh",
+    "-ec",
+    'psql -X --set=ON_ERROR_STOP=1 --tuples-only --no-align --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --command "$SPEC020_SQL"',
+  ).trim();
+}
+
+export function demoDatabaseSizeBytes(): number {
+  const value = queryDemoDatabase("SELECT pg_database_size(current_database())");
+  if (!/^\d+$/.test(value)) throw new Error("PostgreSQL did not return a database size.");
+  return Number(value);
+}
+
+export function demoDatabaseVersion(): string {
+  return queryDemoDatabase("SELECT current_setting('server_version')");
+}
+
+export function measurementMachine() {
+  return {
+    platform: process.platform,
+    architecture: process.arch,
+    cpu_count: os.cpus().length,
+    host_memory_bytes: os.totalmem(),
+    node_version: process.version,
+    docker_engine: execFileSync("docker", ["version", "--format", "{{.Server.Version}}"], {
+      encoding: "utf8",
+    }).trim(),
+    compose_version: execFileSync("docker", ["compose", "version", "--short"], {
+      encoding: "utf8",
+    }).trim(),
+    container_cpu_or_memory_limits: "not configured",
+  };
+}
+
+export function collectionResultCount(collectionId: string): number {
+  if (!/^[0-9a-f-]{36}$/i.test(collectionId)) {
+    throw new Error("Collection ID inválido para a medição sintética.");
+  }
+  const value = queryDemoDatabase(
+    `SELECT count(*) FROM collection_results WHERE collection_id = '${collectionId}'::uuid`,
+  );
+  if (!/^\d+$/.test(value)) throw new Error("PostgreSQL did not return a result count.");
+  return Number(value);
 }
 
 /** Adjusts only the disposable synthetic E2E row so the local rule has evidence. */
@@ -142,7 +200,23 @@ export function seedPendingNews(processId: string): string {
   return newsId;
 }
 
-/** Isolates this browser scenario from the shared demo CNJ used by other suites. */
+/** Creates a unique, structurally valid CNJ for a disposable browser scenario. */
+export function uniqueProcessNumber(): string {
+  const sequence = String(Date.now() % 10_000_000).padStart(7, "0");
+  const bodyWithoutCheckDigits = `${sequence}20268090001`;
+  let remainder = 0;
+  for (const digit of `${bodyWithoutCheckDigits}00`) {
+    remainder = (remainder * 10 + Number(digit)) % 97;
+  }
+  return `${sequence}${String(98 - remainder).padStart(2, "0")}20268090001`;
+}
+
+export function formatProcessNumber(digits: string): string {
+  if (!/^\d{20}$/.test(digits)) throw new Error("CNJ inválido para formatação E2E.");
+  return digits.replace(/^(\d{7})(\d{2})(\d{4})(\d)(\d{2})(\d{4})$/, "$1-$2.$3.$4.$5.$6");
+}
+
+/** Isolates a browser scenario from shared synthetic CNJs. */
 export function setProcessNumber(processId: string, processNumber: string): void {
   if (!/^[0-9a-f-]{36}$/i.test(processId) || !/^\d{20}$/.test(processNumber)) {
     throw new Error("Process ID ou número CNJ inválido para isolamento E2E.");
