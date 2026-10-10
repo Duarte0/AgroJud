@@ -244,7 +244,7 @@ export function NewsPage() {
           </form>
           <div className="space-y-2"><p className="text-sm font-medium">Situação</p><nav aria-label="Situação das novidades" className="flex flex-wrap gap-1">{[["", "Todas"], ["pending", "Pendentes"], ["reviewed", "Revisadas"]].map(([value, label]) => {
             const next = new URLSearchParams(searchParams); if (value) next.set("status", value); else next.delete("status"); next.delete("page");
-            return <Link key={value} to={`?${next}`} aria-current={(status ?? "") === value ? "page" : undefined} className="rounded-md px-3 py-2 text-sm hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:text-primary">{label}</Link>;
+            return <Link key={value} to={`?${next}`} aria-current={(status ?? "") === value ? "page" : undefined} className="rounded-md px-3 py-2 text-sm hover:bg-primary-soft aria-[current=page]:bg-primary-soft aria-[current=page]:font-medium aria-[current=page]:text-primary-dark">{label}</Link>;
           })}</nav></div>
           <div className="space-y-2">
             <label htmlFor="news-category" className="text-sm font-medium">Categoria</label>

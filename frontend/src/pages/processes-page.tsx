@@ -272,7 +272,7 @@ export function ProcessesPage() {
             </Button>
             <Link
               to={overviewHref}
-              className="inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-medium text-primary underline-offset-4 hover:bg-accent hover:underline"
+              className="inline-flex min-h-9 items-center rounded-md border border-input px-3 text-sm font-medium text-primary-dark underline-offset-4 hover:bg-primary-soft hover:underline"
             >
               Ver indicadores deste recorte
             </Link></div>

@@ -167,7 +167,7 @@ function PresetOption({
     <div
       className={cn(
         "rounded-md border px-4 py-3 transition-colors",
-        checked && "border-primary bg-accent",
+        checked && "border-primary bg-primary-soft",
         !enabled && "bg-muted/60",
       )}
       data-preset={preset.id}

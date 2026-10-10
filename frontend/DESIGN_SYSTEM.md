@@ -18,21 +18,28 @@
 
 | Token CSS | Valor | Uso |
 | --- | --- | --- |
-| `--background` | `#f5f7f6` | Fundo geral |
-| `--card` | `#ffffff` | Superfícies de conteúdo |
-| `--foreground` | `#202925` | Texto principal |
-| `--muted-foreground` | `#58665f` | Rótulos e metadados |
-| `--primary` | `#205b49` | Ação principal, seleção e identidade |
-| `--accent` | `#e4eee8` | Navegação e evidência em foco |
-| `--border` | `#dbe2dd` | Divisores e limites de controle |
-| `--info` / `--info-foreground` | `#eaf1f9` / `#285479` | Estado informativo |
-| `--warning` / `--warning-foreground` | `#fff3d9` / `#785012` | Atenção, parcialidade e ambiente demo |
-| `--success` / `--success-foreground` | `#e4f1e9` / `#205b49` | Conclusão positiva |
-| `--destructive` / `--destructive-foreground` | `#a32932` / `#ffffff` | Falha e remoção |
+| `--background` | `#F7F8F5` | Fundo geral |
+| `--surface` / `--card` | `#FFFFFF` | Superfícies de conteúdo e menus |
+| `--text-primary` / `--foreground` | `#18211B` | Texto principal |
+| `--text-secondary` / `--muted-foreground` | `#667069` | Rótulos e metadados |
+| `--primary` | `#1F5D42` | Ações principais e identidade |
+| `--primary-dark` | `#163C2D` | Hover, seleção e texto sobre verde suave |
+| `--primary-soft` | `#EAF3EE` | Seleção, chips e hover de controles |
+| `--accent` | `#B68A3A` | Indicadores gráficos discretos e acento da marca |
+| `--border` | `#DDE2DD` | Divisores e limites de superfícies |
+| `--input` | `#75827A` | Bordas de campos e controles interativos com contraste reforçado |
+| `--muted` | `#F1F3F0` | Cabeçalhos de tabela e superfícies neutras secundárias |
+| `--info` / `--info-foreground` | `#EAF1F9` / `#285479` | Estado informativo |
+| `--warning` / `--warning-foreground` | `#F6F0E5` / `#5B461F` | Atenção, parcialidade e ambiente demo |
+| `--success` / `--success-foreground` | `#EAF3EE` / `#163C2D` | Conclusão positiva |
+| `--destructive` / `--destructive-foreground` | `#A32932` / `#FFFFFF` | Falha e remoção |
+| `--overlay` / `--shadow-color` | `rgb(24 33 27 / 40%)` / `rgb(24 33 27 / 15%)` | Modal e sombra ligados ao texto principal |
 
-Reservar vermelho para falha/remoção e âmbar para atenção; não usar cor sozinha como rótulo de estado. Limites, texto e nomes acessíveis acompanham a cor. O foco usa o verde primário e é visível por teclado.
+Verde escuro identifica ações e seleção; o verde suave identifica superfícies de interação; o dourado aparece em marcadores de timeline e realces curtos. Reservar vermelho para falha/remoção e fundo dourado claro para atenção; não usar cor sozinha como rótulo de estado. O dourado não é usado como texto sobre fundo claro. Limites, texto e nomes acessíveis acompanham a cor. O foco usa o verde primário e é visível por teclado.
 
-Os pares de texto dos tokens acima foram conferidos por luminância relativa: corpo 13,89:1; texto secundário 5,61:1 no fundo geral e 6,03:1 no cartão; texto branco sobre ação primária 7,91:1; texto informativo 7,00:1; alerta 6,46:1; sucesso 6,80:1; texto destrutivo 7,19:1. A borda de controle (`--input`) alcança 3,04:1 sobre cartão.
+Pares foram conferidos por luminância relativa: texto principal no fundo geral 15,49:1; texto secundário no fundo geral 4,82:1 e na superfície 5,14:1; branco sobre ação primária 7,77:1; texto primário sobre o dourado 5,26:1; texto de alerta 7,91:1; sucesso 10,80:1; texto informativo 7,00:1; texto destrutivo 7,19:1. O acento dourado sobre superfície branca alcança 3,14:1 e é restrito a indicadores gráficos. A borda interativa (`--input`) alcança 4,01:1 sobre superfície.
+
+`src/theme.test.ts` verifica os valores da marca e os pares de contraste para texto e elementos gráficos. O E2E verifica os estilos computados no fundo, navegação ativa, ação principal, badge de sucesso, filtro, cabeçalho de tabela, superfície do detalhe e marcador da timeline.
 
 ## Navegação e layout
 

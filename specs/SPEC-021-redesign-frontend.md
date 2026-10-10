@@ -14,7 +14,7 @@ Dar ao AgroJud Radar uma interface de trabalho profissional para pesquisa e revi
 
 ## Direção visual
 
-Interface interna clara, sóbria e contemporânea. Verde profundo identifica ações primárias e navegação ativa; fundos neutros e painéis planos mantêm a leitura de dados; âmbar, azul e vermelho ficam reservados a estados semânticos. IBM Plex Sans atende leitura e formulário; IBM Plex Mono identifica CNJ, IDs e valores tabulares. Evitar estética de marketing, fundos decorativos, gradientes, sombras amplas e cartões repetidos sem função. Os tokens e padrões estão em [Sistema visual do frontend](../frontend/DESIGN_SYSTEM.md).
+Interface interna clara, sóbria e contemporânea. Verde profundo identifica ações e navegação ativa; verde suave organiza superfícies de interação; dourado aparece como acento gráfico discreto; fundos neutros e painéis planos mantêm a leitura de dados. Azul, âmbar claro e vermelho continuam reservados aos estados informativos, de atenção e de falha. IBM Plex Sans atende leitura e formulário; IBM Plex Mono identifica CNJ, IDs e valores tabulares. Evitar estética de marketing, fundos decorativos, gradientes, sombras amplas e cartões repetidos sem função. Os tokens e padrões estão em [Sistema visual do frontend](../frontend/DESIGN_SYSTEM.md).
 
 ## Escopo
 
@@ -67,6 +67,10 @@ Concluída em 10/10/2026. AC1–AC8 passaram. Não houve alteração em API, wor
 - `./scripts/e2e.sh` passou 20/20 no projeto Compose isolado `agrojud-redesign-verify-e2e`; as jornadas cobriram coleta, exportação, filtros, abas, triagem, cancelamento, retomada, estado stale/vazio/erro, teclado e foco.
 - Após os últimos ajustes de rota e acessibilidade, `./scripts/e2e.sh e2e/redesign.spec.ts` passou 3/3 e `./scripts/e2e.sh e2e/states.spec.ts:153` passou 1/1. As páginas foram verificadas em 390, 640, 768, 1024 e 1440 px; 640 px aproxima desktop de 1280 px a zoom 200%. Cabeçalhos de tabela continuam no nome acessível em telas estreitas.
 - A revisão visual confirmou quebra de nomes de órgão julgador extensos, sem overflow horizontal. Capturas temporárias estão em `/tmp/agrojud-redesign-evidence-final/`.
-- Pares de texto principais foram calculados entre 5,61:1 e 7,91:1; borda de controle sobre cartão, 3,04:1.
+- Na validação inicial, pares de texto principais foram calculados entre 5,61:1 e 7,91:1; borda de controle sobre cartão, 3,04:1. Os valores atualizados estão no refinamento cromático abaixo.
 
 Todas as validações funcionais usaram fixtures sintéticas em Compose demo isolado. Nenhuma chamada ao DataJud foi necessária para esta SPEC.
+
+## Refinamento cromático
+
+Em 10/10/2026, a paleta foi alinhada à identidade definida para o produto: `#1F5D42`, `#163C2D`, `#EAF3EE`, `#B68A3A`, `#F7F8F5`, `#FFFFFF`, `#DDE2DD`, `#18211B` e `#667069`. Os tokens centrais e os contrastes calculados estão em [Sistema visual do frontend](../frontend/DESIGN_SYSTEM.md). Testes verificam os valores/contrastes e estilos computados em navegação, ação, badge, filtros, tabela, detalhe e timeline. A estrutura, os fluxos funcionais, contratos da API e semântica jurídica não foram alterados.

@@ -1,6 +1,44 @@
 import { expect, test } from "@playwright/test";
 import { evidence, startCollection, expectJobStatus } from "./support";
 
+test("identidade cromática aplicada à navegação, botões, badges, filtros, tabela e detalhe", async ({ page }) => {
+  await page.goto("/radar");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(247, 248, 245)");
+  const activeNavigation = page.locator('.nav-link[aria-current="page"]');
+  await expect(activeNavigation).toHaveCSS("background-color", "rgb(234, 243, 238)");
+  await expect(activeNavigation).toHaveCSS("color", "rgb(22, 60, 45)");
+  const primaryAction = page.getByRole("button", { name: "Iniciar coleta" });
+  await expect(primaryAction).toHaveCSS("background-color", "rgb(31, 93, 66)");
+  await primaryAction.hover();
+  await expect(primaryAction).toHaveCSS("background-color", "rgb(22, 60, 45)");
+  await page.mouse.move(0, 0);
+
+  await startCollection(page);
+  await expectJobStatus(page, "Concluído");
+  const successBadge = page.locator('[data-slot="badge"]').filter({ hasText: "Concluído" }).first();
+  await expect(successBadge).toHaveCSS("background-color", "rgb(234, 243, 238)");
+  await expect(successBadge).toHaveCSS("color", "rgb(22, 60, 45)");
+
+  await page.getByRole("link", { name: "Ver processos desta coleta" }).click();
+  await page.waitForURL(/\/processes\?collection_id=/);
+  const filterChip = page.getByRole("list", { name: "Filtros aplicados" }).locator(".filter-chip");
+  await expect(filterChip.first()).toHaveCSS("background-color", "rgb(234, 243, 238)");
+  await expect(filterChip.first()).toHaveCSS("border-color", "rgb(117, 130, 122)");
+  await expect(page.getByRole("columnheader", { name: "Número CNJ" })).toHaveCSS(
+    "color",
+    "rgb(102, 112, 105)",
+  );
+
+  await page.getByRole("link", { name: "0000001-00.2026.8.09.0001" }).click();
+  await page.waitForURL(/\/processes\/[0-9a-f-]{36}/);
+  await expect(page.locator("#timeline")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  const eventMarker = await page.getByTestId("movement").first().evaluate((element) =>
+    getComputedStyle(element, "::before").backgroundColor,
+  );
+  expect(eventMarker).toBe("rgb(182, 138, 58)");
+});
+
 test("redesign preserva contexto, rascunho e protege a saída", async ({ page }) => {
   await startCollection(page);
   await expectJobStatus(page, "Concluído");
