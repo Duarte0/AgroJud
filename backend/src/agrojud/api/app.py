@@ -25,6 +25,7 @@ from agrojud.api.errors import (
     http_exception_response,
     validation_error_response,
 )
+from agrojud.api.exports import router as exports_router
 from agrojud.api.jobs import SourceCapabilityUnavailable
 from agrojud.api.jobs import router as jobs_router
 from agrojud.api.metadata import router as metadata_router
@@ -38,6 +39,7 @@ from agrojud.api.watchlist import router as watchlist_router
 from agrojud.config import Settings, get_settings
 from agrojud.db.engine import make_engine
 from agrojud.db.migrations_runner import make_alembic_config
+from agrojud.services.exports import ExportLimitExceeded
 from agrojud.services.jobs import (
     DatabaseUnavailableError,
     InvalidJobTransitionError,
@@ -183,6 +185,21 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
             ),
         )
 
+    @app.exception_handler(ExportLimitExceeded)
+    async def export_limit_exceeded(
+        request: Request,
+        error: ExportLimitExceeded,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content=error_payload(
+                request,
+                code="EXPORT_LIMIT_EXCEEDED",
+                message=str(error),
+                details={"limit": error.limit},
+            ),
+        )
+
     @app.exception_handler(SQLAlchemyError)
     async def database_error(request: Request, _error: SQLAlchemyError) -> JSONResponse:
         return JSONResponse(
@@ -245,6 +262,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.include_router(jobs_router)
     app.include_router(overview_router)
     app.include_router(processes_router)
+    app.include_router(exports_router)
     app.include_router(news_router)
     app.include_router(signals_router)
     app.include_router(triage_router)

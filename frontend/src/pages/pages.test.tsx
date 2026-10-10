@@ -88,6 +88,50 @@ describe("ProcessesPage", () => {
       expect(screen.getByTestId("location")).not.toHaveTextContent("page=3");
     });
   });
+
+  it("exports the active filters without pagination and shows the API limit error", async () => {
+    let finishExport: (response: Response) => void = () => undefined;
+    const api = mockApi({
+      "GET /api/v1/processes": () => json(page([buildProcess()])),
+      "GET /api/v1/exports/processes.csv": () =>
+        new Promise<Response>((resolve) => {
+          finishExport = resolve;
+        }),
+    });
+    renderRoute(<ProcessesPage />, {
+      path: "/processes",
+      url: "/processes?subject=penhora&decision=relevant&page=3&page_size=1",
+    });
+
+    await screen.findByText("0000001-00.2026.8.09.0001");
+    await userEvent.click(screen.getByRole("button", { name: "Exportar CSV" }));
+    expect(screen.getByRole("button", { name: "Exportando…" })).toBeDisabled();
+
+    const exportRequest = api.calls.find(
+      (call) => new URL(call.url).pathname === "/api/v1/exports/processes.csv",
+    );
+    expect(exportRequest).toBeDefined();
+    const params = new URL(exportRequest!.url).searchParams;
+    expect(params.get("subject")).toBe("penhora");
+    expect(params.get("decision")).toBe("relevant");
+    expect(params.has("page")).toBe(false);
+    expect(params.has("page_size")).toBe(false);
+
+    await act(async () => {
+      finishExport(
+        apiError(
+          422,
+          "EXPORT_LIMIT_EXCEEDED",
+          "A exportação contém mais processos que o limite. Restrinja os filtros.",
+        ),
+      );
+    });
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível exportar os processos",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Restrinja os filtros");
+    expect(screen.getByRole("button", { name: "Exportar CSV" })).toBeEnabled();
+  });
 });
 
 describe("RadarPage", () => {

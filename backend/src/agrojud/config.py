@@ -59,6 +59,7 @@ class Settings(BaseSettings):
         default=20, ge=1, le=86_399, validation_alias="JOB_HEARTBEAT_SECONDS"
     )
     job_poll_seconds: float = Field(default=2, gt=0, le=300, validation_alias="JOB_POLL_SECONDS")
+    export_process_limit: int = Field(default=50_000, ge=1, validation_alias="EXPORT_PROCESS_LIMIT")
     frontend_origin: str = Field(
         default="http://127.0.0.1:5173",
         validation_alias="FRONTEND_ORIGIN",

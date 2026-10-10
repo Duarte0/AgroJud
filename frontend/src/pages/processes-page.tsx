@@ -1,8 +1,9 @@
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { useState, type SubmitEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { useProcessList } from "@/api/queries";
+import { describeError, downloadProcessCsv } from "@/api/client";
 import type {
   ProcessListQuery,
   ProcessSummary,
@@ -19,6 +20,7 @@ import {
   StaleNotice,
 } from "@/components/query-feedback";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -292,6 +294,8 @@ function ruralLinkLabel(value: RuralLink): string {
 export function ProcessesPage() {
   usePageTitle("Processos");
   const [searchParams, setSearchParams] = useSearchParams();
+  const [exportPending, setExportPending] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const page = readPage(searchParams);
   const filters = readFilters(searchParams);
   const query: ProcessListQuery = { page, page_size: PAGE_SIZE };
@@ -304,10 +308,25 @@ export function ProcessesPage() {
   if (filters.followed) query.followed = filters.followed === "true";
   if (filters.pending_news) query.pending_news = filters.pending_news === "true";
   const processes = useProcessList(query);
+  const exportFilters = { ...query };
+  delete exportFilters.page;
+  delete exportFilters.page_size;
   const filtered = Object.values(filters).some(Boolean);
   const overviewParams = new URLSearchParams(searchParams);
   overviewParams.delete("page");
   const overviewHref = overviewParams.size ? `/?${overviewParams.toString()}` : "/";
+
+  async function exportCsv() {
+    setExportPending(true);
+    setExportError(null);
+    try {
+      await downloadProcessCsv(exportFilters);
+    } catch (error) {
+      setExportError(describeError(error));
+    } finally {
+      setExportPending(false);
+    }
+  }
 
   return (
     <>
@@ -315,16 +334,34 @@ export function ProcessesPage() {
         title="Processos"
         description="Base local agrupada por número CNJ. Os dados mostrados vêm de coletas já persistidas."
         actions={
-          <Link
-            to={overviewHref}
-            className="inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-medium text-primary underline-offset-4 hover:bg-accent hover:underline"
-          >
-            Ver indicadores deste recorte
-          </Link>
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void exportCsv()}
+              disabled={exportPending}
+              aria-busy={exportPending}
+            >
+              <Download aria-hidden="true" />
+              {exportPending ? "Exportando…" : "Exportar CSV"}
+            </Button>
+            <Link
+              to={overviewHref}
+              className="inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-medium text-primary underline-offset-4 hover:bg-accent hover:underline"
+            >
+              Ver indicadores deste recorte
+            </Link>
+          </>
         }
       />
       <Card>
         <CardContent className="space-y-6">
+          {exportError ? (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Não foi possível exportar os processos</AlertTitle>
+              <AlertDescription>{exportError}</AlertDescription>
+            </Alert>
+          ) : null}
           <FilterForm
             key={searchParams.toString()}
             initial={filters}

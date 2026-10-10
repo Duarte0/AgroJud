@@ -1,6 +1,6 @@
 # SPEC-019 — Exportação CSV
 
-Status: BLOCKED_DEPENDENCY
+Status: DONE
 
 Milestone/Spike: M9
 
@@ -38,11 +38,11 @@ Resultado vazio produz apenas cabeçalho. Arquivo informa demo/real em coluna e 
 Limite é orçamento operacional de exportação, diferente do limite de 2.000 hits por coleta. Não adicionar XLSX para contornar comportamento de planilha.
 
 ## Critérios de aceitação
-- AC1: conjunto de CNJs corresponde à consulta filtrada completa.
-- AC2: caracteres, quebras de linha e separadores permanecem parseáveis.
-- AC3: conteúdo de fórmula é neutralizado e CNJ original pode ser recuperado.
-- AC4: erro/limite não gera arquivo parcial apresentado como sucesso.
-- AC5: artefatos temporários são removidos e origem está explícita.
+- [x] AC1: conjunto de CNJs corresponde à consulta filtrada completa.
+- [x] AC2: caracteres, quebras de linha e separadores permanecem parseáveis.
+- [x] AC3: conteúdo de fórmula é neutralizado e CNJ original pode ser recuperado.
+- [x] AC4: erro/limite não gera arquivo parcial apresentado como sucesso.
+- [x] AC5: artefatos temporários são removidos e origem está explícita.
 
 ## Testes necessários
 Parse de ida/volta com biblioteca CSV, fixture multicapa e caracteres portugueses; payloads de fórmula/whitespace; zeros iniciais; limite exato/excedido; falha durante geração e cancelamento. Playwright de download com filtros.
@@ -54,5 +54,16 @@ Campo ausente vira célula vazia, não dado fabricado. Recorte não pode ser alt
 XLSX, armazenamento permanente, envio por e-mail, exportar bruto e relatórios jurídicos.
 
 ## Evidência e conclusão
-Exemplo sintético de arquivo, comparação de IDs exportados e testes de falha. Nenhum CSV real precisa ser versionado.
+
+Implementação local concluída em 09/10/2026. `GET /api/v1/exports/processes.csv` reutiliza os predicados da listagem, sem paginação, e grava o arquivo completo dentro de uma transação PostgreSQL `REPEATABLE READ READ ONLY`. O contador do recorte e a leitura em lotes de 500 compartilham o mesmo snapshot. Acima do orçamento configurado, a API retorna `422 EXPORT_LIMIT_EXCEEDED`; erro de banco ou falha durante a geração não produz resposta CSV. O temporário é removido após envio, falha ou cancelamento.
+
+O arquivo tem as 14 colunas estáveis deste contrato, BOM UTF-8, `;`, aspas CSV e CRLF. Valores múltiplos de representações e assuntos são ordenados, deduplicados e rotulados com código quando disponível. A primeira observação vem da observação persistida mais antiga, com fallback para a criação da representação; a última usa a observação mais recente. A procedência aparece como `demo` ou `real` no nome fixo e na coluna `data_source`. Texto semelhante a fórmula é prefixado por apóstrofo; `numero_cnj` mantém os dígitos originais e a descrição OpenAPI orienta importar a coluna como texto.
+
+### Validações
+
+- Backend: `280 passed` em PostgreSQL isolado; Ruff check, Ruff format e mypy aprovados. Os testes da SPEC cobrem CSV parseável multicapa, filtros sem paginação, neutralização após whitespace, zeros iniciais, limite exato/excedido, falha de geração, snapshot concorrente, erro de banco e remoção em cancelamento.
+- Frontend: `55 passed` em Vitest; ESLint, typecheck, build e `openapi:check` aprovados.
+- Navegador: `15 passed` em Playwright na stack demo isolada com PostgreSQL em `tmpfs`; a exportação também passou isoladamente com verificações de título, conteúdo visível, ausência de diálogo sobreposto, console sem erros, nome/BOM/cabeçalho, CNJs e filtros enviados. A captura está em `/tmp/agrojud-spec019-evidence/spec019-exportacao-filtrada.png`.
+
+Essas evidências concluem somente a SPEC-019 local. Os dados usados no navegador são sintéticos; não houve validação da fonte real DataJud/TJGO, nem alteração dos gates S1/S2/S5. Nenhum CSV foi versionado.
 

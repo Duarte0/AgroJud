@@ -58,16 +58,19 @@ def test_job_lease_and_heartbeat_defaults_are_configurable() -> None:
     assert settings.job_lease_seconds == 120
     assert settings.job_heartbeat_seconds == 20
     assert settings.job_poll_seconds == 2
+    assert settings.export_process_limit == 50_000
 
     configured = Settings(
         database_url=OPERATIONAL_URL,
         job_lease_seconds=30,
         job_heartbeat_seconds=5,
         job_poll_seconds=0.5,
+        export_process_limit=1_000,
     )
     assert configured.job_lease_seconds == 30
     assert configured.job_heartbeat_seconds == 5
     assert configured.job_poll_seconds == 0.5
+    assert configured.export_process_limit == 1_000
 
 
 def test_job_heartbeat_must_be_shorter_than_lease() -> None:

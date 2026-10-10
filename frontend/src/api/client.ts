@@ -2,6 +2,7 @@ import createClient from "openapi-fetch";
 
 import type { paths } from "@/api-schema";
 import type { ErrorBody } from "@/api/types";
+import type { ProcessListQuery } from "@/api/types";
 
 /** Same-origin client: Vite proxies /api to the local backend. */
 export const api = createClient<paths>({
@@ -59,6 +60,69 @@ export async function request<T>(call: () => Promise<FetchResult<T>>): Promise<T
     throw new ApiError(result.response.status, errorBody(result.error));
   }
   return result.data;
+}
+
+/** Downloads all matching process rows using the list's filters without pagination. */
+export async function downloadProcessCsv(
+  filters: Omit<ProcessListQuery, "page" | "page_size">,
+): Promise<void> {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined) query.set(key, String(value));
+  }
+
+  let response: Response;
+  try {
+    const url = new URL(
+      `/api/v1/exports/processes.csv?${query.toString()}`,
+      globalThis.location?.origin ?? "http://localhost",
+    );
+    response = await globalThis.fetch(url);
+  } catch (cause) {
+    throw new NetworkError(cause);
+  }
+
+  if (!response.ok) {
+    let body: Partial<ErrorBody> | null = null;
+    try {
+      const payload: unknown = await response.json();
+      if (payload && typeof payload === "object" && "error" in payload) {
+        const error = (payload as { error: unknown }).error;
+        if (error && typeof error === "object") body = error as Partial<ErrorBody>;
+      }
+    } catch {
+      // The API error below retains a useful status message for non-JSON failures.
+    }
+    throw new ApiError(response.status, body);
+  }
+
+  let file: Blob;
+  try {
+    file = await response.blob();
+  } catch (cause) {
+    throw new NetworkError(cause);
+  }
+
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const filename = disposition.match(
+    /^attachment;\s*filename="(agrojud-processos-(?:demo|real)\.csv)"$/i,
+  )?.[1];
+  if (!filename) {
+    throw new ApiError(response.status, {
+      code: "invalid_export_response",
+      message: "A API não informou um nome de arquivo válido para a exportação.",
+    });
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  link.hidden = true;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1_000);
 }
 
 export function isNotFound(error: unknown): boolean {

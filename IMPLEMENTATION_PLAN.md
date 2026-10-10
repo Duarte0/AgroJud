@@ -2,7 +2,7 @@
 
 Data: 09/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada com PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. SPEC-014/M7 concluiu localmente regras estruturadas, sinais e reprocessamento em 09/10/2026, com 227 testes backend, 44 testes frontend, build e 10 cenários Playwright. SPEC-015 concluiu localmente a primeira entrega de M8 em 09/10/2026, com acompanhamento auditável, atualização manual por CNJ, 237 testes backend, 47 frontend, build e 11 cenários Playwright. SPEC-016 concluiu localmente baselines por representação, novidades idempotentes/revisáveis e evidências API/UI em 09/10/2026, com 245 testes backend, 49 testes frontend, build e 12 cenários Playwright aprovados. SPEC-017 concluiu localmente buscas salvas versionadas, agendas recuperáveis e alternância persistente da fila em 09/10/2026, com 261 testes backend, 49 testes frontend, build e 13 cenários Playwright aprovados. M8 está completo localmente. Regras reais e integração DataJud/TJGO permanecem desabilitadas enquanto S5/S1/S2 não tiverem validação externa.
+Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada com PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. SPEC-014/M7 concluiu localmente regras estruturadas, sinais e reprocessamento em 09/10/2026, com 227 testes backend, 44 testes frontend, build e 10 cenários Playwright. SPEC-015 concluiu localmente a primeira entrega de M8 em 09/10/2026, com acompanhamento auditável, atualização manual por CNJ, 237 testes backend, 47 frontend, build e 11 cenários Playwright. SPEC-016 concluiu localmente baselines por representação, novidades idempotentes/revisáveis e evidências API/UI em 09/10/2026, com 245 testes backend, 49 testes frontend, build e 12 cenários Playwright aprovados. SPEC-017 concluiu localmente buscas salvas versionadas, agendas recuperáveis e alternância persistente da fila em 09/10/2026, com 261 testes backend, 49 testes frontend, build e 13 cenários Playwright aprovados. SPEC-019/M9 concluiu exportação CSV local em 09/10/2026, com 280 testes backend, 55 testes frontend, 15 cenários Playwright, Ruff, mypy, lint, typecheck, build e OpenAPI aprovados. M8 está completo localmente; M9 segue aberto para SPEC-020 e operação integrada. Regras reais e integração DataJud/TJGO permanecem desabilitadas enquanto S5/S1/S2 não tiverem validação externa.
 
 ## 1. Estado atual e orientação
 
@@ -129,7 +129,7 @@ A fila utilizará reserva transacional com `FOR UPDATE SKIP LOCKED`. Esse mecani
 
 A fonte indisponível permite avançar com o adaptador sintético e contratos provisórios documentados. Os testes locais não encerram S1/S2, e o modo real permanece sem aceite.
 
-A visão geral da base local foi entregue depois do gate de recuperação do núcleo na SPEC-018. A exportação e a operação integrada seguem nas SPEC-019 e SPEC-020.
+A visão geral da base local foi entregue depois do gate de recuperação do núcleo na SPEC-018. A exportação foi concluída localmente na SPEC-019; a operação integrada segue na SPEC-020.
 
 ## 4. Validation Spikes
 
@@ -432,15 +432,17 @@ M8 está concluído localmente. A automação usa dados sintéticos; os gates de
 
 **Dependência:** M8.
 
-**Estado local:** SPEC-018 implementada e validada em 09/10/2026. Exportação (SPEC-019), operação integrada e aceite real (SPEC-020) permanecem pendentes; M9 não está concluído.
+**Estado local:** SPEC-018 e SPEC-019 implementadas e validadas em 09/10/2026. A operação integrada e o aceite real (SPEC-020) permanecem pendentes; M9 não está concluído.
 
 **Validação da SPEC-018:** 266 testes backend, 54 frontend e 14 cenários Playwright aprovados; Ruff, formatação, mypy, ESLint, typecheck, build e OpenAPI aprovados. Planos das quatro consultas foram inspecionados com `EXPLAIN ANALYZE` em amostra de 102 processos/103 representações. A evidência detalhada e os limites locais estão na [SPEC-018](specs/SPEC-018-indicadores-da-base-local.md); isso não altera os gates externos DataJud/TJGO.
+
+**Validação da SPEC-019:** 280 testes backend, 55 frontend e 15 cenários Playwright aprovados; Ruff, formatação, mypy, ESLint, typecheck, build e OpenAPI aprovados. A exportação filtrada passou também isoladamente, incluindo verificação de console e captura em navegador. A evidência detalhada e os limites locais estão na [SPEC-019](specs/SPEC-019-exportacao-csv.md); isso não altera os gates externos DataJud/TJGO.
 
 **Implementar:**
 
 - [x] Contadores locais e distribuições simples — SPEC-018 DONE localmente, com amostra sintética.
-- [ ] CSV reutilizando os filtros da consulta de processos.
-- [ ] Neutralização de fórmulas, encoding e escape testados.
+- [x] CSV reutilizando os filtros da consulta de processos — SPEC-019 DONE localmente.
+- [x] Neutralização de fórmulas, encoding e escape testados — SPEC-019 DONE localmente.
 - [ ] Compose completo, incluindo frontend.
 - [ ] Procedimentos de backup/restauração e reset somente do ambiente demonstrativo.
 - [ ] README, arquitetura, operação de jobs e roteiro de demonstração.
@@ -449,10 +451,10 @@ M8 está concluído localmente. A automação usa dados sintéticos; os gates de
 **Concluir quando:**
 
 - Indicadores não duplicam processos por junções com assuntos/movimentos.
-- Exportação corresponde aos filtros e identifica a origem dos dados.
+- [x] Exportação corresponde aos filtros e identifica a origem dos dados — validado localmente pela SPEC-019.
 - Instalação a partir de checkout limpo funciona.
 - Backup restaurado preserva processos, triagem e acompanhamento.
-- Testes unitários, PostgreSQL, contratos, frontend e navegador passam.
+- [x] Testes unitários, PostgreSQL, contratos, frontend e navegador passam.
 - Aceite real registra evidências específicas de TJGO e paginação; não pode ser substituído pelo aceite sintético.
 
 **Demonstração final:** coletar → interromper → recuperar → revisar → acompanhar → atualizar → exportar.
@@ -527,7 +529,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-018 estão DONE localmente; SPEC-019 e SPEC-020 permanecem pendentes. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-019 estão DONE localmente; SPEC-020 permanece pendente. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |

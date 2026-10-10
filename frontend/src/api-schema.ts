@@ -21,6 +21,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exports/processes.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Exporta todos os processos do recorte em CSV
+         * @description Aplica os mesmos filtros da listagem, em uma leitura consistente, sem paginação. A coluna numero_cnj deve ser importada como texto em planilhas.
+         */
+        get: operations["export_processes_csv_api_v1_exports_processes_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/live": {
         parameters: {
             query?: never;
@@ -1862,6 +1882,76 @@ export interface operations {
                 };
             };
             /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    export_processes_csv_api_v1_exports_processes_csv_get: {
+        parameters: {
+            query?: {
+                process_number?: string | null;
+                subject?: string | null;
+                subject_code?: string | null;
+                subject_name_exact?: string | null;
+                class?: string | null;
+                court_unit?: string | null;
+                collection_id?: string | null;
+                preset_id?: string | null;
+                decision?: ("pending" | "relevant" | "discarded") | null;
+                rural_link?: ("unconfirmed" | "confirmed") | null;
+                followed?: boolean | null;
+                pending_news?: boolean | null;
+                signal_category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida ou limite síncrono de exportação excedido. */
             422: {
                 headers: {
                     [name: string]: unknown;
