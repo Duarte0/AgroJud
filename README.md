@@ -6,7 +6,7 @@ O sistema organiza evidências para revisão humana. Ele não substitui a consul
 
 `React` · `TypeScript` · `FastAPI` · `PostgreSQL` · `Docker Compose`
 
-[Telas](#telas) · [Arquitetura](#arquitetura) · [Demo e real](#demonstração-e-ambiente-real) · [Executar a demo](#executar-a-demonstração) · [Configurar com IA](#configurar-o-ambiente-real-com-uma-ia) · [Limitações](#limitações) · [Documentação](#documentação)
+[Telas](#telas) · [Arquitetura](#arquitetura) · [Demo e real](#demonstração-e-ambiente-real) · [Executar a demo](#executar-a-demonstração) · [Configurar com IA](#configurar-o-ambiente-real-com-uma-ia) · [Como usar](#como-usar) · [Limitações](#limitações) · [Documentação](#documentação)
 
 ![Visão geral dos indicadores da base sintética local](docs/evidence/readme/visao-geral.png)
 
@@ -135,6 +135,20 @@ Passos:
 7. Aplique as migrations e suba os serviços seguindo o procedimento documentado no repositório. Se já existir um banco real, faça antes um backup com a ferramenta do repositório, fora da pasta do projeto. Se portas estiverem ocupadas, ajuste a configuração de forma consistente. Ative o worker somente depois do meu aceite. Não crie consultas nem faça chamadas de teste ao DataJud.
 8. Confira os endpoints de saúde da API e a interface. Ao final, informe as URLs, o estado dos serviços e o comando para parar o ambiente sem perder dados.
 ```
+
+## Como usar
+
+Com o sistema aberto no navegador, o menu lateral se divide em **Coleta** (Radar e Coletas) e **Trabalho** (Visão geral, Processos, Acompanhados e Novidades). O uso típico segue este ciclo:
+
+1. **Iniciar uma coleta no Radar.** Na aba *Nova coleta*, escolha um preset temático, a janela de ajuizamento (datas inicial e final) e o limite de registros da execução. Os mesmos critérios podem ser guardados em *Buscas salvas*, com atualização diária opcional às 06h.
+2. **Acompanhar a execução em Coletas.** Cada coleta mostra status (na fila, em execução, aguardando nova tentativa, concluída, parcial, falhou ou cancelada), progresso confirmado, critérios efetivos e eventos. Coletas ativas se atualizam sozinhas; conforme o estado, é possível cancelar, retomar, continuar ou reiniciar a varredura.
+3. **Explorar a base em Processos.** Os resultados persistidos aparecem agrupados por número CNJ. Filtre por número, assunto, tema, classe, órgão julgador, preset, coleta ou categoria de sinal; os campos sugerem valores já existentes na base. O botão *Exportar CSV* exporta todo o recorte filtrado.
+4. **Revisar um processo.** O detalhe reúne capas por origem, timeline de movimentações e sinais estruturados (por exemplo, leilão ou recuperação judicial; a regra de penhora fica desabilitada no ambiente real), com link para a movimentação que serviu de evidência. No painel de triagem, classifique o processo como pendente, relevante ou descartado e, se for o caso, confirme manualmente o vínculo rural (a confirmação exige nota). Cada decisão fica no histórico.
+5. **Acompanhar processos de interesse.** Use *Acompanhar processo* no detalhe. A página *Acompanhados* lista esses processos, que são atualizados diariamente às 06h ou sob demanda.
+6. **Revisar novidades.** A página *Novidades* mostra o que foi observado depois da referência local de cada processo acompanhado, separando a data original do evento da data em que ele foi observado. Filtre por situação e categoria e marque cada item como revisado.
+7. **Consultar a Visão geral.** Os indicadores descrevem apenas a amostra salva localmente, sem medir risco jurídico nem o total de processos do TJGO.
+
+As ações que consultam o DataJud (coletas, atualizações e acompanhamento diário) dependem do worker ativo e, no ambiente real, de chave configurada. Quando a fonte não está disponível, a interface informa o motivo em vez de exibir resultado vazio.
 
 ## Limitações
 
