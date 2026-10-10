@@ -1,0 +1,1011 @@
+{
+  "capabilities": {
+    "compound_sort": {
+      "evidence": {
+        "duplicate_sort_tuples": 0,
+        "reason": "Os dois valores sort por hit foram observados e ordenados na amostra.",
+        "received_values_per_hit": 2,
+        "requested_fields": [
+          "@timestamp",
+          "id.keyword"
+        ],
+        "sample_count": 100,
+        "value_types": [
+          [
+            "integer"
+          ],
+          [
+            "string"
+          ]
+        ]
+      },
+      "state": "VALIDATED"
+    },
+    "envelope": {
+      "evidence": {
+        "hit_count": 100,
+        "reason": "Resposta HTTP válida parseada como hits.total e hits.hits.",
+        "total_relation": "eq",
+        "total_value": 3433
+      },
+      "state": "VALIDATED"
+    },
+    "essential_fields": {
+      "evidence": {
+        "fields": {
+          "@timestamp": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "assuntos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "classe": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "dataAjuizamento": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "grau": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "id": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "movimentos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "numeroProcesso": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "orgaoJulgador": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "tribunal": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          }
+        },
+        "reason": "Amostra observada; a conclusão se limita aos hits desta página.",
+        "sample_count": 100
+      },
+      "state": "VALIDATED"
+    },
+    "filters": {
+      "evidence": {
+        "date_max": "2026-05-04",
+        "date_min": "2026-05-04",
+        "reason": "Tribunal e intervalo exclusivo conferidos em todos os hits da página observada.",
+        "sample_count": 100
+      },
+      "state": "VALIDATED"
+    },
+    "pagination": {
+      "evidence": {
+        "cursor_advanced": true,
+        "cursor_received": true,
+        "first_page_hits": 100,
+        "ordered_across_boundary": true,
+        "ordered_within_pages": true,
+        "overlap_by_source_document_id": 0,
+        "reason": "Paginação avaliada em duas páginas sob sort composto candidato.",
+        "second_page_hits": 100,
+        "sort_fields": [
+          "@timestamp",
+          "id.keyword"
+        ],
+        "two_non_empty_pages": true
+      },
+      "state": "VALIDATED"
+    },
+    "query_by_case_number": {
+      "evidence": {
+        "different_hits": 0,
+        "matching_hits": 1,
+        "queried_value": "CNJ observado redigido",
+        "reason": "A busca construída do número observado retornou somente esse número na amostra.",
+        "returned_hits": 1
+      },
+      "state": "VALIDATED"
+    },
+    "sort_timestamp": {
+      "evidence": {
+        "duplicate_primary_values": 0,
+        "reason": "Valores sort observados e conferidos na ordem ascendente da amostra.",
+        "received_values_per_hit": 1,
+        "requested_fields": [
+          "@timestamp"
+        ],
+        "sample_count": 100,
+        "value_types": [
+          [
+            "integer"
+          ]
+        ]
+      },
+      "state": "VALIDATED"
+    },
+    "source_identity": {
+      "evidence": {
+        "invalid_hits": 0,
+        "matching_hits": 100,
+        "reason": "Relação observada nesta amostra; uma leitura não demonstra estabilidade histórica.",
+        "sample_count": 100
+      },
+      "state": "VALIDATED"
+    }
+  },
+  "conclusion": "VALIDATED",
+  "duration_ms": 122460,
+  "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+  "planned_recorte_query": {
+    "query": {
+      "bool": {
+        "filter": [
+          {
+            "match": {
+              "tribunal": "TJGO"
+            }
+          },
+          {
+            "range": {
+              "dataAjuizamento": {
+                "gte": "20260504000000",
+                "lt": "20260505000000"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "size": 100,
+    "sort": [
+      {
+        "@timestamp": {
+          "order": "asc"
+        }
+      }
+    ]
+  },
+  "repeat_comparison": {
+    "first_page_hits": 100,
+    "interpretation": "Comparação de duas leituras; não representa snapshot consistente da fonte.",
+    "overlap_by_source_document_id": 100,
+    "repeated_page_hits": 100,
+    "same_cursor": true,
+    "same_hit_count": true
+  },
+  "report_version": 1,
+  "request_budget": {
+    "automatic_retries": false,
+    "max_requests": 6,
+    "page_size": 100,
+    "writes_to_product_database": false
+  },
+  "requests": [
+    {
+      "duration_ms": 30873,
+      "http_status": 200,
+      "name": "recorte_timestamp_pagina_1",
+      "outcome": "SUCCESS",
+      "query": {
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "match": {
+                  "tribunal": "TJGO"
+                }
+              },
+              {
+                "range": {
+                  "dataAjuizamento": {
+                    "gte": "20260504000000",
+                    "lt": "20260505000000"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "size": 100,
+        "sort": [
+          {
+            "@timestamp": {
+              "order": "asc"
+            }
+          }
+        ]
+      },
+      "response": {
+        "field_shapes": {
+          "@timestamp": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "assuntos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "classe": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "dataAjuizamento": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "grau": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "id": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "movimentos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "numeroProcesso": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "orgaoJulgador": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "tribunal": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          }
+        },
+        "hit_count": 100,
+        "sort_received": {
+          "duplicate_primary_values": 0,
+          "fields": [
+            "@timestamp"
+          ],
+          "ordered_ascending_in_sample": true,
+          "value_types_by_position": [
+            [
+              "integer"
+            ]
+          ],
+          "values_per_hit": [
+            1
+          ]
+        },
+        "total_relation": "eq",
+        "total_value": 3433
+      }
+    },
+    {
+      "duration_ms": 8512,
+      "http_status": 200,
+      "name": "consulta_cnj_observado",
+      "outcome": "SUCCESS",
+      "query": {
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "match": {
+                  "tribunal": "TJGO"
+                }
+              },
+              {
+                "match": {
+                  "numeroProcesso": "<numeroProcesso-observado-redigido>"
+                }
+              }
+            ]
+          }
+        },
+        "size": 100,
+        "sort": [
+          {
+            "@timestamp": {
+              "order": "asc"
+            }
+          }
+        ]
+      },
+      "response": {
+        "field_shapes": {
+          "@timestamp": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "string"
+            ]
+          },
+          "assuntos": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "array"
+            ]
+          },
+          "classe": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "object"
+            ]
+          },
+          "dataAjuizamento": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "string"
+            ]
+          },
+          "grau": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "string"
+            ]
+          },
+          "id": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "string"
+            ]
+          },
+          "movimentos": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "array"
+            ]
+          },
+          "numeroProcesso": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "string"
+            ]
+          },
+          "orgaoJulgador": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "object"
+            ]
+          },
+          "tribunal": {
+            "present_count": 1,
+            "sample_count": 1,
+            "types": [
+              "string"
+            ]
+          }
+        },
+        "hit_count": 1,
+        "sort_received": {
+          "duplicate_primary_values": 0,
+          "fields": [
+            "@timestamp"
+          ],
+          "ordered_ascending_in_sample": true,
+          "value_types_by_position": [
+            [
+              "integer"
+            ]
+          ],
+          "values_per_hit": [
+            1
+          ]
+        },
+        "total_relation": "eq",
+        "total_value": 1
+      }
+    },
+    {
+      "duration_ms": 32149,
+      "http_status": 200,
+      "name": "repeticao_recorte_timestamp_pagina_1",
+      "outcome": "SUCCESS",
+      "query": {
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "match": {
+                  "tribunal": "TJGO"
+                }
+              },
+              {
+                "range": {
+                  "dataAjuizamento": {
+                    "gte": "20260504000000",
+                    "lt": "20260505000000"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "size": 100,
+        "sort": [
+          {
+            "@timestamp": {
+              "order": "asc"
+            }
+          }
+        ]
+      },
+      "response": {
+        "field_shapes": {
+          "@timestamp": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "assuntos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "classe": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "dataAjuizamento": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "grau": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "id": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "movimentos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "numeroProcesso": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "orgaoJulgador": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "tribunal": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          }
+        },
+        "hit_count": 100,
+        "sort_received": {
+          "duplicate_primary_values": 0,
+          "fields": [
+            "@timestamp"
+          ],
+          "ordered_ascending_in_sample": true,
+          "value_types_by_position": [
+            [
+              "integer"
+            ]
+          ],
+          "values_per_hit": [
+            1
+          ]
+        },
+        "total_relation": "eq",
+        "total_value": 3433
+      }
+    },
+    {
+      "duration_ms": 14323,
+      "http_status": 200,
+      "name": "recorte_timestamp_pagina_2",
+      "outcome": "SUCCESS",
+      "query": {
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "match": {
+                  "tribunal": "TJGO"
+                }
+              },
+              {
+                "range": {
+                  "dataAjuizamento": {
+                    "gte": "20260504000000",
+                    "lt": "20260505000000"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "search_after": [
+          "<cursor-redigido>"
+        ],
+        "size": 100,
+        "sort": [
+          {
+            "@timestamp": {
+              "order": "asc"
+            }
+          }
+        ]
+      },
+      "response": {
+        "field_shapes": {
+          "@timestamp": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "assuntos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "classe": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "dataAjuizamento": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "grau": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "id": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "movimentos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "numeroProcesso": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "orgaoJulgador": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "tribunal": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          }
+        },
+        "hit_count": 100,
+        "sort_received": {
+          "duplicate_primary_values": 0,
+          "fields": [
+            "@timestamp"
+          ],
+          "ordered_ascending_in_sample": true,
+          "value_types_by_position": [
+            [
+              "integer"
+            ]
+          ],
+          "values_per_hit": [
+            1
+          ]
+        },
+        "total_relation": "eq",
+        "total_value": 3433
+      }
+    },
+    {
+      "duration_ms": 18735,
+      "http_status": 200,
+      "name": "recorte_sort_composto_pagina_1",
+      "outcome": "SUCCESS",
+      "query": {
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "match": {
+                  "tribunal": "TJGO"
+                }
+              },
+              {
+                "range": {
+                  "dataAjuizamento": {
+                    "gte": "20260504000000",
+                    "lt": "20260505000000"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "size": 100,
+        "sort": [
+          {
+            "@timestamp": {
+              "order": "asc"
+            }
+          },
+          {
+            "id.keyword": {
+              "order": "asc"
+            }
+          }
+        ]
+      },
+      "response": {
+        "field_shapes": {
+          "@timestamp": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "assuntos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "classe": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "dataAjuizamento": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "grau": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "id": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "movimentos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "numeroProcesso": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "orgaoJulgador": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "tribunal": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          }
+        },
+        "hit_count": 100,
+        "sort_received": {
+          "duplicate_primary_values": 0,
+          "fields": [
+            "@timestamp",
+            "id.keyword"
+          ],
+          "ordered_ascending_in_sample": true,
+          "value_types_by_position": [
+            [
+              "integer"
+            ],
+            [
+              "string"
+            ]
+          ],
+          "values_per_hit": [
+            2
+          ]
+        },
+        "total_relation": "eq",
+        "total_value": 3433
+      }
+    },
+    {
+      "duration_ms": 17857,
+      "http_status": 200,
+      "name": "recorte_sort_composto_pagina_2",
+      "outcome": "SUCCESS",
+      "query": {
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "match": {
+                  "tribunal": "TJGO"
+                }
+              },
+              {
+                "range": {
+                  "dataAjuizamento": {
+                    "gte": "20260504000000",
+                    "lt": "20260505000000"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "search_after": [
+          "<cursor-redigido>",
+          "<cursor-redigido>"
+        ],
+        "size": 100,
+        "sort": [
+          {
+            "@timestamp": {
+              "order": "asc"
+            }
+          },
+          {
+            "id.keyword": {
+              "order": "asc"
+            }
+          }
+        ]
+      },
+      "response": {
+        "field_shapes": {
+          "@timestamp": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "assuntos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "classe": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "dataAjuizamento": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "grau": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "id": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "movimentos": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "array"
+            ]
+          },
+          "numeroProcesso": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          },
+          "orgaoJulgador": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "object"
+            ]
+          },
+          "tribunal": {
+            "present_count": 100,
+            "sample_count": 100,
+            "types": [
+              "string"
+            ]
+          }
+        },
+        "hit_count": 100,
+        "sort_received": {
+          "duplicate_primary_values": 0,
+          "fields": [
+            "@timestamp",
+            "id.keyword"
+          ],
+          "ordered_ascending_in_sample": true,
+          "value_types_by_position": [
+            [
+              "integer"
+            ],
+            [
+              "string"
+            ]
+          ],
+          "values_per_hit": [
+            2
+          ]
+        },
+        "total_relation": "eq",
+        "total_value": 3433
+      }
+    }
+  ],
+  "requests_made": 6,
+  "started_at": "2026-10-10T14:26:21.308430+00:00"
+}

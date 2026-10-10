@@ -78,5 +78,15 @@ Essa amostra valida apenas envelope, campos essenciais e correspondência de ide
 
 **Validações locais:** Ruff check passou; 30 arquivos estavam formatados; mypy passou em 21 arquivos de origem; pytest passou com **67 testes** em container Python 3.14.8 e PostgreSQL isolado. A porta padrão 55432 estava ocupada, então a execução isolada usou 55435. As configurações Compose demo/real/test passaram; a imagem de produção foi construída e o comando foi executado no container sem chave, confirmando falha local antes de HTTP. Um teste de regressão confirma a leitura de `dataAjuizamento` em `YYYYMMDDHHMMSS`.
 
-**Conclusão da unidade:** DONE para ferramenta, testes e relatório. Envelope, campos essenciais e relação `_id`/`_source.id` foram observados em uma amostra manual. S1/S2 seguem pendentes para filtro de data, busca exata, sort e paginação; nenhuma capacidade não observada foi aprovada e a fonte real continua sem liberação.
+### Validação remota em 10/10/2026
+
+Duas tentativas preliminares diagnosticaram bloqueios locais, não ausência de dados: com recorte de 01–08/09/2026 a probe recebeu HTTP 200 sem hits porque o filtro usava datas ISO; consultas manuais de diagnóstico (`size: 1`, sem registrar CNJ ou IDs) mostraram 0 hits no formato ISO e 17.817 no formato compacto para 04–08/05/2026. Após corrigir o payload (SPEC-002), a probe com recorte de um dia expirou no read timeout de 20 s; o limite passou a 60 s configurável.
+
+A execução seguinte (`2026-10-10`, recorte `2026-05-04` a `2026-05-05`, fim exclusivo) fez 6 requisições, todas HTTP 200, entre 8,5 s e 32,1 s, em 122 s no total. O relatório sanitizado [`datajud-tjgo-validacao-2026-10-10.json`](../docs/evidence/datajud-tjgo-validacao-2026-10-10.json) registra **VALIDATED** para envelope, campos essenciais, filtro de tribunal/intervalo, busca exata por CNJ observado, identidade `_id`/`_source.id` (100/100), sort `@timestamp`, sort composto `@timestamp` + `id.keyword` e paginação em duas páginas não vazias com cursor avançando, ordem preservada na fronteira e sobreposição zero.
+
+Limites: a amostra não teve empates no valor primário, portanto o desempate não foi exercitado; a paginação foi aprovada sob o sort composto candidato, enquanto o contrato local ainda envia somente `@timestamp`; uma leitura não demonstra estabilidade histórica de IDs. Filtros por classe/assunto/movimento e exemplos por preset não fazem parte de S1/S2 e continuam sob S5 (SPEC-010).
+
+**Conclusão de S1/S2 em 10/10/2026:** aprovados para as capacidades acima, com os limites registrados. A habilitação da coleta real é uma mudança separada e revisável.
+
+**Conclusão da unidade (08/10/2026):** DONE para ferramenta, testes e relatório. Envelope, campos essenciais e relação `_id`/`_source.id` foram observados em uma amostra manual. S1/S2 seguem pendentes para filtro de data, busca exata, sort e paginação; nenhuma capacidade não observada foi aprovada e a fonte real continua sem liberação.
 

@@ -59,6 +59,7 @@ def test_job_lease_and_heartbeat_defaults_are_configurable() -> None:
     assert settings.job_heartbeat_seconds == 20
     assert settings.job_poll_seconds == 2
     assert settings.export_process_limit == 50_000
+    assert settings.datajud_read_timeout_seconds == 60
 
     configured = Settings(
         database_url=OPERATIONAL_URL,
@@ -80,6 +81,19 @@ def test_job_heartbeat_must_be_shorter_than_lease() -> None:
             job_lease_seconds=20,
             job_heartbeat_seconds=20,
         )
+
+
+def test_real_datajud_read_timeout_must_be_shorter_than_lease() -> None:
+    with pytest.raises(ValidationError, match="DATAJUD_READ_TIMEOUT_SECONDS must be less"):
+        Settings(
+            environment="real",
+            database_url=OPERATIONAL_URL,
+            job_lease_seconds=60,
+            datajud_read_timeout_seconds=60,
+        )
+
+    demo = Settings(database_url=OPERATIONAL_URL, job_lease_seconds=30, job_heartbeat_seconds=5)
+    assert demo.datajud_read_timeout_seconds == 60
 
 
 def test_frontend_origin_defaults_to_local_vite_server() -> None:

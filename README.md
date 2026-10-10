@@ -79,7 +79,7 @@ A interface tem radar, coletas e processos, com barra permanente indicando demo/
 
 ## Probe limitada DataJud/TJGO (SPEC-003)
 
-O comando `agrojud-datajud-probe` executa uma consulta diagnóstica sem gravar no banco de produto. Exige `AGROJUD_ENV=real` e `DATAJUD_API_KEY` no ambiente do backend. Faz até seis requisições, limita cada página a 100 hits, não repete automaticamente e grava um JSON sanitizado no caminho indicado. Por padrão consulta os últimos 365 dias; `--from-date` e `--to-date` definem outro intervalo semiaberto.
+O comando `agrojud-datajud-probe` executa uma consulta diagnóstica sem gravar no banco de produto. Exige `AGROJUD_ENV=real` e `DATAJUD_API_KEY` no ambiente do backend. Faz até seis requisições, limita cada página a 100 hits, não repete automaticamente e grava um JSON sanitizado no caminho indicado. Por padrão consulta os últimos 365 dias; `--from-date` e `--to-date` definem outro intervalo semiaberto. Prefira um recorte curto (um dia) já indexado: o TJGO respondeu em até 32 s por requisição em 10/10/2026, e o read timeout (`DATAJUD_READ_TIMEOUT_SECONDS`, padrão 60) deve ficar abaixo de `JOB_LEASE_SECONDS` no ambiente real.
 
 Com `.env.real` configurado, monte a pasta de evidências para guardar o relatório no repositório:
 
@@ -88,7 +88,7 @@ mkdir -p docs/evidence
 docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm --no-deps -v "$PWD/docs/evidence:/evidence" api uv run --no-sync agrojud-datajud-probe --output /evidence/datajud-tjgo-validacao.json
 ```
 
-Timeout ou indisponibilidade gera diagnóstico `INCONCLUSIVE`, nunca resultado vazio nem habilitação da fonte real. O comando só pesquisa por CNJ depois de observar o número em um hit público. A matriz da probe está em [sua evidência](docs/evidence/datajud-tjgo-validacao-2026-10-08.json); a [amostra manual sanitizada](docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json) confirma apenas o envelope e alguns campos de um hit. O uso da API também permanece sujeito ao termo registrado no [PRD](PRD.md#2-decisões-e-premissas).
+Timeout ou indisponibilidade gera diagnóstico `INCONCLUSIVE`, nunca resultado vazio nem habilitação da fonte real. O comando só pesquisa por CNJ depois de observar o número em um hit público. A matriz aprovada de S1/S2 está na [evidência de 10/10/2026](docs/evidence/datajud-tjgo-validacao-2026-10-10.json); a [execução de 08/10/2026](docs/evidence/datajud-tjgo-validacao-2026-10-08.json) expirou; a [amostra manual sanitizada](docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json) confirma apenas o envelope e alguns campos de um hit. O uso da API também permanece sujeito ao termo registrado no [PRD](PRD.md#2-decisões-e-premissas).
 
 ## Ambientes separados
 

@@ -110,8 +110,9 @@ def test_query_compilation_uses_only_allowlisted_filters_and_half_open_dates() -
     encoded = json.dumps(request_body)
 
     assert request_body["size"] == 25
-    assert '"gte": "2026-01-01"' in encoded
-    assert '"lt": "2026-02-01"' in encoded
+    assert '"gte": "20260101000000"' in encoded
+    assert '"lt": "20260201000000"' in encoded
+    assert "2026-01-01" not in encoded
     assert "classe.codigo" in encoded
     assert "assuntos.codigo" in encoded
     assert "orgaoJulgador.codigo" in encoded
@@ -282,8 +283,20 @@ def test_exact_timeout_configuration() -> None:
     try:
         timeout = adapter._client.timeout  # type: ignore[attr-defined]
         assert timeout.connect == 5.0
-        assert timeout.read == 20.0
+        assert timeout.read == 60.0
         assert timeout.write == 20.0
         assert timeout.pool == 5.0
+    finally:
+        adapter.close()
+
+
+def test_read_timeout_follows_settings() -> None:
+    settings = make_settings().model_copy(update={"datajud_read_timeout_seconds": 45.0})
+    adapter = DataJudSourceAdapter(
+        settings,
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=response_body())),
+    )
+    try:
+        assert adapter._client.timeout.read == 45.0  # type: ignore[attr-defined]
     finally:
         adapter.close()

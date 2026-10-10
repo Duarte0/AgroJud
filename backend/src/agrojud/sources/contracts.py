@@ -264,6 +264,16 @@ def validate_fetch_arguments(
     return tuple(values)
 
 
+def _datajud_filed_date(value: date) -> str:
+    """Serialize a day boundary in the compact format indexed by DataJud/TJGO.
+
+    The TJGO index stores ``dataAjuizamento`` as ``YYYYMMDDHHMMSS``; ISO dates are
+    accepted by the endpoint but silently match no documents.
+    """
+
+    return f"{value:%Y%m%d}000000"
+
+
 def build_datajud_payload(
     query: SourceQuery,
     cursor: Cursor | None,
@@ -281,8 +291,8 @@ def build_datajud_payload(
             {
                 "range": {
                     "dataAjuizamento": {
-                        "gte": query.filed_from.isoformat(),
-                        "lt": query.filed_to.isoformat(),
+                        "gte": _datajud_filed_date(query.filed_from),
+                        "lt": _datajud_filed_date(query.filed_to),
                     }
                 }
             }

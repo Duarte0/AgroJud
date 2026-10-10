@@ -59,6 +59,9 @@ class Settings(BaseSettings):
         default=20, ge=1, le=86_399, validation_alias="JOB_HEARTBEAT_SECONDS"
     )
     job_poll_seconds: float = Field(default=2, gt=0, le=300, validation_alias="JOB_POLL_SECONDS")
+    datajud_read_timeout_seconds: float = Field(
+        default=60, gt=0, le=600, validation_alias="DATAJUD_READ_TIMEOUT_SECONDS"
+    )
     export_process_limit: int = Field(default=50_000, ge=1, validation_alias="EXPORT_PROCESS_LIMIT")
     frontend_origin: str = Field(
         default="http://127.0.0.1:5173",
@@ -119,6 +122,11 @@ class Settings(BaseSettings):
 
         if self.job_heartbeat_seconds >= self.job_lease_seconds:
             raise ValueError("JOB_HEARTBEAT_SECONDS must be less than JOB_LEASE_SECONDS.")
+        if (
+            self.environment == "real"
+            and self.datajud_read_timeout_seconds >= self.job_lease_seconds
+        ):
+            raise ValueError("DATAJUD_READ_TIMEOUT_SECONDS must be less than JOB_LEASE_SECONDS.")
 
         return self
 

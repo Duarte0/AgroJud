@@ -67,7 +67,12 @@ class DataJudSourceAdapter:
         self._authorization = f"APIKey {api_key}"
         self._client = httpx.Client(
             transport=transport,
-            timeout=httpx.Timeout(connect=5.0, read=20.0, write=20.0, pool=5.0),
+            timeout=httpx.Timeout(
+                connect=5.0,
+                read=settings.datajud_read_timeout_seconds,
+                write=20.0,
+                pool=5.0,
+            ),
             follow_redirects=False,
         )
 

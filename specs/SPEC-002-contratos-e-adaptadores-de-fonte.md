@@ -28,7 +28,7 @@ Contratos Python, cliente HTTP de chamada única e fonte sintética determiníst
 - Separar validação do envelope (hits/lista/sort) de validação individual do payload. Um hit inválido permanece bruto para futura quarentena; envelope inválido gera CONTRACT.
 - Hit preserva _id, _source e sort. Para normalizar capa, exigir _source objeto, numeroProcesso com 20 dígitos e tribunal TJGO. Identificador de origem deve ser texto não vazio e seguir a correspondência aprovada em SPEC-003; em fixtures usar _source.id igual a _id. Divergência real ainda não validada é rejeição, não fallback arbitrário entre os IDs.
 - Erros: VALIDATION, AUTHENTICATION, AUTHORIZATION, RATE_LIMIT, NETWORK, SOURCE_UNAVAILABLE, CONTRACT; incluir status HTTP, retry_after e mensagem sanitizada quando disponíveis.
-- HTTPX síncrono; POST somente ao endpoint público TJGO permitido. Credencial por configuração. Connect 5s, read/write 20s, pool 5s e redirects desativados.
+- HTTPX síncrono; POST somente ao endpoint público TJGO permitido. Credencial por configuração. Connect 5s, read configurável por `DATAJUD_READ_TIMEOUT_SECONDS` (padrão 60s; no ambiente real deve ser menor que `JOB_LEASE_SECONDS`), write 20s, pool 5s e redirects desativados.
 - Preservar valores opcionais ausentes e campos extras no bruto. Não converter datas desconhecidas em data atual ou zero.
 - Fonte sintética suporta conjunto fixo de páginas, cursores opacos, consulta vazia, mutação entre execuções e erros injetáveis.
 - Isolamento da configuração impede utilizar fonte real em ambiente demo por fallback; a escolha é explícita.
@@ -36,7 +36,7 @@ Contratos Python, cliente HTTP de chamada única e fonte sintética determiníst
 ### Implementação entregue
 
 - `agrojud.sources.contracts` contém `SourceQuery`, `SourcePage`, `SourceHit`, `NormalizedSourceCover`, `SourceError`/`SourceErrorCode`, `SourceAdapter`, compilação allowlisted e normalização mínima da capa.
-- `DataJudSourceAdapter` usa HTTPX síncrono, endpoint fixo `api_publica_tjgo/_search`, credencial `Settings.datajud_api_key`, connect/read/write/pool 5/20/20/5 segundos, sem redirects e uma única tentativa. Consulta inválida é rejeitada antes do HTTP.
+- `DataJudSourceAdapter` usa HTTPX síncrono, endpoint fixo `api_publica_tjgo/_search`, credencial `Settings.datajud_api_key`, connect 5 s, read configurável (padrão 60 s), write 20 s e pool 5 s, sem redirects e uma única tentativa. Consulta inválida é rejeitada antes do HTTP.
 - Respostas 400/422 são VALIDATION; 401 AUTHENTICATION; 403 AUTHORIZATION; 429 RATE_LIMIT com `Retry-After`; 404 e 5xx SOURCE_UNAVAILABLE; timeout/falha de conexão NETWORK; JSON/envelope inesperado CONTRACT. As mensagens e logs não incluem corpo remoto, cabeçalho Authorization, chave nem exceção de transporte.
 - A validação do envelope exige objeto `hits`, lista de hits e lista `sort` não vazia por hit, com quantidade de valores compatível com o sort da consulta. Não valida o conteúdo de `_source` na leitura da página: mantém hits inválidos e todo o bruto (incluindo listas e campos extras) disponíveis para quarentena posterior.
 - A normalização de capa exige `_source` objeto, `numeroProcesso` texto com 20 dígitos, `tribunal == TJGO`, `_source.id` e `_id` textuais e não vazios, e rejeita divergência sem escolher um deles como fallback. O uso real dessa correspondência permanece condicionado à evidência da SPEC-003.
@@ -57,6 +57,11 @@ Cliente real pode ser testado por transporte simulado antes da validação exter
 
 ## Testes necessários
 AC1/AC2: HTTPX MockTransport para 200 válido/vazio, 400, 401, 403, 429, 5xx, timeout, JSON inválido e sort ausente em página paginada. AC3: repetição de fixtures e consulta por número. AC4: captura de logs.
+
+### Revisão em 10/10/2026
+
+- O índice TJGO armazena `dataAjuizamento` como `YYYYMMDDHHMMSS`. Um filtro de intervalo com datas ISO (`2026-05-01`) é aceito pelo endpoint, mas não casa nenhum documento; a mesma semana em formato compacto retornou 17.817 processos. O payload agora serializa os limites do intervalo semiaberto como `YYYYMMDD000000`.
+- O read timeout de 20 s foi insuficiente: respostas reais levaram de 8 a 32 s em 10/10/2026 e 57 s na amostra de 09/10/2026. O padrão passou a 60 s configurável. Heartbeats usam sessão própria e o limite real permanece abaixo do lease, evitando que uma chamada bloqueada ultrapasse a posse do job.
 
 ## Erros e edge cases
 Total com relation=gte é limite inferior, não denominador exato. Resposta sem movimentos preserva ausência, distinta de lista vazia. Consulta inválida falha antes de HTTP. Retorno de outro tribunal não será aceito silenciosamente na normalização.
