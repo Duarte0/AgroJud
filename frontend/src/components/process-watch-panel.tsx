@@ -2,14 +2,17 @@ import { useNavigate } from "react-router";
 
 import { describeError } from "@/api/client";
 import { useProcessWatch, useRefreshProcess, useSetProcessWatch } from "@/api/queries";
+import { ConfirmAction } from "@/components/confirm-action";
+import { useCurrentEnvironment } from "@/app/environment-context";
 import { ProcessRefreshStatus } from "@/components/process-refresh-status";
-import { ErrorState, LoadingState } from "@/components/query-feedback";
+import { ErrorState, LoadingState, StaleNotice } from "@/components/query-feedback";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/format";
 
-export function ProcessWatchPanel({ processId }: { processId: string }) {
+export function ProcessWatchPanel({ processId, section = "controls" }: { processId: string; section?: "controls" | "history" | "baselines" }) {
+  const environment = useCurrentEnvironment();
   const navigate = useNavigate();
   const watch = useProcessWatch(processId);
   const setWatch = useSetProcessWatch(processId);
@@ -30,8 +33,8 @@ export function ProcessWatchPanel({ processId }: { processId: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Acompanhamento manual</CardTitle>
-        <CardDescription>
+        <CardTitle>{section === "history" ? "Histórico de acompanhamento" : section === "baselines" ? "Referência histórica por representação" : "Acompanhamento"}</CardTitle>
+        <CardDescription hidden={section !== "controls"}>
           Atualize este processo por número CNJ fora da janela de descoberta. A triagem permanece
           independente do acompanhamento.
         </CardDescription>
@@ -48,6 +51,8 @@ export function ProcessWatchPanel({ processId }: { processId: string }) {
           />
         ) : (
           <>
+            <StaleNotice query={watch} />
+            {section === "controls" ? <>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium">
                 {watch.data.active ? "Acompanhamento ativo" : "Não acompanhado"}
@@ -65,21 +70,12 @@ export function ProcessWatchPanel({ processId }: { processId: string }) {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button
-                variant={watch.data.active ? "outline" : "default"}
-                onClick={toggleWatch}
-                disabled={setWatch.isPending}
-              >
-                {setWatch.isPending
-                  ? watch.data.active
-                    ? "Removendo…"
-                    : "Incluindo…"
-                  : watch.data.active
-                    ? "Remover acompanhamento"
-                    : "Acompanhar processo"}
-              </Button>
+              {watch.data.active ? <ConfirmAction title="Remover acompanhamento?" description="O processo e seu histórico serão preservados. Novas atualizações diárias serão interrompidas; uma coleta já iniciada pode terminar." confirmLabel="Remover acompanhamento" onConfirm={toggleWatch}>
+                <Button variant="outline" disabled={setWatch.isPending}>{setWatch.isPending ? "Removendo…" : "Remover acompanhamento"}</Button>
+              </ConfirmAction> : <Button onClick={toggleWatch} disabled={setWatch.isPending}>{setWatch.isPending ? "Incluindo…" : "Acompanhar processo"}</Button>}
+
               {watch.data.active ? (
-                <Button onClick={refreshProcess} disabled={refresh.isPending}>
+                <Button onClick={refreshProcess} disabled={refresh.isPending || !environment.source_enabled}>
                   {refresh.isPending ? "Enfileirando…" : "Atualizar processo"}
                 </Button>
               ) : null}
@@ -90,10 +86,12 @@ export function ProcessWatchPanel({ processId }: { processId: string }) {
               <ProcessRefreshStatus result={watch.data.last_refresh} />
             </div>
 
-            {watch.data.active ? (
+            {!environment.source_enabled ? <p role="status" className="text-sm text-warning-foreground">{environment.source_disabled_reason ?? "Fonte desabilitada neste ambiente."}</p> : null}
+            </> : null}
+            {section === "baselines" && watch.data.active ? (
               <section className="space-y-2" aria-labelledby="watch-baselines-title">
                 <h3 id="watch-baselines-title" className="text-sm font-semibold">
-                  Referência histórica por representação
+                  Situação por representação
                 </h3>
                 {watch.data.baselines.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
@@ -126,8 +124,9 @@ export function ProcessWatchPanel({ processId }: { processId: string }) {
               </section>
             ) : null}
 
+            {section === "history" ? (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold">Histórico de acompanhamento</h3>
+              <h3 className="text-sm font-semibold">Eventos registrados</h3>
               {watch.data.history.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sem alterações registradas.</p>
               ) : (
@@ -140,7 +139,8 @@ export function ProcessWatchPanel({ processId }: { processId: string }) {
                   ))}
                 </ol>
               )}
-            </div>
+            </div>            ) : null}
+
           </>
         )}
         {mutationError ? (

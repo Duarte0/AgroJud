@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { JobStatusBadge } from "@/components/job-status-badge";
 import { Link, useSearchParams } from "react-router";
 
 import { useOverview } from "@/api/queries";
@@ -16,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { formatCount, formatDateTime, jobStatusLabel } from "@/lib/format";
+import { formatCount, formatDateTime } from "@/lib/format";
 
 type OverviewFilters = Overview["filters"];
 type Metric = Overview["processes"];
@@ -180,24 +183,26 @@ function MetricCard({
   metric,
   href,
   detail,
+  secondary = false,
 }: {
   title: string;
   metric: Metric;
   href: string;
   detail: string;
+  secondary?: boolean;
 }) {
   return (
     <Link
       to={href}
       aria-label={`${title}: ${metricLabel(metric)}. ${detail}`}
-      className="block h-full rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="block h-full rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
-      <Card className="h-full gap-3 transition-colors hover:border-primary/60">
+      <Card className={secondary ? "h-full gap-2 rounded-none border-0 border-b bg-transparent py-3" : "metric-primary h-full gap-3 transition-colors hover:border-primary/60"}>
         <CardHeader className="pb-0">
           <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-semibold tabular-nums">{metricLabel(metric)}</p>
+          <p className={secondary ? "text-lg font-semibold tabular-nums" : "metric-value"}>{metricLabel(metric)}</p>
           <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
         </CardContent>
       </Card>
@@ -249,6 +254,7 @@ function CurrentSignals({ overview }: { overview: Overview }) {
 }
 
 function Themes({ overview }: { overview: Overview }) {
+  const [expanded, setExpanded] = useState(false);
   return (
     <Card>
       <CardHeader>
@@ -270,7 +276,7 @@ function Themes({ overview }: { overview: Overview }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {overview.themes.map((theme) => {
+              {(expanded ? overview.themes : overview.themes.slice(0, 10)).map((theme) => {
                 const name = theme.subject_name ?? "Tema sem nome";
                 const href = processListHref(overview.filters, {
                   subject_code: theme.subject_code ?? undefined,
@@ -293,6 +299,7 @@ function Themes({ overview }: { overview: Overview }) {
             </TableBody>
           </Table>
         )}
+        {overview.themes.length > 10 ? <Button variant="ghost" className="mt-3" onClick={() => setExpanded(!expanded)} aria-expanded={expanded}>{expanded ? "Mostrar menos temas" : `Ver todos os ${overview.themes.length} temas`}</Button> : null}
       </CardContent>
     </Card>
   );
@@ -333,7 +340,7 @@ function LatestCollections({ overview }: { overview: Overview }) {
                     </Link>
                   </TableCell>
                   <TableCell>{collection.environment === "demo" ? "Sintética" : "DataJud"}</TableCell>
-                  <TableCell>{jobStatusLabel(collection.status)}</TableCell>
+                  <TableCell><JobStatusBadge status={collection.status} /></TableCell>
                   <TableCell>{formatDateTime(collection.created_at)}</TableCell>
                 </TableRow>
               ))}
@@ -358,7 +365,7 @@ export function OverviewPage() {
         description="Indicadores descritivos da amostra persistida localmente; não representam o universo de processos do TJGO."
       />
       {overview.isPending ? (
-        <LoadingState label="Carregando indicadores locais…" />
+        <LoadingState variant="dashboard" label="Carregando indicadores locais…" />
       ) : !overview.data ? (
         <ErrorState
           title="Não foi possível carregar os indicadores"
@@ -377,7 +384,7 @@ export function OverviewPage() {
               A última observação local indica quando estes dados foram vistos pela aplicação. Uma consulta concluída não garante que o tribunal esteja atualizado.
             </AlertDescription>
           </Alert>
-          <Card>
+          <Card className="gap-2 border-0 border-l-2 border-l-primary bg-transparent py-1">
             <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle>Recorte dos indicadores</CardTitle>
@@ -412,54 +419,55 @@ export function OverviewPage() {
           </Card>
           {overview.data.processes.value === 0 ? (
             <EmptyState title="Nenhum processo neste recorte">
-              A consulta terminou com sucesso; por isso os zeros abaixo são contagens reais desta base local. Inicie uma coleta pelo <Link to="/radar" className="font-medium text-primary underline">radar</Link> para popular a demonstração.
+              A consulta terminou com sucesso; por isso os zeros abaixo são contagens reais desta base local. Inicie uma coleta pelo <Link to="/radar" className="font-medium text-primary underline">radar</Link> para popular a base local.
             </EmptyState>
           ) : null}
           <section aria-label="Indicadores da base local" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              title="Processos distintos"
-              metric={overview.data.processes}
-              href={processListHref(overview.data.filters)}
-              detail="Abrir os processos deste recorte"
-            />
-            <MetricCard
-              title="Representações"
-              metric={overview.data.representations}
-              href={processListHref(overview.data.filters)}
-              detail="Capas por origem nos processos selecionados"
-            />
-            <MetricCard
+<MetricCard
               title="Triagem pendente"
               metric={overview.data.triage.pending}
               href={processListHref(overview.data.filters, { decision: "pending" })}
               detail="Inclui processos sem decisão registrada"
             />
-            <MetricCard
-              title="Triagem relevante"
-              metric={overview.data.triage.relevant}
-              href={processListHref(overview.data.filters, { decision: "relevant" })}
-              detail="Abrir processos marcados como relevantes"
-            />
-            <MetricCard
-              title="Triagem descartada"
-              metric={overview.data.triage.discarded}
-              href={processListHref(overview.data.filters, { decision: "discarded" })}
-              detail="Abrir processos marcados como descartados"
-            />
-            <MetricCard
-              title="Acompanhados ativos"
-              metric={overview.data.followed_processes}
-              href={processListHref(overview.data.filters, { followed: "true" })}
-              detail="Abrir processos com acompanhamento ativo"
-            />
-            <MetricCard
+<MetricCard
               title="Novidades pendentes"
               metric={overview.data.pending_news}
               href={newsListHref(overview.data.filters)}
               detail="Ocorrências aguardando revisão"
             />
+<MetricCard
+              title="Acompanhados ativos"
+              metric={overview.data.followed_processes}
+              href={processListHref(overview.data.filters, { followed: "true" })}
+              detail="Abrir processos com acompanhamento ativo"
+            />
+<MetricCard
+              title="Processos distintos"
+              metric={overview.data.processes}
+              href={processListHref(overview.data.filters)}
+              detail="Abrir os processos deste recorte"
+            />
           </section>
-          <div className="grid gap-6 lg:grid-cols-2">
+          <section aria-label="Indicadores complementares" className="grid gap-3 sm:grid-cols-3"><MetricCard secondary
+              title="Representações"
+              metric={overview.data.representations}
+              href={processListHref(overview.data.filters)}
+              detail="Capas por origem nos processos selecionados"
+            />
+<MetricCard secondary
+              title="Triagem relevante"
+              metric={overview.data.triage.relevant}
+              href={processListHref(overview.data.filters, { decision: "relevant" })}
+              detail="Abrir processos marcados como relevantes"
+            />
+<MetricCard secondary
+              title="Triagem descartada"
+              metric={overview.data.triage.discarded}
+              href={processListHref(overview.data.filters, { decision: "discarded" })}
+              detail="Abrir processos marcados como descartados"
+            />
+          </section>
+          <div className="grid items-start gap-6 lg:grid-cols-2">
             <CurrentSignals overview={overview.data} />
             <Themes overview={overview.data} />
           </div>

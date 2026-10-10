@@ -26,6 +26,7 @@ test("exibe baseline pendente, separa as datas e permite revisar e reabrir novid
   expect(seedPendingNews(processId)).toMatch(/^[0-9a-f-]{36}$/i);
 
   await page.reload();
+  await page.getByRole("tab", { name: "Capas por origem" }).click();
   await expect(page.getByText(/Baseline pendente/)).toBeVisible();
   await page.getByRole("link", { name: "Novidades" }).click();
   const item = page.getByTestId("news-item");
@@ -41,5 +42,6 @@ test("exibe baseline pendente, separa as datas e permite revisar e reabrir novid
 
   await page.goto(`/processes/${processId}`);
   await page.getByRole("button", { name: "Remover acompanhamento" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Remover acompanhamento" }).click();
   await expect(page.getByText("Não acompanhado")).toBeVisible();
 });

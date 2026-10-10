@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 
 import { useJobList } from "@/api/queries";
 import type { JobKind, JobStatus, JobSummary } from "@/api/types";
@@ -40,6 +40,7 @@ import { readEnum, readPage, withFilters, withPage } from "@/lib/search-params";
 const PAGE_SIZE = 25;
 
 function JobsTable({ jobs }: { jobs: JobSummary[] }) {
+  const location = useLocation();
   return (
     <Table>
       <TableCaption className="sr-only">Coletas ordenadas da mais recente para a mais antiga</TableCaption>
@@ -61,6 +62,7 @@ function JobsTable({ jobs }: { jobs: JobSummary[] }) {
               <TableCell className="whitespace-nowrap">
                 <Link
                   to={`/jobs/${job.id}`}
+                  state={{ from: location.pathname + location.search }}
                   className="font-medium text-primary underline-offset-4 hover:underline"
                 >
                   {formatDateTime(job.created_at)}

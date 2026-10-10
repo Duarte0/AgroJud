@@ -1,6 +1,11 @@
-import { useEffect } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useParams, useSearchParams } from "react-router";
 
+import { Copy, Check } from "lucide-react";
+import { ContextBackLink } from "@/components/context-back-link";
+import { ProcessState } from "@/components/process-state";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ApiError, isNotFound } from "@/api/client";
 import { useMovements, useProcess, useRepresentations } from "@/api/queries";
 import type {
@@ -10,7 +15,7 @@ import type {
   Representation,
 } from "@/api/types";
 import { DescriptionList } from "@/components/description-list";
-import { ProcessTriagePanel } from "@/components/process-triage-panel";
+import { ProcessTriagePanel, ProcessTriageHistory } from "@/components/process-triage-panel";
 import { ProcessSignalsPanel } from "@/components/process-signals-panel";
 import { ProcessWatchPanel } from "@/components/process-watch-panel";
 import { PageHeader } from "@/components/page-header";
@@ -245,13 +250,9 @@ function TimelineItem({
     <li
       id={`movement-${movement.occurrence_id}`}
       tabIndex={-1}
-      className="relative border-l-2 border-border pb-6 pl-5 last:pb-0 focus-visible:outline-2 focus-visible:outline-ring"
+      className="timeline-entry focus-visible:outline-2 focus-visible:outline-ring"
       data-testid="movement"
     >
-      <span
-        className="absolute top-1.5 -left-1.75 size-3 rounded-full border-2 border-card bg-primary"
-        aria-hidden="true"
-      />
       <h3 className="font-medium wrap-break-word">
         {name ?? "Movimento sem descrição"}
         {code ? <span className="ml-1.5 text-sm font-normal text-muted-foreground">código {code}</span> : null}
@@ -263,7 +264,7 @@ function TimelineItem({
           ))}
         </ul>
       ) : null}
-      <dl className="mt-2 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-3">
+      <dl className="mt-3 grid gap-x-4 gap-y-2 text-sm md:grid-cols-3">
         <div>
           <dt className="text-xs text-muted-foreground">Data do evento</dt>
           <dd>
@@ -290,9 +291,9 @@ function TimelineItem({
         </div>
       </dl>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        <Badge variant="outline">
+        <span className="block w-full min-w-0 break-words text-xs text-muted-foreground">
           Origem: {representation ? representationLabel(representation) : `capa ${movement.representation_id}`}
-        </Badge>
+        </span>
         <Badge variant={movement.comparison_result === "ALTERATION_OBSERVED" ? "warning" : "secondary"}>
           {comparisonLabel(movement.comparison_result)}
         </Badge>
@@ -312,13 +313,17 @@ function Timeline({
   representations: Map<string, Representation>;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const page = readPage(searchParams, "mov_page");
   const evidenceId = searchParams.get("evidence");
   const movements = useMovements(processId, page, evidenceId ?? undefined);
 
   useEffect(() => {
     if (!evidenceId || !movements.data) return;
-    document.getElementById(`movement-${evidenceId}`)?.scrollIntoView?.({ block: "center" });
+    const target = document.getElementById(`movement-${evidenceId}`);
+    target?.scrollIntoView?.({ block: "center" });
+    target?.focus({ preventScroll: true });
+    if (target) target.dataset.evidence = "true";
   }, [evidenceId, movements.data]);
 
   return (
@@ -378,7 +383,7 @@ function Timeline({
               pageSize={MOVEMENT_PAGE_SIZE}
               total={movements.data.total}
               disabled={movements.isPlaceholderData}
-              onPageChange={(next) => setSearchParams(withPage(searchParams, next, "mov_page"))}
+              onPageChange={(next) => setSearchParams(withPage(searchParams, next, "mov_page"), { state: location.state, preventScrollReset: true })}
             />
           </div>
         )}
@@ -389,32 +394,48 @@ function Timeline({
 
 function ProcessView({ process }: { process: ProcessDetail }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   const representationPage = readPage(searchParams, "rep_page");
   const representations = useRepresentations(process.id, representationPage);
-  const byId = new Map((representations.data?.items ?? []).map((item) => [item.id, item]));
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title={<span className="tabular-nums">{formatCnj(process.numero_cnj)}</span>}
-        description="Processo agrupado por número CNJ; capas de origens distintas são exibidas separadamente."
-      />
-      <Card>
-        <CardContent>
-          <DescriptionList
-            items={[
-              { term: "Registrado localmente em", value: formatDateTime(process.created_at) },
-              { term: "Última observação local", value: formatDateTime(process.latest_observed_at) },
-              { term: "Capas", value: formatCount(process.representation_count) },
-            ]}
-          />
-        </CardContent>
-      </Card>
-
-      <ProcessWatchPanel processId={process.id} />
-      <ProcessTriagePanel processId={process.id} initialTriage={process.triage} />
-      <ProcessSignalsPanel processId={process.id} />
-
+  const byId = new Map((representations.data?.items ?? []).map(item => [item.id, item]));
+  const requested = searchParams.get("tab");
+  const tab = searchParams.has("evidence") ? "movements" : ["movements", "representations", "signals", "history"].includes(requested ?? "") ? requested! : searchParams.has("triage_page") ? "history" : searchParams.has("rep_page") ? "representations" : "movements";
+  function selectTab(value: string) {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", value);
+    next.delete("evidence");
+    setSearchParams(next, { state: location.state, preventScrollReset: true });
+  }
+  async function copyCnj() {
+    try { await navigator.clipboard.writeText(formatCnj(process.numero_cnj)); setCopied(true); setCopyError(false); }
+    catch { setCopyError(true); }
+  }
+  return <>
+    <ContextBackLink fallback="/processes" label="Voltar à lista" />
+    <PageHeader title={<span className="cnj">{formatCnj(process.numero_cnj)}</span>}
+      description={`Última observação local: ${formatDateTime(process.latest_observed_at)} · ${formatCount(process.representation_count)} capa(s)`}
+      actions={<Button variant="outline" onClick={() => void copyCnj()}>{copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}{copied ? "CNJ copiado" : "Copiar CNJ"}</Button>} />
+    <div className="mb-5"><ProcessState decision={process.triage.decision} ruralLink={process.triage.rural_link} /><span role="status" className="text-xs">{copyError ? "Não foi possível copiar. Selecione o número acima." : copied ? "Número copiado para a área de transferência." : ""}</span></div>
+    <div className="detail-layout">
+      <details className="review-panel" open>
+        <summary>Revisão e acompanhamento</summary>
+        <div className="flex flex-col gap-4">
+          <ProcessTriagePanel processId={process.id} initialTriage={process.triage} />
+          <ProcessWatchPanel processId={process.id} />
+        </div>
+      </details>
+      <Tabs value={tab} onValueChange={selectTab} className="detail-content">
+        <TabsList aria-label="Detalhes do processo">
+          <TabsTrigger value="movements">Movimentações</TabsTrigger>
+          <TabsTrigger value="representations">Capas por origem</TabsTrigger>
+          <TabsTrigger value="signals">Sinais</TabsTrigger>
+          <TabsTrigger value="history">Histórico</TabsTrigger>
+        </TabsList>
+        <TabsContent value="movements"><Timeline processId={process.id} representations={byId} /></TabsContent>
+        <TabsContent value="representations">
+          <p className="mb-4 text-sm text-muted-foreground">Registrado localmente em {formatDateTime(process.created_at)}. Representações de origens distintas são preservadas separadamente.</p>
       <section aria-labelledby="capas-title" className="space-y-3">
         <h2 id="capas-title" className="text-lg font-semibold">
           Capas por origem
@@ -445,7 +466,7 @@ function ProcessView({ process }: { process: ProcessDetail }) {
                 pageSize={REPRESENTATION_PAGE_SIZE}
                 total={representations.data.total}
                 onPageChange={(next) =>
-                  setSearchParams(withPage(searchParams, next, "rep_page"))
+                  setSearchParams(withPage(searchParams, next, "rep_page"), { state: location.state, preventScrollReset: true })
                 }
               />
             ) : null}
@@ -453,9 +474,13 @@ function ProcessView({ process }: { process: ProcessDetail }) {
         )}
       </section>
 
-      <Timeline processId={process.id} representations={byId} />
+          <div className="mt-5"><ProcessWatchPanel processId={process.id} section="baselines" /></div>
+        </TabsContent>
+        <TabsContent value="signals"><ProcessSignalsPanel processId={process.id} /></TabsContent>
+        <TabsContent value="history" className="space-y-5"><ProcessTriageHistory processId={process.id} /><ProcessWatchPanel processId={process.id} section="history" /></TabsContent>
+      </Tabs>
     </div>
-  );
+  </>;
 }
 
 export function ProcessDetailPage() {
@@ -463,7 +488,7 @@ export function ProcessDetailPage() {
   const process = useProcess(processId);
   usePageTitle(process.data ? formatCnj(process.data.numero_cnj) : "Processo");
 
-  if (process.isPending) return <LoadingState label="Carregando processo…" />;
+  if (process.isPending) return <LoadingState variant="detail" label="Carregando processo…" />;
   if (!process.data) {
     if (
       isNotFound(process.error) ||
@@ -490,7 +515,7 @@ export function ProcessDetailPage() {
   return (
     <div className="space-y-4">
       <StaleNotice query={process} />
-      <ProcessView process={process.data} />
+      <ProcessView key={process.data.id} process={process.data} />
     </div>
   );
 }

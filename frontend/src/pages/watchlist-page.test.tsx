@@ -139,6 +139,8 @@ describe("WatchlistPage", () => {
 
     await screen.findByText("Atualização em andamento");
     await userEvent.click(screen.getByRole("button", { name: "Remover" }));
+    expect(api.count("DELETE", `/api/v1/processes/${processId}/watch`)).toBe(0);
+    await userEvent.click(screen.getByRole("button", { name: "Remover acompanhamento" }));
     expect(await screen.findByText("Nenhum processo acompanhado")).toBeInTheDocument();
     expect(api.count("DELETE", `/api/v1/processes/${processId}/watch`)).toBe(1);
     expect(api.count("POST", `/api/v1/jobs/${jobId}/cancel`)).toBe(0);
@@ -174,7 +176,7 @@ describe("ProcessWatchPanel", () => {
         return json(watch());
       },
     });
-    renderRoute(<ProcessWatchPanel processId={processId} />, {
+    renderRoute(<><ProcessWatchPanel processId={processId} /><ProcessWatchPanel processId={processId} section="history" /></>, {
       path: "/processes/:processId",
       url: `/processes/${processId}`,
     });

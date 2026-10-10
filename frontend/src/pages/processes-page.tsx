@@ -1,6 +1,6 @@
-import { Download, Search } from "lucide-react";
+import { Download, Search, SlidersHorizontal } from "lucide-react";
 import { useState, type SubmitEvent } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 
 import { useProcessList } from "@/api/queries";
 import { describeError, downloadProcessCsv } from "@/api/client";
@@ -10,6 +10,8 @@ import type {
   RuralLink,
   TriageDecision,
 } from "@/api/types";
+import { AppliedFilters } from "@/components/applied-filters";
+import { ProcessState } from "@/components/process-state";
 import { PageHeader } from "@/components/page-header";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Pagination } from "@/components/pagination";
@@ -86,139 +88,52 @@ function readFilters(params: URLSearchParams): FilterValues {
   };
 }
 
-function FilterForm({
-  initial,
-  onApply,
-  onClear,
-}: {
-  initial: FilterValues;
-  onApply: (values: FilterValues) => void;
-  onClear: () => void;
+function FilterForm({ initial, onApply, onClear }: {
+  initial: FilterValues; onApply: (values: FilterValues) => void; onClear: () => void;
 }) {
   const [values, setValues] = useState(initial);
-  const hasFilters = Object.values(initial).some(Boolean);
-
-  function submit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onApply(values);
+  const [expanded, setExpanded] = useState(false);
+  const advancedCount = Object.entries(initial).filter(([key, value]) => !["process_number", "subject", "decision"].includes(key) && value).length;
+  function textField(field: (typeof FILTER_FIELDS)[number]) {
+    return <div key={field.key} className="flex min-w-0 flex-col gap-1.5">
+      <Label htmlFor={`filter-${field.key}`}>{field.label}</Label>
+      <Input id={`filter-${field.key}`} name={field.key} value={values[field.key]} placeholder={field.placeholder} autoComplete="off" spellCheck={false}
+        pattern={field.key === "collection_id" ? UUID_PATTERN : undefined} title={field.key === "collection_id" ? "Informe um UUID válido." : undefined}
+        maxLength={field.key === "process_number" ? 30 : field.key === "subject_code" ? 80 : 160}
+        onChange={event => setValues(current => ({...current, [field.key]: event.target.value}))} />
+    </div>;
   }
-
-  return (
-    <form role="search" aria-label="Filtrar processos" onSubmit={submit} className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {FILTER_FIELDS.map((field) => (
-          <div key={field.key} className="space-y-1.5">
-            <Label htmlFor={`filter-${field.key}`}>{field.label}</Label>
-            <Input
-              id={`filter-${field.key}`}
-              name={field.key}
-              value={values[field.key]}
-              placeholder={field.placeholder}
-              pattern={field.key === "collection_id" ? UUID_PATTERN : undefined}
-              title={field.key === "collection_id" ? "Informe um UUID válido." : undefined}
-              maxLength={
-                field.key === "process_number"
-                  ? 30
-                  : field.key === "subject_code"
-                    ? 80
-                    : 160
-              }
-              onChange={(event) =>
-                setValues((current) => ({ ...current, [field.key]: event.target.value }))
-              }
-            />
-          </div>
-        ))}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="filter-decision">Decisão da triagem</Label>
-          <NativeSelect
-            id="filter-decision"
-            value={values.decision}
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                decision: event.target.value as FilterValues["decision"],
-              }))
-            }
-          >
-            <option value="">Todas as decisões</option>
-            <option value="pending">Pendente</option>
-            <option value="relevant">Relevante</option>
-            <option value="discarded">Descartado</option>
-          </NativeSelect>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filter-followed">Acompanhamento ativo</Label>
-          <NativeSelect
-            id="filter-followed"
-            value={values.followed}
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                followed: event.target.value as FilterValues["followed"],
-              }))
-            }
-          >
-            <option value="">Todos</option>
-            <option value="true">Acompanhados</option>
-            <option value="false">Sem acompanhamento ativo</option>
-          </NativeSelect>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filter-pending-news">Novidades pendentes</Label>
-          <NativeSelect
-            id="filter-pending-news"
-            value={values.pending_news}
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                pending_news: event.target.value as FilterValues["pending_news"],
-              }))
-            }
-          >
-            <option value="">Todos</option>
-            <option value="true">Com novidades pendentes</option>
-            <option value="false">Sem novidades pendentes</option>
-          </NativeSelect>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filter-rural-link">Vínculo rural</Label>
-          <NativeSelect
-            id="filter-rural-link"
-            value={values.rural_link}
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                rural_link: event.target.value as FilterValues["rural_link"],
-              }))
-            }
-          >
-            <option value="">Todos os vínculos</option>
-            <option value="unconfirmed">Não confirmado</option>
-            <option value="confirmed">Confirmado manualmente</option>
-          </NativeSelect>
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button type="submit">
-          <Search aria-hidden="true" />
-          Pesquisar
-        </Button>
-        <Button type="button" variant="ghost" disabled={!hasFilters} onClick={onClear}>
-          Limpar filtros
-        </Button>
-      </div>
-    </form>
-  );
+  function selectField(key: "decision" | "followed" | "pending_news" | "rural_link", label: string, options: [string, string][]) {
+    return <div className="flex flex-col gap-1.5" key={key}><Label htmlFor={`filter-${key}`}>{label}</Label>
+      <NativeSelect id={`filter-${key}`} name={key} value={values[key]} onChange={event => setValues(current => ({...current, [key]: event.target.value}))}>
+        {options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+      </NativeSelect></div>;
+  }
+  return <form role="search" aria-label="Filtrar processos" onSubmit={(event: SubmitEvent<HTMLFormElement>) => {event.preventDefault(); onApply(values);}} className="flex flex-col gap-4">
+    <div className="grid gap-3 md:grid-cols-3">
+      {FILTER_FIELDS.filter(field => ["process_number", "subject"].includes(field.key)).map(textField)}
+      {selectField("decision", "Decisão da triagem", [["", "Todas as decisões"], ["pending", "Pendente"], ["relevant", "Relevante"], ["discarded", "Descartado"]])}
+    </div>
+    <div className="flex flex-wrap gap-2">
+      <Button type="submit"><Search aria-hidden="true" />Pesquisar</Button>
+      <Button type="button" variant="outline" aria-expanded={expanded} aria-controls="advanced-filters" onClick={() => setExpanded(!expanded)}><SlidersHorizontal aria-hidden="true" />Mais filtros{advancedCount ? ` (${advancedCount})` : ""}</Button>
+      <Button type="button" variant="ghost" disabled={!Object.values(initial).some(Boolean)} onClick={onClear}>Limpar filtros</Button>
+    </div>
+    <div id="advanced-filters" hidden={!expanded} className="grid gap-3 rounded-md bg-muted/50 p-4 sm:grid-cols-2 lg:grid-cols-3">
+      {FILTER_FIELDS.filter(field => !["process_number", "subject"].includes(field.key)).map(textField)}
+      {selectField("followed", "Acompanhamento ativo", [["", "Todos"], ["true", "Acompanhados"], ["false", "Sem acompanhamento ativo"]])}
+      {selectField("pending_news", "Novidades pendentes", [["", "Todos"], ["true", "Com novidades pendentes"], ["false", "Sem novidades pendentes"]])}
+      {selectField("rural_link", "Vínculo rural", [["", "Todos os vínculos"], ["unconfirmed", "Não confirmado"], ["confirmed", "Confirmado manualmente"]])}
+    </div>
+  </form>;
 }
 
 function ProcessesTable({ processes }: { processes: ProcessSummary[] }) {
+  const location = useLocation();
   return (
-    <Table>
+    <Table className="responsive-records">
       <TableCaption className="sr-only">Processos locais ordenados por número CNJ</TableCaption>
-      <TableHeader>
+      <TableHeader className="sr-only md:not-sr-only">
         <TableRow>
           <TableHead>Número CNJ</TableHead>
           <TableHead>Triagem</TableHead>
@@ -232,27 +147,23 @@ function ProcessesTable({ processes }: { processes: ProcessSummary[] }) {
           const latest = process.latest_collection;
           return (
             <TableRow key={process.id}>
-              <TableCell className="whitespace-nowrap">
+              <TableCell data-label="Número CNJ" className="whitespace-nowrap">
                 <Link
                   to={`/processes/${process.id}`}
-                  className="font-medium text-primary tabular-nums underline-offset-4 hover:underline"
+                  state={{ from: location.pathname + location.search }}
+                  className="cnj font-medium text-primary underline-offset-4 hover:underline"
                 >
                   {formatCnj(process.numero_cnj)}
                 </Link>
               </TableCell>
-              <TableCell className="whitespace-nowrap text-sm">
-                <div>{triageDecisionLabel(process.triage.decision)}</div>
-                <div className="text-muted-foreground">
-                  {ruralLinkLabel(process.triage.rural_link)}
-                </div>
-              </TableCell>
-              <TableCell className="text-right tabular-nums">
+              <TableCell data-label="Triagem"><ProcessState decision={process.triage.decision} ruralLink={process.triage.rural_link} /></TableCell>
+              <TableCell data-label="Capas" className="text-right tabular-nums">
                 {formatCount(process.representation_count)}
               </TableCell>
-              <TableCell className="whitespace-nowrap">
+              <TableCell data-label="Última observação local" className="whitespace-nowrap">
                 {formatDateTime(process.latest_observed_at)}
               </TableCell>
-              <TableCell>
+              <TableCell data-label="Última coleta">
                 {latest ? (
                   <span className="text-sm">
                     {captureOutcomeLabel(latest.capture_outcome)} em{" "}
@@ -281,14 +192,6 @@ function ProcessesTable({ processes }: { processes: ProcessSummary[] }) {
       </TableBody>
     </Table>
   );
-}
-
-function triageDecisionLabel(value: TriageDecision): string {
-  return { pending: "Pendente", relevant: "Relevante", discarded: "Descartado" }[value];
-}
-
-function ruralLinkLabel(value: RuralLink): string {
-  return { unconfirmed: "Vínculo não confirmado", confirmed: "Vínculo confirmado" }[value];
 }
 
 export function ProcessesPage() {
@@ -333,26 +236,7 @@ export function ProcessesPage() {
       <PageHeader
         title="Processos"
         description="Base local agrupada por número CNJ. Os dados mostrados vêm de coletas já persistidas."
-        actions={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void exportCsv()}
-              disabled={exportPending}
-              aria-busy={exportPending}
-            >
-              <Download aria-hidden="true" />
-              {exportPending ? "Exportando…" : "Exportar CSV"}
-            </Button>
-            <Link
-              to={overviewHref}
-              className="inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-medium text-primary underline-offset-4 hover:bg-accent hover:underline"
-            >
-              Ver indicadores deste recorte
-            </Link>
-          </>
-        }
+
       />
       <Card>
         <CardContent className="space-y-6">
@@ -368,6 +252,31 @@ export function ProcessesPage() {
             onApply={(values) => setSearchParams(withFilters(searchParams, values))}
             onClear={() => setSearchParams(new URLSearchParams())}
           />
+          <AppliedFilters values={filters} onRemove={key => setSearchParams(withFilters(searchParams, { [key]: "" }))} />
+          </CardContent>
+      </Card>
+      <Card className="mt-5">
+        <CardContent>
+          <div className="data-toolbar">
+            <p className="font-medium">{processes.data ? `${formatCount(processes.data.total)} processos` : "Resultados"}<span className="block text-xs font-normal text-muted-foreground">CSV inclui todo o recorte aplicado</span></p>
+            <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void exportCsv()}
+              disabled={exportPending}
+              aria-busy={exportPending}
+            >
+              <Download aria-hidden="true" />
+              {exportPending ? "Exportando…" : "Exportar CSV"}
+            </Button>
+            <Link
+              to={overviewHref}
+              className="inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-medium text-primary underline-offset-4 hover:bg-accent hover:underline"
+            >
+              Ver indicadores deste recorte
+            </Link></div>
+          </div>
           {processes.isPending ? (
             <LoadingState label="Carregando processos…" />
           ) : !processes.data ? (

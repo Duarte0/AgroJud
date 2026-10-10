@@ -36,6 +36,7 @@ test("AC3: falha de rede mantém dados antigos identificados e retry não cria c
   expect(requests.count("POST", /^\/api\/v1\/jobs$/)).toBe(1);
 
   await page.getByRole("button", { name: "Cancelar coleta" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Cancelar coleta" }).click();
   await expectJobStatus(page, "Cancelado");
 });
 
@@ -127,6 +128,7 @@ test("AC2: reload e link direto preservam filtros, página e contexto", async ({
   await expect(page.getByRole("table")).toBeVisible();
 
   await page.goto("/processes");
+  await page.getByRole("button", { name: /Mais filtros/ }).click();
   await page.getByLabel("Classe").fill("Classe TPU");
   await page.getByLabel("Preset").fill("rural.credito_contratos");
   await page.getByRole("button", { name: "Pesquisar" }).click();
@@ -134,13 +136,13 @@ test("AC2: reload e link direto preservam filtros, página e contexto", async ({
   await expect(page).toHaveURL(/preset_id=rural.credito_contratos/);
   const url = page.url();
   await page.reload();
-  await expect(page.getByLabel("Classe")).toHaveValue("Classe TPU");
-  await expect(page.getByLabel("Preset")).toHaveValue("rural.credito_contratos");
+  await expect(page.getByLabel("Classe", { exact: true })).toHaveValue("Classe TPU");
+  await expect(page.getByLabel("Preset", { exact: true })).toHaveValue("rural.credito_contratos");
   await expect(page.getByRole("table")).toBeVisible();
 
   const direct = await context.newPage();
   await direct.goto(url);
-  await expect(direct.getByLabel("Classe")).toHaveValue("Classe TPU");
+  await expect(direct.getByLabel("Classe", { exact: true })).toHaveValue("Classe TPU");
   await direct.goto(`/jobs/${jobId}`);
   await expectJobStatus(direct, "Concluído");
   await direct.goto("/processes?page=999");
@@ -160,6 +162,9 @@ test("AC5: teclado, foco visível e largura de 390px", async ({ page }) => {
     .getByRole("navigation", { name: "Principal" })
     .getByRole("link", { name: "Visão geral" });
   await expect(overviewLink).toBeFocused();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
   const radarLink = page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Radar" });
   await expect(radarLink).toBeFocused();

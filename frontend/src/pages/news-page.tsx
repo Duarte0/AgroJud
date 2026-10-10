@@ -1,16 +1,17 @@
 import { useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 
 import { describeError } from "@/api/client";
 import { useNewsList, useUpdateNewsStatus } from "@/api/queries";
 import type { NewsCategory, NewsListQuery, NewsStatus, ProcessNews } from "@/api/types";
+import { AppliedFilters } from "@/components/applied-filters";
 import { PageHeader } from "@/components/page-header";
 import { Pagination } from "@/components/pagination";
 import { EmptyState, ErrorState, LoadingState, StaleNotice } from "@/components/query-feedback";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -52,23 +53,25 @@ function evidenceSummary(item: ProcessNews): string {
 
 function NewsCard({ item }: { item: ProcessNews }) {
   const updateStatus = useUpdateNewsStatus();
+  const location = useLocation();
   const nextStatus: NewsStatus = item.status === "pending" ? "reviewed" : "pending";
 
   return (
-    <Card data-testid="news-item">
-      <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <article className="news-row" data-testid="news-item">
+      <header className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <CardTitle className="text-base">
+          <h2 className="text-base font-medium">
             <Link
               to={`/processes/${item.process_id}`}
-              className="text-primary underline-offset-4 hover:underline"
+              state={{ from: location.pathname + location.search }}
+              className="cnj text-primary underline-offset-4 hover:underline"
             >
               {formatCnj(item.numero_cnj)}
             </Link>
-          </CardTitle>
-          <CardDescription>
+          </h2>
+          <p className="break-words text-xs text-muted-foreground">
             {item.tribunal} · origem {item.source} · representação {item.source_id}
-          </CardDescription>
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant={item.category === "ALTERATION_OBSERVED" ? "warning" : "secondary"}>
@@ -78,8 +81,8 @@ function NewsCard({ item }: { item: ProcessNews }) {
             {item.status === "pending" ? "Pendente" : "Revisada"}
           </Badge>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </header>
+      <div className="space-y-3">
         <p className="font-medium">{evidenceSummary(item)}</p>
         {item.category === "NEW_OBSERVATION" ? (
           <p className="text-sm text-muted-foreground">
@@ -96,6 +99,7 @@ function NewsCard({ item }: { item: ProcessNews }) {
             <dd>{formatDateTime(item.first_observed_at)}</dd>
           </div>
         </dl>
+        <details className="text-sm"><summary className="text-muted-foreground">Origem e evidência</summary><div className="mt-3 space-y-3">
         {item.category === "ALTERATION_OBSERVED" ? (
           <details className="rounded-md border px-3 py-2 text-sm">
             <summary className="cursor-pointer font-medium">Ver evidência da alteração</summary>
@@ -104,7 +108,9 @@ function NewsCard({ item }: { item: ProcessNews }) {
             </pre>
           </details>
         ) : null}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+        <p className="break-words text-xs text-muted-foreground">{item.tribunal} · origem {item.source} · representação {item.source_id}</p>
+        </div></details>
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
           <span className="text-xs text-muted-foreground">
             Proveniência local: {item.provenance === "ingestion" ? "ingestão" : "reprocessamento de quarentena"}
           </span>
@@ -122,8 +128,8 @@ function NewsCard({ item }: { item: ProcessNews }) {
             <AlertDescription>{describeError(updateStatus.error)}</AlertDescription>
           </Alert>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   );
 }
 
@@ -177,32 +183,17 @@ function processFiltersFromUrl(params: URLSearchParams): Partial<NewsListQuery> 
   return query;
 }
 
-function processFilterSummary(params: URLSearchParams): string[] {
-  const labels: Array<[string, string | null]> = [
-    ["Assunto", params.get("subject")],
-    ["Tema", params.get("subject_name_exact") ?? params.get("subject_code")],
-    ["Classe", params.get("class")],
-    ["Órgão julgador", params.get("court_unit")],
-    ["Preset", params.get("preset_id")],
-    ["Coleta", params.get("collection_id")],
-    ["Triagem", params.get("decision")],
-    ["Vínculo rural", params.get("rural_link")],
-    ["Acompanhamento", params.get("followed")],
-    ["Sinal vigente", params.get("signal_category")],
-  ];
-  return labels.flatMap(([label, value]) => (value ? [`${label}: ${value}`] : []));
-}
 
 export function NewsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [processNumberDraft, setProcessNumberDraft] = useState(
-    searchParams.get("process_number") ?? "",
-  );
+  const currentNumber = searchParams.get("process_number") ?? "";
+  const [numberDraft, setNumberDraft] = useState({ source: currentNumber, value: currentNumber });
+  const processNumberDraft = numberDraft.source === currentNumber ? numberDraft.value : currentNumber;
   const page = readPage(searchParams);
   const status = queryStatus(searchParams.get("status"));
   const category = queryCategory(searchParams.get("category"));
   const processFilters = processFiltersFromUrl(searchParams);
-  const processFilterLabels = processFilterSummary(searchParams);
+
   const query: NewsListQuery = {
     page,
     page_size: PAGE_SIZE,
@@ -245,24 +236,16 @@ export function NewsPage() {
               <Input
                 id="news-process-number"
                 value={processNumberDraft}
-                onChange={(event) => setProcessNumberDraft(event.target.value)}
+                onChange={(event) => setNumberDraft({source: currentNumber, value: event.target.value})}
                 placeholder="0000000-00.0000.0.00.0000"
               />
               <Button type="submit" variant="outline">Filtrar</Button>
             </div>
           </form>
-          <div className="space-y-2">
-            <label htmlFor="news-status" className="text-sm font-medium">Situação</label>
-            <NativeSelect
-              id="news-status"
-              value={status ?? ""}
-              onChange={(event) => setFilter("status", event.target.value)}
-            >
-              <option value="">Todas</option>
-              <option value="pending">Pendentes</option>
-              <option value="reviewed">Revisadas</option>
-            </NativeSelect>
-          </div>
+          <div className="space-y-2"><p className="text-sm font-medium">Situação</p><nav aria-label="Situação das novidades" className="flex flex-wrap gap-1">{[["", "Todas"], ["pending", "Pendentes"], ["reviewed", "Revisadas"]].map(([value, label]) => {
+            const next = new URLSearchParams(searchParams); if (value) next.set("status", value); else next.delete("status"); next.delete("page");
+            return <Link key={value} to={`?${next}`} aria-current={(status ?? "") === value ? "page" : undefined} className="rounded-md px-3 py-2 text-sm hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:text-primary">{label}</Link>;
+          })}</nav></div>
           <div className="space-y-2">
             <label htmlFor="news-category" className="text-sm font-medium">Categoria</label>
             <NativeSelect
@@ -278,12 +261,7 @@ export function NewsPage() {
           </div>
         </CardContent>
       </Card>
-      {processFilterLabels.length ? (
-        <Alert>
-          <AlertTitle>Recorte de processos aplicado</AlertTitle>
-          <AlertDescription>{processFilterLabels.join(" · ")}</AlertDescription>
-        </Alert>
-      ) : null}
+      <AppliedFilters values={Object.fromEntries(Object.entries(processFilters).map(([key, value]) => [key, String(value)]))} onRemove={key => setFilter(key, "")} />
       <Card>
         <CardContent className="space-y-4 pt-6">
           {news.isPending ? (

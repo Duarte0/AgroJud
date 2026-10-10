@@ -1,7 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { ProcessTriagePanel } from "@/components/process-triage-panel";
+import { ProcessTriagePanel, ProcessTriageHistory } from "@/components/process-triage-panel";
 import type { ProcessTriage } from "@/api/types";
 import { buildProcess } from "@/test/factories";
 import { apiError, json, mockApi, renderRoute } from "@/test/render";
@@ -56,7 +56,7 @@ describe("ProcessTriagePanel", () => {
         return json(current);
       },
     });
-    renderRoute(<ProcessTriagePanel processId={processId} initialTriage={initial} />, {
+    renderRoute(<><ProcessTriagePanel processId={processId} initialTriage={initial} /><ProcessTriageHistory processId={processId} /></>, {
       path: "/processes/:processId",
       url: `/processes/${processId}`,
     });
@@ -111,7 +111,7 @@ describe("ProcessTriagePanel", () => {
         return json(current);
       },
     });
-    renderRoute(<ProcessTriagePanel processId={processId} initialTriage={initial} />, {
+    renderRoute(<><ProcessTriagePanel processId={processId} initialTriage={initial} /><ProcessTriageHistory processId={processId} /></>, {
       path: "/processes/:processId",
       url: `/processes/${processId}`,
     });
@@ -157,7 +157,7 @@ describe("ProcessTriagePanel", () => {
       [`GET /api/v1/processes/${processId}`]: () => json(buildProcess()),
       [`GET /api/v1/processes/${processId}/triage-history`]: () => json(emptyHistory),
     });
-    renderRoute(<ProcessTriagePanel processId={processId} initialTriage={initial} />, {
+    renderRoute(<><ProcessTriagePanel processId={processId} initialTriage={initial} /><ProcessTriageHistory processId={processId} /></>, {
       path: "/processes/:processId",
       url: `/processes/${processId}`,
     });

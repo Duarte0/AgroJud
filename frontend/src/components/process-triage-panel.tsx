@@ -1,5 +1,5 @@
-import { useState, type SubmitEvent } from "react";
-import { useSearchParams } from "react-router";
+import { useCallback, useState, type SubmitEvent } from "react";
+import { useBeforeUnload, useBlocker, useSearchParams } from "react-router";
 
 import { ApiError, describeError } from "@/api/client";
 import {
@@ -12,6 +12,7 @@ import type {
   ProcessTriageHistoryEntry,
   ProcessTriagePatch,
 } from "@/api/types";
+import { ConfirmAction } from "@/components/confirm-action";
 import { Pagination } from "@/components/pagination";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -82,7 +83,7 @@ export function ProcessTriagePanel({
   processId: string;
   initialTriage: ProcessTriage;
 }) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const historyPage = readPage(searchParams, "triage_page");
   const process = useProcess(processId);
   const serverTriage = process.data?.triage ?? initialTriage;
@@ -102,11 +103,17 @@ export function ProcessTriagePanel({
     draft.rural_link !== serverTriage.rural_link ||
     draft.note !== serverTriage.note;
 
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => hasChanges && currentLocation.pathname !== nextLocation.pathname);
+  useBeforeUnload(useCallback((event: BeforeUnloadEvent) => {
+    if (hasChanges) { event.preventDefault(); event.returnValue = ""; }
+  }, [hasChanges]));
+
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setValidationError(null);
     if (draft.rural_link === "confirmed" && !draft.note.trim()) {
       setValidationError("Informe uma nota não vazia para confirmar o vínculo rural.");
+      document.getElementById("triage-note")?.focus();
       return;
     }
 
@@ -163,6 +170,7 @@ export function ProcessTriagePanel({
 
   return (
     <section className="space-y-4" aria-labelledby="triage-title">
+      <ConfirmAction open={blocker.state === "blocked"} onOpenChange={open => { if (!open && blocker.state === "blocked") blocker.reset(); }} title="Sair sem salvar a triagem?" description="A nota e as alterações deste rascunho ainda não foram salvas." confirmLabel="Sair sem salvar" onConfirm={() => { if (blocker.state === "blocked") blocker.proceed(); }} />
       <Card>
         <CardHeader>
           <CardTitle id="triage-title">Triagem humana</CardTitle>
@@ -208,7 +216,7 @@ export function ProcessTriagePanel({
           {validationError ? (
             <Alert variant="destructive" role="alert">
               <AlertTitle>Nota necessária</AlertTitle>
-              <AlertDescription>{validationError}</AlertDescription>
+              <AlertDescription>Revise o campo indicado abaixo.</AlertDescription>
             </Alert>
           ) : null}
           {update.isError && !conflict && !saveConflict ? (
@@ -257,7 +265,9 @@ export function ProcessTriagePanel({
                 value={draft.note}
                 maxLength={5000}
                 rows={4}
-                aria-describedby="triage-note-help triage-note-count"
+                aria-describedby="triage-note-help triage-note-count triage-note-error"
+                aria-invalid={Boolean(validationError)}
+                name="triage-note"
                 disabled={update.isPending}
                 className="flex min-h-24 w-full rounded-md border border-input bg-card px-3 py-2 text-base shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm"
                 onChange={(event) => changeDraft({ note: event.target.value })}
@@ -267,6 +277,8 @@ export function ProcessTriagePanel({
                 <span id="triage-note-count">{draft.note.length}/5000 caracteres</span>
               </div>
             </div>
+            <p id="triage-note-error" className="text-sm text-destructive">{validationError}</p>
+            <p role="status" className="text-xs text-muted-foreground">{hasChanges ? "Alterações não salvas" : update.isSuccess ? "Triagem salva." : ""}</p>
             <Button type="submit" disabled={update.isPending || !hasChanges}>
               {update.isPending ? "Salvando…" : "Salvar triagem"}
             </Button>
@@ -274,7 +286,16 @@ export function ProcessTriagePanel({
         </CardContent>
       </Card>
 
-      <Card>
+
+    </section>
+  );
+}
+
+export function ProcessTriageHistory({ processId }: { processId: string }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const historyPage = readPage(searchParams, "triage_page");
+  const history = useProcessTriageHistory(processId, historyPage);
+  return (      <Card>
         <CardHeader>
           <CardTitle>Histórico de triagem</CardTitle>
           <CardDescription>
@@ -318,7 +339,5 @@ export function ProcessTriagePanel({
             </div>
           )}
         </CardContent>
-      </Card>
-    </section>
-  );
+      </Card>);
 }

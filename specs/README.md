@@ -1,6 +1,6 @@
 # SPECs — AgroJud Radar
 
-Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004 a SPEC-019 foram concluídas localmente em 09/10/2026, incluindo reconciliação, persistência, fila/leases, paginação/checkpoints, retries/recuperação, catálogo temático, API/OpenAPI, frontend, triagem/histórico, sinais/reprocessamento, acompanhamento manual, baselines por representação, novidades revisáveis, buscas versionadas, agendamento diário, indicadores da base local e exportação CSV filtrada. SPEC-020 concluiu implementação e aceite local em 10/10/2026 e, no mesmo dia, o aceite real (AC4) após a aprovação de S1/S2 e S5 com evidência DataJud/TJGO; está DONE. `sinal.penhora` segue desabilitado no real.
+Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004 a SPEC-019 foram concluídas localmente em 09/10/2026, incluindo reconciliação, persistência, fila/leases, paginação/checkpoints, retries/recuperação, catálogo temático, API/OpenAPI, frontend, triagem/histórico, sinais/reprocessamento, acompanhamento manual, baselines por representação, novidades revisáveis, buscas versionadas, agendamento diário, indicadores da base local e exportação CSV filtrada. SPEC-020 concluiu implementação e aceite local em 10/10/2026 e, no mesmo dia, o aceite real (AC4) após a aprovação de S1/S2 e S5 com evidência DataJud/TJGO; está DONE. SPEC-021 redesenhou o frontend sem alterar contratos de API ou dados e passou seus aceites localmente em 10/10/2026; está DONE. `sinal.penhora` segue desabilitado no real.
 
 ## Como executar uma unidade
 
@@ -19,6 +19,8 @@ Uma SPEC contém objetivo, contexto, dependências, escopo, requisitos/contratos
 - **BLOCKED_VALIDATION:** implementação necessária existe, mas falta evidência técnica externa ou decisão explicitamente exigida.
 - **IN_PROGRESS:** execução iniciada.
 - **DONE:** todos os critérios desta unidade foram atendidos e registrados.
+
+SPEC-021 está DONE. O sistema visual, os componentes afetados e a matriz de validação estão descritos no [documento da unidade](SPEC-021-redesign-frontend.md) e no [sistema visual do frontend](../frontend/DESIGN_SYSTEM.md).
 
 SPEC-001 a SPEC-019 estão DONE localmente. SPEC-005/006 comprovam efeitos locais de capas, movimentos e quarentena; SPEC-007/008/009 comprovam fila/posse, paginação/checkpoints e recuperação em PostgreSQL isolado com HTTP simulado e ensaio de interrupção por subprocesso. SPEC-010 registra códigos TPU ativos e aplicáveis ao TJGO; em 10/10/2026 a probe S5 validou filtros e exemplos dos 4 presets e das regras de leilão e recuperação judicial. SPEC-011 comprova API, filtros e transições em PostgreSQL isolado. SPEC-012 comprova a jornada visual com Playwright sobre API/worker/banco demo isolados; falhas foram simuladas no navegador e não validam a fonte real. SPEC-013 comprova triagem, histórico append-only, concorrência otimista, defaults projetados, filtros e preservação após recoleta. SPEC-014 comprova sinais estruturados demo-only, persistência versionada, execução local retomável, ausência de HTTP no worker, publicação por processo e evidência Playwright na timeline. SPEC-015 comprova lista acompanhada, histórico auditável, gate de refresh por processo ativo, deduplicação por CNJ, preservação após vazio/falha e UI Playwright. SPEC-016 comprova ciclos de acompanhamento, baseline completa ou pendente por representação, novidades idempotentes, revisão persistente, datas e evidências por API/UI, inclusive após replay e reprocessamento. SPEC-017 comprova buscas salvas com revisões imutáveis, dispatches idempotentes, agregação de agendas vencidas, deduplicação manual/agendada, janela rolling congelada por coleta e alternância persistente da fila. SPEC-018 comprova agregados sem duplicação, filtros/drill-down, exclusão de versões históricas de sinais e snapshot read-only; teve 266 testes backend, 54 frontend e 14 cenários Playwright. SPEC-019 comprova exportação filtrada sem paginação, snapshot read-only em lotes, CSV seguro com origem explícita, tratamento de limite/falhas e limpeza após cancelamento; teve 280 testes backend, 55 frontend e 15 cenários Playwright, além de Ruff, mypy, lint, typecheck, build e OpenAPI atualizado. Essas conclusões locais, por si, não validam a fonte real; a validação real veio das probes S1/S2 (SPEC-003) e S5 (SPEC-010) de 10/10/2026. SPEC-004/006 fixam a política técnica local com fixtures sintéticas; não validam movimentos reais nem liberam a fonte DataJud.
 
@@ -56,12 +58,13 @@ SPEC-020 passou localmente em AC1, AC2, AC3, AC5 e AC6: Compose com frontend Ngi
 | [SPEC-018 — Indicadores da base local](SPEC-018-indicadores-da-base-local.md) | M9 | [SPEC-017](SPEC-017-buscas-salvas-e-agendamento.md) | DONE |
 | [SPEC-019 — Exportação CSV](SPEC-019-exportacao-csv.md) | M9 | [SPEC-017](SPEC-017-buscas-salvas-e-agendamento.md) | DONE |
 | [SPEC-020 — Operação e aceite integrado](SPEC-020-operacao-e-aceite-integrado.md) | M9 | [SPEC-018](SPEC-018-indicadores-da-base-local.md), [SPEC-019](SPEC-019-exportacao-csv.md) | DONE |
+| [SPEC-021 — Redesign do frontend jurídico e de dados](SPEC-021-redesign-frontend.md) | Pós-M9 / UX | [SPEC-012](SPEC-012-frontend-de-coleta-e-consulta.md)–[SPEC-020](SPEC-020-operacao-e-aceite-integrado.md) | DONE |
 
 As dependências transitivas estão implícitas no grafo acima. Dependências de capacidades reais são adicionais: identidade/consultas/sort por SPEC-003 e presets/regras por SPEC-010. Não há dependência circular entre transporte, catálogo e persistência.
 
 ## Ordem e Critical Path
 
-Ordem recomendada: **001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020**.
+Ordem recomendada: **001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021**.
 
 SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017. Esta independência não exige execução por agentes paralelos.
 
@@ -87,6 +90,7 @@ A indisponibilidade do TJGO permite desenvolver o núcleo local com fixtures, ma
 | M7 | 013 e 014 |
 | M8 | 015, 016 e 017 |
 | M9 | 018, 019 e 020 |
+| Pós-M9 / UX | 021 |
 | S1 e S2 | 003 |
 | S3 | 004 |
 | S4 | 009, apoiada pelos testes de 007/008 |
@@ -117,8 +121,8 @@ A indisponibilidade do TJGO permite desenvolver o núcleo local com fixtures, ma
 
 ## Checklist documental
 
-- [x] 20 unidades com escopo, dependências e status inicial.
+- [x] 21 unidades com escopo, dependências e status inicial.
 - [x] M0–M9 e S1–S5 mapeados.
 - [x] Esclarecimentos registrados sem alterar o PRD.
-- [ ] Implementação das unidades — acompanhar status individual, não marcar por geração de documentos.
+- [x] Implementação das unidades — cada status acompanha os critérios e evidências de sua SPEC.
 

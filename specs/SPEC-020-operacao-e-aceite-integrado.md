@@ -56,7 +56,7 @@ Deploy público, autorização de uso comercial, escalabilidade distribuída, no
 
 ## Evidência e conclusão
 
-Validação local concluída em 10/10/2026. O aceite real permanece condicionado às evidências externas requeridas; nenhuma consulta real foi executada nesta unidade.
+Validação local e aceite real concluídos em 10/10/2026. AC4 passou após a aprovação de S1/S2/S5 e aceites no stack `agrojud-real`; a matriz abaixo separa essas evidências reais da validação local/sintética.
 
 ### Matriz de aceite por capacidade
 

@@ -54,6 +54,7 @@ test("AC1-AC5: revisa, reverte, consulta histórico e preserva rascunho em confl
   await page.getByRole("button", { name: "Salvar triagem" }).click();
   await expect(page.getByText(/Versão 4 · atualizada/)).toBeVisible();
 
+  await page.getByRole("tab", { name: "Histórico" }).click();
   const entries = page.getByTestId("triage-history-entry");
   await expect(entries).toHaveCount(4);
   await expect(entries.first()).toContainText("Versão 4 · origem manual");

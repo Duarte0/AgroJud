@@ -7,18 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime } from "@/lib/format";
 
-export function LoadingState({ label }: { label: string }) {
-  return (
-    <div role="status" aria-live="polite" className="flex flex-col gap-3 py-2">
-      <span className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-        {label}
-      </span>
-      <Skeleton className="h-8 w-full" />
-      <Skeleton className="h-8 w-full" />
-      <Skeleton className="h-8 w-3/4" />
+export function LoadingState({ label, variant = "table" }: { label: string; variant?: "table" | "dashboard" | "detail" }) {
+  return <div role="status" aria-live="polite" aria-label={label} className="flex flex-col gap-4 py-3">
+    <span className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" aria-hidden="true" />{label}</span>
+    <div aria-hidden="true" className={variant === "dashboard" ? "grid grid-cols-2 gap-4 xl:grid-cols-4" : "flex flex-col gap-3"}>
+      {Array.from({length: variant === "dashboard" ? 4 : variant === "detail" ? 3 : 5}, (_, index) => <Skeleton key={index} className={variant === "dashboard" ? "h-28" : variant === "detail" ? "h-24" : "h-11"} />)}
     </div>
-  );
+  </div>;
 }
 
 type RetryProps = {
@@ -82,7 +77,7 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
   return (
     <div
       data-state="empty"
-      className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-10 text-center"
+      className="flex flex-col items-center gap-2 px-4 py-8 text-center"
     >
       <Inbox className="size-6 text-muted-foreground" aria-hidden="true" />
       <p className="font-medium">{title}</p>

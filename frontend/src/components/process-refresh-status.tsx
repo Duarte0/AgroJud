@@ -14,18 +14,16 @@ export function ProcessRefreshStatus({
   }
 
   return (
-    <p className="text-sm" data-testid="refresh-result">
+    <div className="flex flex-col gap-1 text-sm" data-testid="refresh-result">
       <span className="font-medium">{refreshResultLabel(result)}</span>
       {result.hit_count !== null ? ` · ${result.hit_count} capa(s) retornada(s)` : ""}
-      {" · "}
-      {formatDateTime(result.checked_at)}
-      {" · "}
+      <span className="text-xs text-muted-foreground">{formatDateTime(result.checked_at)}</span>
       <Link
         to={`/jobs/${result.job_id}`}
         className="text-primary underline-offset-4 hover:underline"
       >
         Ver atualização ({jobStatusLabel(result.job_status).toLowerCase()})
       </Link>
-    </p>
+    </div>
   );
 }

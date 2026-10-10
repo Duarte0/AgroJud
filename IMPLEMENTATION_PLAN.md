@@ -2,7 +2,7 @@
 
 Data: 10/10/2026.
 
-Status: M0 concluído em 08/10/2026. SPEC-002 e a entrega local da SPEC-003 foram concluídas em 08/10/2026. SPEC-004/S3 e SPEC-005/006 foram concluídas localmente em 09/10/2026; M2 está completo. SPEC-007/M3, SPEC-008 e SPEC-009 foram concluídas localmente em 09/10/2026; M4 e S4 passaram nos critérios locais com PostgreSQL isolado, HTTP simulado e subprocessos interrompidos antes/depois do commit. SPEC-010 concluiu localmente catálogo e investigação TPU em 09/10/2026. SPEC-011/M5 concluiu API operacional e contrato OpenAPI em 09/10/2026, com PostgreSQL isolado, tipos gerados e testes HTTP. SPEC-012/M6 concluiu localmente o frontend de coleta e consulta em 09/10/2026, validado com Playwright sobre API, worker e banco demo isolados. SPEC-013 concluiu localmente triagem humana e histórico em 09/10/2026, validada com PostgreSQL isolado, 222 testes backend, 42 testes frontend e 9 cenários Playwright. SPEC-014/M7 concluiu localmente regras estruturadas, sinais e reprocessamento em 09/10/2026, com 227 testes backend, 44 testes frontend, build e 10 cenários Playwright. SPEC-015 concluiu localmente a primeira entrega de M8 em 09/10/2026, com acompanhamento auditável, atualização manual por CNJ, 237 testes backend, 47 frontend, build e 11 cenários Playwright. SPEC-016 concluiu localmente baselines por representação, novidades idempotentes/revisáveis e evidências API/UI em 09/10/2026, com 245 testes backend, 49 testes frontend, build e 12 cenários Playwright aprovados. SPEC-017 concluiu localmente buscas salvas versionadas, agendas recuperáveis e alternância persistente da fila em 09/10/2026, com 261 testes backend, 49 testes frontend, build e 13 cenários Playwright aprovados. SPEC-019/M9 concluiu exportação CSV local em 09/10/2026, com 280 testes backend, 55 testes frontend, 15 cenários Playwright, Ruff, mypy, lint, typecheck, build e OpenAPI aprovados. M8 está completo localmente; em 10/10/2026, SPEC-020 concluiu a operação e o aceite locais AC1, AC2, AC3, AC5 e AC6. Ainda em 10/10/2026, S1/S2 e S5 foram aprovados com evidência real, a coleta real foi habilitada (sort composto, filtro de data compacto, read timeout de 60 s) e o AC4 passou no stack real; SPEC-020 e M9 estão concluídos. `sinal.penhora` segue desabilitado no real porque o movimento 11382 não aparece no TJGO.
+Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redesign do frontend jurídico e de dados em 10/10/2026, preservando as funcionalidades existentes. SPEC-020 foi aprovada local e realmente em 10/10/2026 após S1/S2/S5; `sinal.penhora` permanece desabilitado porque o movimento 11382 não aparece no TJGO.
 
 ## 1. Estado atual e orientação
 
@@ -129,7 +129,7 @@ A fila utilizará reserva transacional com `FOR UPDATE SKIP LOCKED`. Esse mecani
 
 A fonte indisponível permite avançar com o adaptador sintético e contratos provisórios documentados. Os testes locais não encerram S1/S2, e o modo real permanece sem aceite.
 
-A visão geral da base local foi entregue depois do gate de recuperação do núcleo na SPEC-018. A exportação foi concluída localmente na SPEC-019; a operação integrada da SPEC-020 passou localmente, com aceite real ainda bloqueado pelo AC4.
+A visão geral da base local foi entregue depois do gate de recuperação do núcleo na SPEC-018. A exportação foi concluída localmente na SPEC-019; SPEC-020 concluiu o aceite local e real em 10/10/2026. O redesign transversal do frontend está registrado na SPEC-021.
 
 ## 4. Validation Spikes
 
@@ -486,7 +486,7 @@ Usar índices direcionados às consultas e à fila ativa, com restrições de un
 
 - Atualização diária: M8.
 - Indicadores e CSV: M9.
-- Acabamento visual final: M9.
+- Redesign do frontend: concluído na SPEC-021 após M9.
 
 **Fora do MVP:**
 
@@ -507,31 +507,32 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] Inspecionar estado atual do repositório.
 - [x] Materializar este conteúdo em `IMPLEMENTATION_PLAN.md`.
 - [x] M0 — Fundação e PostgreSQL executáveis (SPEC-001 DONE).
-- [ ] S1 — Contrato real TJGO verificado.
-- [ ] S2 — Paginação real verificada.
+- [x] S1 — Contrato real TJGO verificado em 10/10/2026; limite da amostra descrito na SPEC-003.
+- [x] S2 — Paginação real verificada em duas páginas em 10/10/2026; limite da amostra descrito na SPEC-003.
 - [x] S3 — Reconciliação documentada e testada (SPEC-004 DONE; fixtures sintéticas, sem validação da fonte real).
-- [ ] M1 — Adaptadores e erros tipados.
+- [x] M1 — Adaptadores e erros tipados (SPEC-002 e catálogo SPEC-010 concluídos).
 - [x] M2 — Persistência de página idempotente (SPEC-005 e SPEC-006 concluídas localmente).
 - [x] M3 — Fila, lease e posse (SPEC-007 DONE localmente).
-- [x] SPEC-008 — Paginação e checkpoints localmente concluídos; fonte real permanece bloqueada por S2.
-- [x] S4 — Atomicidade e recuperação comprovadas localmente; integração real permanece bloqueada por S2.
-- [x] M4 — Coleta recuperável demonstrada localmente; consulta real multipágina segue pendente.
+- [x] SPEC-008 — Paginação e checkpoints concluídos localmente; duas páginas reais validadas pela S2 com os limites registrados.
+- [x] S4 — Atomicidade e recuperação comprovadas localmente com HTTP simulado e interrupções por subprocesso.
+- [x] M4 — Coleta recuperável demonstrada localmente; paginação real multipágina aprovada na amostra S2.
 - [x] SPEC-010 — Catálogo versionado e investigação TPU concluídos localmente; gates de evidência real preservados.
-- [x] M5 — API e OpenAPI estáveis (SPEC-011 DONE localmente; fonte real continua bloqueada por evidência externa).
-- [x] M6 — Fluxo visual completo (SPEC-012 DONE localmente; dados demo sintéticos, fonte real segue bloqueada).
-- [ ] S5 — Catálogo temático validado.
-- [x] M7 — Triagem e regras concluídas localmente (SPEC-013/014); habilitação real continua condicionada a S5.
-- [x] M8 — Acompanhamento, novidades e agendamento estão concluídos localmente (SPEC-015/016/017); fonte real continua condicionada a S5/S1/S2.
+- [x] M5 — API e OpenAPI estáveis; compatibilidade da fonte real validada na amostra S1/S2.
+- [x] M6 — Fluxo visual completo, validado em demo sintética; a UI também identifica o ambiente real.
+- [x] S5 — Catálogo temático e regras pesquisadas validados em 10/10/2026; o sinal 11382 permanece inconclusivo.
+- [x] M7 — Triagem e regras concluídas; habilitação real restrita às regras com evidência S5 aprovada.
+- [x] M8 — Acompanhamento, novidades e agendamento concluídos; limites de regras/capacidades reais estão registrados na SPEC-020.
 - [x] SPEC-018 — Indicadores da base local concluídos localmente; amostra sintética e não representativa do universo TJGO.
 - [x] M9 — Indicadores, CSV e operação documentada; aceite real concluído em 10/10/2026.
+- [x] SPEC-021 — Redesign visual, responsivo e acessível do frontend concluído com testes e evidências.
 - [x] Aceite sintético completo, conforme matriz da SPEC-020.
-- [ ] Aceite real TJGO registrado separadamente.
+- [x] Aceite real TJGO registrado separadamente na matriz da SPEC-020.
 - [x] Instalação em Compose descartável e restauração verificadas.
 - [x] Limitações remanescentes documentadas.
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-019 estão DONE localmente; SPEC-020 está BLOCKED_VALIDATION após passar seus critérios locais e aguarda AC4. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-001 a SPEC-021 estão DONE com os alcances descritos em cada documento. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |
@@ -555,8 +556,9 @@ A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 u
 | [SPEC-018](specs/SPEC-018-indicadores-da-base-local.md) | M9 | Indicadores da base local | SPEC-017 |
 | [SPEC-019](specs/SPEC-019-exportacao-csv.md) | M9 | Exportação CSV | SPEC-017 |
 | [SPEC-020](specs/SPEC-020-operacao-e-aceite-integrado.md) | M9 | Operação e aceite integrado | SPEC-018, SPEC-019 |
+| [SPEC-021](specs/SPEC-021-redesign-frontend.md) | Pós-M9 / UX | Redesign do frontend jurídico e de dados | SPEC-012–SPEC-020 |
 
-Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020. SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017.
+Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021. SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017.
 
 ### Esclarecimentos técnicos registrados na especificação
 

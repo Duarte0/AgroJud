@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 import { describeError } from "@/api/client";
 import { useCreateSignalRun, useProcessSignals, useResumeSignalRun } from "@/api/queries";
@@ -69,13 +69,14 @@ function SignalRunStatusCard({
 }
 
 function SignalCard({ processId, signal }: { processId: string; signal: ProcessSignal }) {
+  const location = useLocation();
   const evidenceHref = signal.movement_occurrence_id
     ? `/processes/${processId}?evidence=${signal.movement_occurrence_id}#timeline`
     : null;
   return (
     <li className="rounded-lg border bg-card p-4" data-testid="process-signal">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={signal.state === "current" ? "default" : "secondary"}>
+        <Badge variant={signal.state === "current" ? "info" : "secondary"}>
           {signal.state === "current" ? "Vigente" : "Histórico"}
         </Badge>
         <Badge variant="outline">{categories[signal.category] ?? signal.category}</Badge>
@@ -92,6 +93,7 @@ function SignalCard({ processId, signal }: { processId: string; signal: ProcessS
       {evidenceHref ? (
         <Link
           to={evidenceHref}
+          state={location.state}
           className="mt-2 inline-block text-sm text-primary underline-offset-4 hover:underline"
         >
           Ver evidência na linha do tempo

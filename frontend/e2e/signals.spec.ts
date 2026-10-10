@@ -12,6 +12,7 @@ test("sinal reprocessado abre sua ocorrência exata na timeline", async ({ page 
 
   const processId = page.url().split("/").pop()!;
   const occurrenceId = setProcessMovementCode(processId, 11382);
+  await page.getByRole("tab", { name: "Sinais" }).click();
   await page.getByRole("button", { name: "Reprocessar sinais deste processo" }).click();
 
   await expect(page.getByText("Último reprocessamento: Concluído")).toBeVisible({

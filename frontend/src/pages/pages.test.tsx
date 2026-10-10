@@ -77,6 +77,7 @@ describe("ProcessesPage", () => {
     renderRoute(<ProcessesPage />, { path: "/processes", url: "/processes?page=3" });
     await screen.findByText("0000001-00.2026.8.09.0001");
 
+    await userEvent.click(screen.getByRole("button", { name: /Mais filtros/ }));
     await userEvent.type(screen.getByLabelText("Classe"), "Execução");
     await userEvent.selectOptions(screen.getByLabelText("Decisão da triagem"), "relevant");
     await userEvent.selectOptions(screen.getByLabelText("Vínculo rural"), "confirmed");
@@ -383,7 +384,8 @@ describe("ProcessDetailPage", () => {
     expect(items[1]).toHaveTextContent("Atualização da fonteNão informado");
     expect(items[1]).toHaveTextContent("Observação local09/10/2026, 10:00");
     expect(screen.getByText("Há capas com lista de movimentos incompleta")).toBeInTheDocument();
-    const representation = screen.getByTestId("representation");
+    await userEvent.click(screen.getByRole("tab", { name: "Capas por origem" }));
+    const representation = await screen.findByTestId("representation");
     expect(representation).toHaveTextContent("Procedimento Comum (7)");
     expect(representation).toHaveTextContent("original: 2025-01-15T09:00:00");
   });
@@ -431,6 +433,7 @@ describe("ProcessDetailPage", () => {
       url: `/processes/${processId}`,
     });
 
+    await userEvent.click(await screen.findByRole("tab", { name: "Sinais" }));
     await userEvent.click(await screen.findByRole("button", { name: "Reprocessar sinais deste processo" }));
     expect(await screen.findByText("Último reprocessamento: Na fila")).toBeInTheDocument();
     expect(submitted).toEqual({ process_ids: [processId] });
@@ -500,6 +503,7 @@ describe("ProcessDetailPage", () => {
       url: `/processes/${processId}`,
     });
 
+    await userEvent.click(await screen.findByRole("tab", { name: "Sinais" }));
     await userEvent.click(await screen.findByRole("link", { name: "Ver evidência na linha do tempo" }));
     expect(await screen.findByText("Bloqueio, Penhora ou Arresto")).toBeInTheDocument();
     expect(screen.getByTestId("location")).toHaveTextContent(`evidence=${occurrenceId}`);

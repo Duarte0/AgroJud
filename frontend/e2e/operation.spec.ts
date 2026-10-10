@@ -110,5 +110,6 @@ test("jornada sintética integrada: reinício, coleta, revisão, acompanhamento,
 
   await page.goto(`/processes/${processId}`);
   await page.getByRole("button", { name: "Remover acompanhamento" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Remover acompanhamento" }).click();
   await expect(page.getByText("Não acompanhado")).toBeVisible();
 });

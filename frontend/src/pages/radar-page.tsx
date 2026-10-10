@@ -15,6 +15,7 @@ import {
 import type { Preset, SavedSearch } from "@/api/types";
 import { useCurrentEnvironment } from "@/app/environment-context";
 import { JobStatusBadge } from "@/components/job-status-badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
 import { usePageTitle } from "@/hooks/use-page-title";
 import {
@@ -26,7 +27,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultWindow, DEFAULT_WINDOW_MONTHS } from "@/lib/date-window";
@@ -121,13 +122,14 @@ function SavedSearchRow({ search }: { search: SavedSearch }) {
 function SavedSearchesPanel() {
   const searches = useSavedSearches();
   return (
-    <section className="mt-8 border-t pt-6" aria-labelledby="saved-searches-title">
+    <section className="pt-2" aria-labelledby="saved-searches-title">
       <div className="mb-3">
         <h2 id="saved-searches-title" className="text-lg font-semibold">Buscas salvas</h2>
         <p className="text-sm text-muted-foreground">
           Atualizações automáticas ocorrem às 06h no fuso de São Paulo. Executar agora é uma ação manual.
         </p>
       </div>
+      {searches.data ? <StaleNotice query={searches} /> : null}
       {searches.isPending ? (
         <LoadingState label="Carregando buscas salvas…" />
       ) : !searches.data ? (
@@ -164,7 +166,7 @@ function PresetOption({
   return (
     <div
       className={cn(
-        "rounded-lg border p-4 transition-colors",
+        "rounded-md border px-4 py-3 transition-colors",
         checked && "border-primary bg-accent",
         !enabled && "bg-muted/60",
       )}
@@ -230,6 +232,11 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const [filedThrough, setFiledThrough] = useState(suggested.through);
   const [hitBudget, setHitBudget] = useState(String(MAX_HIT_BUDGET));
   const [validation, setValidation] = useState<string | null>(null);
+  const [invalidField, setInvalidField] = useState<string | null>(null);
+  function failValidation(message: string, field: string) {
+    setValidation(message); setInvalidField(field);
+    document.getElementById(field)?.focus();
+  }
   const [savedSearchName, setSavedSearchName] = useState("");
   const [enableSavedSearch, setEnableSavedSearch] = useState(false);
 
@@ -250,14 +257,14 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
     if (submitting.current || !selected || sourceBlocked) return;
     const budget = Number(hitBudget);
     if (!Number.isInteger(budget) || budget < 1 || budget > MAX_HIT_BUDGET) {
-      setValidation(`O limite deve ser um número inteiro entre 1 e ${MAX_HIT_BUDGET}.`);
+      failValidation(`O limite deve ser um número inteiro entre 1 e ${MAX_HIT_BUDGET}.`, "hit-budget");
       return;
     }
     if (!useDefaultWindow && (!filedFrom || !filedThrough || filedFrom > filedThrough)) {
-      setValidation("Informe uma janela válida: a data inicial deve ser anterior ou igual à final.");
+      failValidation("Informe uma janela válida: a data inicial deve ser anterior ou igual à final.", "filed-from");
       return;
     }
-    setValidation(null);
+    setValidation(null); setInvalidField(null);
     submitting.current = true;
     try {
       const created = await createJob.mutateAsync({
@@ -281,18 +288,18 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
     if (!selected || sourceBlocked) return;
     const budget = Number(hitBudget);
     if (!savedSearchName.trim()) {
-      setValidation("Informe um nome para a busca salva.");
+      failValidation("Informe um nome para a busca salva.", "saved-search-name");
       return;
     }
     if (!Number.isInteger(budget) || budget < 1 || budget > MAX_HIT_BUDGET) {
-      setValidation(`O limite deve ser um número inteiro entre 1 e ${MAX_HIT_BUDGET}.`);
+      failValidation(`O limite deve ser um número inteiro entre 1 e ${MAX_HIT_BUDGET}.`, "hit-budget");
       return;
     }
     if (!useDefaultWindow && (!filedFrom || !filedThrough || filedFrom > filedThrough)) {
-      setValidation("Informe uma janela válida: a data inicial deve ser anterior ou igual à final.");
+      failValidation("Informe uma janela válida: a data inicial deve ser anterior ou igual à final.", "filed-from");
       return;
     }
-    setValidation(null);
+    setValidation(null); setInvalidField(null);
     try {
       await createSavedSearch.mutateAsync({
         name: savedSearchName.trim(),
@@ -314,10 +321,11 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const pending = createJob.isPending;
 
   return (
-    <form onSubmit={submit} className="space-y-6" aria-describedby="collection-form-help">
+    <form onSubmit={submit} className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]" aria-describedby="collection-form-help">
+      <div className="flex min-w-0 flex-col gap-5">
       <p id="collection-form-help" className="text-sm text-muted-foreground">
-        A coleta é enfileirada e processada pelo worker. O acompanhamento mostra apenas o estado
-        persistido.
+        Selecione o tema e o período para consultar a fonte. Você poderá acompanhar os resultados
+        confirmados na tela da coleta.
       </p>
 
       {sourceBlocked ? (
@@ -361,6 +369,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
             <Label htmlFor="filed-from">Ajuizados a partir de</Label>
             <Input
               id="filed-from"
+              name="filed-from" aria-invalid={invalidField === "filed-from"} aria-describedby={invalidField === "filed-from" ? "collection-validation" : undefined}
               type="date"
               value={filedFrom}
               onChange={(event) => setFiledFrom(event.target.value)}
@@ -372,6 +381,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
             <Label htmlFor="filed-through">Ajuizados até (inclusive)</Label>
             <Input
               id="filed-through"
+              name="filed-through" aria-invalid={invalidField === "filed-through"} aria-describedby={invalidField === "filed-through" ? "collection-validation" : undefined}
               type="date"
               value={filedThrough}
               onChange={(event) => setFiledThrough(event.target.value)}
@@ -385,7 +395,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
       <div className="space-y-1.5 sm:max-w-xs">
         <Label htmlFor="hit-budget">Limite de registros desta execução</Label>
         <Input
-          id="hit-budget"
+          id="hit-budget" name="hit-budget" aria-invalid={invalidField === "hit-budget"}
           type="number"
           inputMode="numeric"
           min={1}
@@ -393,7 +403,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
           step={1}
           value={hitBudget}
           onChange={(event) => setHitBudget(event.target.value)}
-          aria-describedby="hit-budget-help"
+          aria-describedby="hit-budget-help collection-validation"
           required
         />
         <p id="hit-budget-help" className="text-xs text-muted-foreground">
@@ -403,7 +413,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
       </div>
 
       {validation ? (
-        <p role="alert" className="text-sm font-medium text-destructive">
+        <p id="collection-validation" role="alert" className="text-sm font-medium text-destructive">
           {validation}
         </p>
       ) : null}
@@ -414,7 +424,8 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         </Alert>
       ) : null}
 
-      <div className="space-y-3 rounded-lg border p-4">
+      <details className="space-y-3 rounded-md border p-4">
+        <summary className="font-medium">Salvar busca</summary>
         <div>
           <h2 className="font-semibold">Salvar estes critérios</h2>
           <p className="text-sm text-muted-foreground">
@@ -425,6 +436,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
           <Label htmlFor="saved-search-name">Nome da busca salva</Label>
           <Input
             id="saved-search-name"
+              name="saved-search-name" aria-invalid={invalidField === "saved-search-name"} aria-describedby={invalidField === "saved-search-name" ? "collection-validation" : undefined}
             value={savedSearchName}
             maxLength={160}
             onChange={(event) => setSavedSearchName(event.target.value)}
@@ -447,12 +459,22 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
           </Alert>
         ) : null}
         {createSavedSearch.isSuccess ? (
-          <p role="status" className="text-sm text-success">Busca salva.</p>
+          <p role="status" className="text-sm text-success-foreground">Busca salva.</p>
         ) : null}
         <Button type="button" variant="outline" onClick={() => void saveSearch()} disabled={createSavedSearch.isPending || !selected || sourceBlocked}>
           {createSavedSearch.isPending ? "Salvando…" : "Salvar busca"}
         </Button>
+      </details>
       </div>
+      <aside className="flex flex-col gap-5 xl:sticky xl:top-20">
+        <Card>
+          <CardHeader><CardTitle>Resumo da coleta</CardTitle></CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <dl className="flex flex-col gap-3 text-sm">
+              <div><dt className="text-xs text-muted-foreground">Tema</dt><dd className="font-medium">{selected?.name ?? "Nenhum tema disponível"}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">Período de ajuizamento</dt><dd>{useDefaultWindow ? "Últimos 12 meses, calculados ao iniciar" : `${filedFrom} a ${filedThrough}`}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">Limite desta execução</dt><dd>{hitBudget} registros</dd></div>
+            </dl>
 
       <Button type="submit" size="lg" disabled={pending || !selected || sourceBlocked}>
         {pending ? (
@@ -462,6 +484,10 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         )}
         {pending ? "Enviando…" : "Iniciar coleta"}
       </Button>
+          </CardContent>
+        </Card>
+        <Card><CardHeader><CardTitle>Coletas recentes</CardTitle></CardHeader><CardContent><RecentJobs /></CardContent></Card>
+      </aside>
     </form>
   );
 }
@@ -508,49 +534,16 @@ function RecentJobs() {
 export function RadarPage() {
   usePageTitle("Radar");
   const presets = usePresets();
-
-  return (
-    <>
-      <PageHeader
-        title="Radar"
-        description="Escolha um preset versionado, ajuste a janela e o limite, e inicie uma coleta no TJGO."
-      />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Nova coleta por preset</CardTitle>
-            <CardDescription>
-              Itens sem evidência suficiente aparecem desabilitados com o motivo.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {presets.isPending ? (
-              <LoadingState label="Carregando presets…" />
-            ) : presets.data ? (
-              <>
-                <StaleNotice query={presets} />
-                <CollectionForm presets={presets.data.items} />
-                <SavedSearchesPanel />
-              </>
-            ) : (
-              <ErrorState
-                title="Não foi possível carregar os presets"
-                error={presets.error}
-                onRetry={() => void presets.refetch()}
-                retrying={presets.isFetching}
-              />
-            )}
-          </CardContent>
-        </Card>
-        <Card className="self-start">
-          <CardHeader>
-            <CardTitle>Coletas recentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RecentJobs />
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  );
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") === "saved" ? "saved" : "new";
+  return <>
+    <PageHeader title="Radar" description="Descoberta de processos no TJGO por tema e período de ajuizamento." />
+    <Tabs value={tab} onValueChange={value => { const next = new URLSearchParams(params); next.set("tab", value); setParams(next, { preventScrollReset: true }); }}>
+      <TabsList aria-label="Radar"><TabsTrigger value="new">Nova coleta</TabsTrigger><TabsTrigger value="saved">Buscas salvas</TabsTrigger></TabsList>
+      <TabsContent value="new" forceMount>
+        {presets.isPending ? <LoadingState label="Carregando presets…" variant="detail" /> : presets.data ? <><StaleNotice query={presets} /><CollectionForm presets={presets.data.items} /></> : <ErrorState title="Não foi possível carregar os presets" error={presets.error} onRetry={() => void presets.refetch()} retrying={presets.isFetching} />}
+      </TabsContent>
+      <TabsContent value="saved"><Card><CardContent><SavedSearchesPanel /></CardContent></Card></TabsContent>
+    </Tabs>
+  </>;
 }

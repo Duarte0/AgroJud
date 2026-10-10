@@ -51,7 +51,9 @@ test("AC1/AC4: inicia, acompanha e abre o processo sem envio duplicado", async (
 
   await page.getByRole("link", { name: "0000001-00.2026.8.09.0001" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("0000001-00.2026.8.09.0001");
+  await page.getByRole("tab", { name: "Capas por origem" }).click();
   await expect(page.getByTestId("representation").first()).toContainText("Classe TPU");
+  await page.getByRole("tab", { name: "Movimentações" }).click();
   const movement = page.getByTestId("movement").first();
   await expect(movement).toContainText("Data do evento");
   await expect(movement).toContainText("Atualização da fonte");
@@ -70,6 +72,7 @@ test("cancelamento interrompe o polling e retomada volta a acompanhar", async ({
 
   await expect(page.getByText("Cancelar não desfaz resultados de páginas já confirmadas.")).toBeVisible();
   await page.getByRole("button", { name: "Cancelar coleta" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Cancelar coleta" }).click();
   await expectJobStatus(page, "Cancelado");
   await expect(page.getByTestId("command-confirmed")).toContainText("Cancelado");
   await expect(page.getByText("O cancelamento não desfaz resultados confirmados antes dele.")).toBeVisible();

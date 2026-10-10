@@ -1,9 +1,10 @@
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { describeError } from "@/api/client";
 import { useRefreshProcess, useSetProcessWatch, useWatchlist } from "@/api/queries";
 import { useCurrentEnvironment } from "@/app/environment-context";
 import type { WatchlistItem } from "@/api/types";
+import { ConfirmAction } from "@/components/confirm-action";
 import { PageHeader } from "@/components/page-header";
 import { ProcessRefreshStatus } from "@/components/process-refresh-status";
 import { EmptyState, ErrorState, LoadingState, StaleNotice } from "@/components/query-feedback";
@@ -28,6 +29,7 @@ const PAGE_SIZE = 25;
 
 function WatchlistRow({ item }: { item: WatchlistItem }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const environment = useCurrentEnvironment();
   const refresh = useRefreshProcess(item.process_id);
   const setWatch = useSetProcessWatch(item.process_id);
@@ -41,11 +43,12 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
 
   return (
     <TableRow data-testid="watchlist-entry">
-      <TableCell>
+      <TableCell data-label="Processo">
         <div className="space-y-1">
           <Link
             to={`/processes/${item.process_id}`}
-            className="font-medium text-primary tabular-nums underline-offset-4 hover:underline"
+            state={{ from: location.pathname + location.search }}
+            className="cnj font-medium text-primary underline-offset-4 hover:underline"
           >
             {formatCnj(item.numero_cnj)}
           </Link>
@@ -65,10 +68,10 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
           ) : null}
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell data-label="Última consulta por número">
         <ProcessRefreshStatus result={item.last_refresh} />
       </TableCell>
-      <TableCell>
+      <TableCell data-label="Ações">
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={update}
@@ -77,13 +80,9 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
           >
             {refresh.isPending ? "Enfileirando…" : "Atualizar"}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => setWatch.mutate(false)}
-            disabled={setWatch.isPending}
-          >
-            {setWatch.isPending ? "Removendo…" : "Remover"}
-          </Button>
+          <ConfirmAction title="Remover acompanhamento?" description="O processo e seu histórico serão preservados. Novas atualizações diárias serão interrompidas; uma coleta já iniciada pode terminar." confirmLabel="Remover acompanhamento" onConfirm={() => setWatch.mutate(false)}>
+            <Button variant="outline" disabled={setWatch.isPending}>{setWatch.isPending ? "Removendo…" : "Remover"}</Button>
+          </ConfirmAction>
         </div>
         {actionError ? (
           <Alert variant="destructive" role="alert" className="mt-2">
@@ -127,11 +126,11 @@ export function WatchlistPage() {
                   Inclua um processo pela tela de detalhe para começar a lista.
                 </EmptyState>
               ) : (
-                <Table>
+                <Table className="responsive-records">
                   <TableCaption className="sr-only">
                     Processos acompanhados e resultado da última consulta por número
                   </TableCaption>
-                  <TableHeader>
+                <TableHeader className="sr-only md:not-sr-only">
                     <TableRow>
                       <TableHead>Processo</TableHead>
                       <TableHead>Última consulta por número</TableHead>

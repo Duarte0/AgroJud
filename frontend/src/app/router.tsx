@@ -1,14 +1,6 @@
 import { createBrowserRouter } from "react-router";
 
 import { AppShell } from "@/app/app-shell";
-import { JobDetailPage } from "@/pages/job-detail-page";
-import { JobsPage } from "@/pages/jobs-page";
-import { NotFoundPage } from "@/pages/not-found-page";
-import { NewsPage } from "@/pages/news-page";
-import { ProcessDetailPage } from "@/pages/process-detail-page";
-import { ProcessesPage } from "@/pages/processes-page";
-import { RadarPage } from "@/pages/radar-page";
-import { WatchlistPage } from "@/pages/watchlist-page";
 
 export const router = createBrowserRouter([
   {
@@ -20,14 +12,38 @@ export const router = createBrowserRouter([
           Component: (await import("@/pages/overview-page")).OverviewPage,
         }),
       },
-      { path: "radar", element: <RadarPage /> },
-      { path: "jobs", element: <JobsPage /> },
-      { path: "jobs/:jobId", element: <JobDetailPage /> },
-      { path: "processes", element: <ProcessesPage /> },
-      { path: "processes/:processId", element: <ProcessDetailPage /> },
-      { path: "watchlist", element: <WatchlistPage /> },
-      { path: "news", element: <NewsPage /> },
-      { path: "*", element: <NotFoundPage /> },
+      {
+        path: "radar",
+        lazy: async () => ({ Component: (await import("@/pages/radar-page")).RadarPage }),
+      },
+      {
+        path: "jobs",
+        lazy: async () => ({ Component: (await import("@/pages/jobs-page")).JobsPage }),
+      },
+      {
+        path: "jobs/:jobId",
+        lazy: async () => ({ Component: (await import("@/pages/job-detail-page")).JobDetailPage }),
+      },
+      {
+        path: "processes",
+        lazy: async () => ({ Component: (await import("@/pages/processes-page")).ProcessesPage }),
+      },
+      {
+        path: "processes/:processId",
+        lazy: async () => ({ Component: (await import("@/pages/process-detail-page")).ProcessDetailPage }),
+      },
+      {
+        path: "watchlist",
+        lazy: async () => ({ Component: (await import("@/pages/watchlist-page")).WatchlistPage }),
+      },
+      {
+        path: "news",
+        lazy: async () => ({ Component: (await import("@/pages/news-page")).NewsPage }),
+      },
+      {
+        path: "*",
+        lazy: async () => ({ Component: (await import("@/pages/not-found-page")).NotFoundPage }),
+      },
     ],
   },
 ]);

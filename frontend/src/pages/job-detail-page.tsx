@@ -7,6 +7,8 @@ import { ApiError, describeError, isNotFound } from "@/api/client";
 import { queryKeys, useJob, useJobCommand } from "@/api/queries";
 import type { JobCommandResult, JobDetail } from "@/api/types";
 import { useCurrentEnvironment } from "@/app/environment-context";
+import { ConfirmAction } from "@/components/confirm-action";
+import { ContextBackLink } from "@/components/context-back-link";
 import { DescriptionList } from "@/components/description-list";
 import { JobStatusBadge } from "@/components/job-status-badge";
 import { PageHeader } from "@/components/page-header";
@@ -327,6 +329,7 @@ function JobActions({ job }: { job: JobDetail }) {
   const inFlight = useRef(false);
   const [confirmed, setConfirmed] = useState<JobCommandResult | null>(null);
   const actions = availableJobActions(job);
+  const [confirmAction, setConfirmAction] = useState<JobAction | null>(null);
 
   async function run(action: JobAction) {
     if (inFlight.current) return;
@@ -346,13 +349,14 @@ function JobActions({ job }: { job: JobDetail }) {
   if (actions.length === 0 && !command.isError && !confirmed) return null;
   return (
     <div className="space-y-3">
+      <ConfirmAction open={confirmAction !== null} onOpenChange={open => { if (!open) setConfirmAction(null); }} title={`${confirmAction?.label ?? "Confirmar ação"}?`} description={confirmAction?.description ?? ""} confirmLabel={confirmAction?.label ?? "Confirmar"} onConfirm={() => { if (confirmAction) void run(confirmAction); setConfirmAction(null); }} />
       <div className="flex flex-wrap gap-2">
         {actions.map((action) => (
           <Button
             key={action.command}
             variant={action.variant}
             disabled={command.isPending}
-            onClick={() => void run(action)}
+            onClick={() => { if (action.command === "cancel" || action.command === "restart-scan") setConfirmAction(action); else void run(action); }}
             title={action.description}
           >
             {command.isPending && command.variables === action.command ? (
@@ -372,7 +376,7 @@ function JobActions({ job }: { job: JobDetail }) {
       <div aria-live="polite">
         {confirmed ? (
           <p className="text-sm text-muted-foreground" data-testid="command-confirmed">
-            Comando confirmado pelo backend. Estado persistido: {jobStatusLabel(confirmed.status)}
+            Comando confirmado. Estado: {jobStatusLabel(confirmed.status)}
             {confirmed.cancel_requested && confirmed.status !== "cancelled"
               ? " (cancelamento solicitado)"
               : ""}
@@ -397,6 +401,7 @@ function JobView({ job }: { job: JobDetail }) {
 
   return (
     <div className="space-y-6">
+      <ContextBackLink fallback="/jobs" label="Voltar às coletas" />
       <PageHeader
         title={
           <span className="flex flex-wrap items-center gap-3">
@@ -404,7 +409,7 @@ function JobView({ job }: { job: JobDetail }) {
             <JobStatusBadge status={job.status} />
           </span>
         }
-        description={`${jobKindLabel(job.kind)} · ${job.environment === "demo" ? "ambiente demo (sintético)" : "ambiente real"} · ID ${job.id}`}
+        description={`${jobKindLabel(job.kind)} · ${job.environment === "demo" ? "ambiente demo (sintético)" : "ambiente real"}`}
         actions={
           <Button asChild variant="outline">
             <Link to={`/processes?collection_id=${job.collection_id}`}>
@@ -430,7 +435,7 @@ function JobView({ job }: { job: JobDetail }) {
         {active ? (
           <>
             <RefreshCw className="size-4 animate-spin" aria-hidden="true" />
-            Acompanhando o estado persistido a cada 3 segundos.
+            Atualizando o andamento a cada 3 segundos.
           </>
         ) : (
           <>Estado final: {jobStatusLabel(job.status)}. Atualização automática encerrada.</>
@@ -439,7 +444,7 @@ function JobView({ job }: { job: JobDetail }) {
       <StatusExplanation job={job} />
       <JobActions job={job} />
       <ProgressCard job={job} />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
         <CriteriaCard job={job} />
         <Card>
           <CardHeader>
@@ -461,7 +466,11 @@ function JobView({ job }: { job: JobDetail }) {
           </CardContent>
         </Card>
       </div>
-      <AttemptsCard job={job} />
+      <details className="rounded-lg border bg-card p-5">
+        <summary className="font-medium">Tentativas e detalhes técnicos <span className="text-xs font-normal text-muted-foreground">· {job.attempt_count} tentativa(s)</span></summary>
+        <p className="my-4 break-all text-xs text-muted-foreground">ID da coleta: {job.id}</p>
+        <AttemptsCard job={job} />
+      </details>
     </div>
   );
 }

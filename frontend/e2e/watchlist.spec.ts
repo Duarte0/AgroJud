@@ -17,6 +17,7 @@ test("acompanha, atualiza por número e remove sem cancelar o resultado", async 
   const processId = page.url().split("/").pop()!;
   await page.getByRole("button", { name: "Acompanhar processo" }).click();
   await expect(page.getByText("Acompanhamento ativo")).toBeVisible();
+  await page.getByRole("tab", { name: "Histórico" }).click();
   await expect(page.getByTestId("watch-history-entry")).toHaveCount(1);
 
   await page.getByRole("button", { name: "Atualizar processo" }).click();
@@ -28,6 +29,7 @@ test("acompanha, atualiza por número e remove sem cancelar o resultado", async 
   await expect(entry).toContainText("0000001-00.2026.8.09.0001");
   await expect(entry).toContainText("Encontrado na consulta");
   await entry.getByRole("button", { name: "Remover" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Remover acompanhamento" }).click();
   await expect(page.getByText("Nenhum processo acompanhado")).toBeVisible();
 
   const audit = await page.request.get(
