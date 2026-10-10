@@ -31,7 +31,7 @@ docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml 
 
 Abra `http://127.0.0.1:5173`. A API também publica `http://127.0.0.1:8000/api/v1`; o Nginx do frontend encaminha `/api/` sem publicar a rede interna. Para uma porta ocupada, altere `FRONTEND_PORT` ou `API_PORT` no arquivo local antes de iniciar.
 
-O real usa `.env.real`, `agrojud-real`, frontend em `127.0.0.1:5174` e API em `127.0.0.1:8001`. O arquivo de exemplo não contém chave DataJud; a credencial local deve ser configurada somente no backend. O schema atual bloqueia coleta real enquanto S1/S2 não forem aprovados. Não execute migração ou probe real como parte da demonstração sintética.
+O real usa `.env.real`, `agrojud-real`, frontend em `127.0.0.1:5174` e API em `127.0.0.1:8001`. O arquivo de exemplo não contém chave DataJud; a credencial local deve ser configurada somente no backend. Desde 10/10/2026 a coleta real fica habilitada quando `DATAJUD_API_KEY` está configurada; sem chave, a API informa o motivo e não enfileira jobs. Presets e regras de sinais seguem a evidência por item do catálogo. Não execute migração ou probe real como parte da demonstração sintética.
 
 ## Migrations, jobs e desligamento
 
@@ -119,5 +119,5 @@ Uma execução da jornada integrada em Compose recém-criado a partir de `.env.e
 - API não fica pronta: confirme PostgreSQL saudável e aplique a migration explícita; não interprete readiness bloqueada como base vazia.
 - Jobs ficam na fila: confirme que o serviço `worker` está ativo no perfil `worker`, veja logs e a fonte definida no arquivo do ambiente.
 - Um erro DataJud permanece erro/estado inconclusivo. Não acione fixture no ambiente real nem apresente timeout, 429, 504 ou resposta inválida como zero resultados.
-- S1/S2 seguem sem prova de filtro, busca exata, sort e duas páginas reais; S5 segue sem validação dos presets/payloads reais necessários. Os gates e respectivas evidências estão em [SPEC-003](../specs/SPEC-003-validacao-datajud-tjgo.md), [SPEC-010](../specs/SPEC-010-catalogo-tematico-versionado.md) e na matriz da [SPEC-020](../specs/SPEC-020-operacao-e-aceite-integrado.md).
+- S1/S2 e S5 foram aprovados em 10/10/2026 (exceto `sinal.penhora`, cujo movimento 11382 não aparece no TJGO). Para revalidar, use `agrojud-datajud-probe` (S1/S2) e `agrojud-catalog-probe` (S5, até 31 dias e 2 requisições por item); um novo resultado só muda a habilitação por edição revisável do catálogo. As consultas reais levam de 8 a 32 s por página. Os gates e respectivas evidências estão em [SPEC-003](../specs/SPEC-003-validacao-datajud-tjgo.md), [SPEC-010](../specs/SPEC-010-catalogo-tematico-versionado.md) e na matriz da [SPEC-020](../specs/SPEC-020-operacao-e-aceite-integrado.md).
 - O projeto é local, de um operador e sem login. Não exponha portas à rede, não use como serviço profissional/comercial e não publique dados derivados sem avaliação dos termos vigentes e da finalidade.

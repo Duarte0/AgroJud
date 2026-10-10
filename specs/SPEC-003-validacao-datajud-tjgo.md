@@ -84,7 +84,7 @@ Duas tentativas preliminares diagnosticaram bloqueios locais, não ausência de 
 
 A execução seguinte (`2026-10-10`, recorte `2026-05-04` a `2026-05-05`, fim exclusivo) fez 6 requisições, todas HTTP 200, entre 8,5 s e 32,1 s, em 122 s no total. O relatório sanitizado [`datajud-tjgo-validacao-2026-10-10.json`](../docs/evidence/datajud-tjgo-validacao-2026-10-10.json) registra **VALIDATED** para envelope, campos essenciais, filtro de tribunal/intervalo, busca exata por CNJ observado, identidade `_id`/`_source.id` (100/100), sort `@timestamp`, sort composto `@timestamp` + `id.keyword` e paginação em duas páginas não vazias com cursor avançando, ordem preservada na fronteira e sobreposição zero.
 
-Limites: a amostra não teve empates no valor primário, portanto o desempate não foi exercitado; a paginação foi aprovada sob o sort composto candidato, enquanto o contrato local ainda envia somente `@timestamp`; uma leitura não demonstra estabilidade histórica de IDs. Filtros por classe/assunto/movimento e exemplos por preset não fazem parte de S1/S2 e continuam sob S5 (SPEC-010).
+Limites: a amostra não teve empates no valor primário, portanto o desempate não foi exercitado; a paginação foi aprovada sob o sort composto candidato, que passou a ser o sort padrão da coleta (SPEC-002); uma leitura não demonstra estabilidade histórica de IDs. Filtros por classe/assunto/movimento e exemplos por preset não fazem parte de S1/S2 e continuam sob S5 (SPEC-010).
 
 **Conclusão de S1/S2 em 10/10/2026:** aprovados para as capacidades acima, com os limites registrados. A habilitação da coleta real é uma mudança separada e revisável.
 

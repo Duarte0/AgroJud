@@ -55,6 +55,8 @@ Editor genérico de regras, classificação probabilística, análise documental
 
 ## Evidência e conclusão
 
+- **10/10/2026:** com a evidência S5 da SPEC-010, `sinal.leilao` e `sinal.recuperacao_judicial` passaram a `enablement.real.enabled = true` (`state: validated`), sem mudar predicado nem versão. `sinal.penhora` segue desabilitado no real: o movimento 11382 não aparece no índice TJGO. Execução sem `rule_ids` no real continua retornando 409 enquanto houver regra inativa; selecione as regras habilitadas.
+
 - O catálogo versionado registra `sinal.penhora` (11382), `sinal.leilao` (311) e `sinal.recuperacao_judicial` (12041). As três regras só estão habilitadas como `synthetic_only` em `demo`; todas permanecem desabilitadas em `real`, pois SPEC-010 não validou amostras estruturadas reais. Não se declarou capacidade real.
 - As fixtures PostgreSQL exercitam correspondência positiva, negativa, código ausente e snapshot incompleto. O worker é executado com chamadas HTTPX bloqueadas pelo teste; a tentativa de HTTP falha o teste.
 - A persistência usa `process_signals` com unicidade regra/versão/evidência/fingerprint, `signal_evaluations` append-only, snapshots imutáveis por entrada, checkpoint por UUID, lotes de até 100 e publicação atômica sob posse do lease.

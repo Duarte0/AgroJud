@@ -33,7 +33,7 @@ curl --fail http://127.0.0.1:8000/api/v1/health/ready
 
 Frontend publica apenas em `127.0.0.1:5173` e API em `127.0.0.1:8000`; PostgreSQL fica somente na rede interna. `FRONTEND_PORT` e `API_PORT` permitem escolher outras portas. O Nginx encaminha `/api/` à API e serve o fallback SPA para rotas como `/processes`. Migrações são explícitas e devem ser aplicadas após subir o banco. API e worker usam a mesma imagem backend.
 
-O worker executa um loop persistente com handlers para jobs `discovery` e `refresh_number`. No ambiente `demo`, as consultas usam fixtures determinísticas marcadas como sintéticas. O ambiente `real` permanece bloqueado pela API enquanto S1/S2 não forem aprovados. Para validar configuração e encerrar sem iniciar o loop:
+O worker executa um loop persistente com handlers para jobs `discovery` e `refresh_number`. No ambiente `demo`, as consultas usam fixtures determinísticas marcadas como sintéticas. No ambiente `real`, a fonte DataJud fica habilitada quando `DATAJUD_API_KEY` está configurada no backend; presets e regras de sinais seguem a evidência por item do catálogo. Para validar configuração e encerrar sem iniciar o loop:
 
 ```sh
 docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml --profile worker run --rm --no-deps worker uv run --no-sync agrojud-worker --check
@@ -89,6 +89,12 @@ docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml 
 ```
 
 Timeout ou indisponibilidade gera diagnóstico `INCONCLUSIVE`, nunca resultado vazio nem habilitação da fonte real. O comando só pesquisa por CNJ depois de observar o número em um hit público. A matriz aprovada de S1/S2 está na [evidência de 10/10/2026](docs/evidence/datajud-tjgo-validacao-2026-10-10.json); a [execução de 08/10/2026](docs/evidence/datajud-tjgo-validacao-2026-10-08.json) expirou; a [amostra manual sanitizada](docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json) confirma apenas o envelope e alguns campos de um hit. O uso da API também permanece sujeito ao termo registrado no [PRD](PRD.md#2-decisões-e-premissas).
+
+O comando `agrojud-catalog-probe` valida o S5: consulta cada preset e sinal do catálogo com até 2 requisições, recorte de até 31 dias, sem retry e com 1 s de espaçamento, e grava relatório sanitizado com `query_status`/`sample_status`. `--item` restringe a um item. O resultado não altera a habilitação automaticamente; ela muda por edição revisável do catálogo (SPEC-010).
+
+```sh
+docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm --no-deps -v "$PWD/docs/evidence:/evidence" api uv run --no-sync agrojud-catalog-probe --from-date 2026-05-01 --to-date 2026-06-01 --output /evidence/catalogo-s5.json
+```
 
 ## Ambientes separados
 

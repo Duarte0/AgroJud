@@ -1,6 +1,6 @@
 # SPEC-020 — Operação e aceite integrado
 
-Status: BLOCKED_VALIDATION
+Status: DONE
 
 Milestone/Spike: M9
 
@@ -63,22 +63,24 @@ Validação local concluída em 10/10/2026. O aceite real permanece condicionado
 | Capacidade | Estado | Evidência e efeito |
 | --- | --- | --- |
 | Operação sintética local | VALIDATED | Compose descartável, migration explícita, interface Nginx, proxy `/api`, jobs, revisão, acompanhamento, atualização e CSV passaram; não valida a fonte externa. |
-| Transporte real, autenticação e resposta do endpoint | INCONCLUSIVE | A probe S1 expirou sem status HTTP após 20.187 ms. A [amostra manual posterior](../docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json) confirma somente envelope/campos essenciais e igualdade `_id`/`_source.id` para um hit, sem aprovar o transporte completo. |
-| Filtros reais e busca exata por CNJ | INCONCLUSIVE | Sem evidência de consulta DataJud/TJGO que valide filtros ou busca exata; criação de jobs reais permanece bloqueada. |
-| Ordenação e paginação real em duas páginas | INCONCLUSIVE | Não foi observado segundo cursor/página, desempate estável ou ausência de lacunas; nenhuma alegação de paginação real é aprovada. |
+| Transporte real, autenticação e resposta do endpoint | VALIDATED (10/10/2026) | A [probe S1/S2](../docs/evidence/datajud-tjgo-validacao-2026-10-10.json) fez 6 requisições HTTP 200 (8,5–32,1 s) após o read timeout passar a 60 s configurável. A execução de 08/10 expirou em 20 s. |
+| Filtros reais e busca exata por CNJ | VALIDATED (10/10/2026) | Filtro de intervalo no formato compacto `YYYYMMDDHHMMSS` (datas ISO não casavam documentos) e busca exata por CNJ observado validados na probe S1/S2. |
+| Ordenação e paginação real em duas páginas | VALIDATED (10/10/2026) | Duas páginas não vazias com sort `@timestamp` + `id.keyword`, cursor avançando e sobreposição zero; a coleta passou a usar esse sort. A amostra não teve empates no valor primário. |
 | Taxonomia oficial dos códigos TPU pesquisados e aplicabilidade ao TJGO | VALIDATED | Consulta ao SGT e detalhes de aplicabilidade constam em [`catalogo-tematico-tpu-2026-10-09.json`](../docs/evidence/catalogo-tematico-tpu-2026-10-09.json); valida apenas os códigos pesquisados. |
-| Semântica dos filtros DataJud e exemplos estruturados reais para presets/sinais (S5) | INCONCLUSIVE | Não há amostras reais que provem os filtros nem payloads de movimentos correspondentes. Presets reais e regras de sinais seguem desabilitados. |
+| Semântica dos filtros DataJud e exemplos estruturados reais para presets/sinais (S5) | VALIDATED, exceto `sinal.penhora` (10/10/2026) | A [probe S5](../docs/evidence/catalogo-tematico-datajud-2026-10-10.json), com critério aprovado pelo usuário (todos os hits contêm código pedido e ao menos 3 documentos distintos), validou os 4 presets e as regras de leilão (311) e recuperação judicial (12041). O movimento 11382 não aparece no índice TJGO; `sinal.penhora` segue desabilitado no real. |
 
 | Critério | Estado | Evidência registrada |
 | --- | --- | --- |
 | AC1 | PASSOU localmente | `./scripts/e2e.sh` construiu e subiu PostgreSQL, API, worker e frontend Nginx em projeto E2E isolado, aplicou migration explicitamente, validou fallback SPA e proxy `/api`; 17 cenários Playwright passaram. O smoke adicional confirmou `agrojud-worker --check`, liveness/readiness da API e rotas frontend/proxy. `docker compose config --quiet` passou para demo, real, test e restore. |
 | AC2 | PASSOU localmente | `backup-db.sh` gerou `pg_dump` custom e manifesto `0600`; SHA-256 e `pg_restore --list` passaram. Contagens e digests de 32 tabelas foram comparados antes/depois na origem e no restore descartável, sem mutação observada na origem. Foram preservados 3 processos, 16 representações, 16 versões, 2 triagens, 5 entradas de histórico de triagem, 3 entradas de acompanhamento, 6 eventos de acompanhamento, 18 jobs, 18 tentativas e checkpoints, 3 novidades e 1 sinal; revisão `20261009_0010`. O restore usou projeto `agrojud-restore-spec020`, PostgreSQL em `tmpfs`, sem API/frontend/worker, e foi removido ao final. |
 | AC3 | PASSOU localmente | 280 testes backend passaram em PostgreSQL isolado (incluindo interrupção real por subprocesso antes/depois do commit em `test_real_subprocess_crash_before_and_after_commit_matches_continuous_run`); 55 testes frontend passaram; lint, typecheck, build e OpenAPI passaram; Playwright passou 17/17. A jornada integrada cobriu reinício da API com job na fila, coleta sintética, triagem, acompanhamento, atualização e CSV. |
-| AC4 | PENDENTE externo | A matriz por capacidade acima mostra S1/S2 e a parte DataJud de S5 como INCONCLUSIVE. A taxonomia TPU pesquisada tem validação oficial, mas isso não aprova filtros, respostas ou exemplos reais necessários ao aceite. |
+| AC4 | PASSOU (10/10/2026) | S1/S2 e S5 aprovados nas evidências acima. Aceite real no stack `agrojud-real` (migration explícita, API, worker e frontend): descoberta `rural.credito_contratos` em ajuizamentos de 05/2026 com `hit_budget` 200 terminou `completed` com 183 hits confirmados, 183 válidos, 0 rejeitados e 3 requisições até página vazia; atualização por CNJ de um processo coletado e acompanhado terminou `completed` com estado `found`; a interface exibiu "Fonte DataJud habilitada". Nenhum CNJ ou ID foi registrado. |
 | AC5 | PASSOU localmente | UI e job identificam `demo`/`synthetic`; exportação inclui origem. A chave DataJud fica na configuração do backend, não no build/container frontend. Testes verificam que mensagens/logs não expõem senha e que a falha real não aciona fixture. |
 | AC6 | PASSOU localmente | Este runbook e o README cobrem instalação, configuração, portas, migrations, jobs, testes, tipos OpenAPI, diagnóstico, semântica dos dados e limites de uso. A medição sintética reproduzível está registrada no runbook e não faz alegação de throughput. |
 
 Comandos executados: suíte backend serial em Compose com Ruff, formatação, mypy e pytest (`280 passed`, um aviso de depreciação Starlette); `npm run lint`, `npm run typecheck`, `npm test` (`55 passed`), `npm run build`, `npm run openapi:check`; `scripts/e2e.sh` (`17 passed`); smoke de imagens/serviços; `scripts/backup-db.sh demo ...`; `scripts/restore-backup.sh demo ...`. O escopo e as saídas locais são sintéticos; as falhas de fonte foram testadas por simulação e não substituem S1/S2/S5.
 
-**Conclusão:** entregas locais e AC1, AC2, AC3, AC5 e AC6 concluídos. A SPEC permanece `BLOCKED_VALIDATION` pelo AC4 e só poderá passar a `DONE` após aprovação das evidências reais requeridas. Entrega técnica não equivale a autorização de operação profissional ou comercial. Não marcar milestones anteriores concluídos sem suas evidências.
+Revalidação em 10/10/2026 após habilitar o real: 298 testes backend, Ruff, formatação e mypy; `npm run lint`, `npm run typecheck`, `npm test` (`56 passed`), `npm run build`; schema OpenAPI exportado idêntico ao versionado; `scripts/e2e.sh` (`17 passed`) em demo isolado.
+
+**Conclusão:** AC1 a AC6 concluídos; DONE em 10/10/2026. Limites: `sinal.penhora` não tem código observado no TJGO; janelas S5 diferentes por item servem só para obter exemplos; a latência real (até ~32 s por página) torna coletas grandes lentas. Entrega técnica não equivale a autorização de operação profissional ou comercial. Não marcar milestones anteriores concluídos sem suas evidências.
 
