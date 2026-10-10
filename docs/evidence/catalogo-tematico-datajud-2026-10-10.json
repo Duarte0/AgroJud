@@ -1,0 +1,1109 @@
+{
+  "checked_at": "2026-10-10",
+  "criteria": {
+    "query_status": "VALIDATED quando total > 0 e todos os hits observados contêm algum código pedido em cada dimensão filtrada; INCOMPATIBLE se algum hit não contém; INCONCLUSIVE sem hits ou sem resposta.",
+    "sample_status": "VALIDATED com ao menos 3 documentos distintos contendo o código estruturado; INCONCLUSIVE abaixo disso."
+  },
+  "criteria_approved_by": "usuário do projeto, em 10/10/2026 (filtro + ao menos 3 exemplos distintos; janela de até 31 dias; até 2 requisições por item)",
+  "diagnostics": [
+    "Controle do filtro por movimento: terms movimentos.codigo [26] em ajuizamentos de 05/2026 retornou 89.841 processos; o filtro por movimento funciona no índice.",
+    "Movimento 11382 (sinal.penhora): 0 processos em todo o índice TJGO, sem recorte de data, em 10/10/2026. O código não é usado pelo TJGO no DataJud; a regra permanece desabilitada e a substituição do código exige nova investigação TPU.",
+    "Movimentos 311 e 12041 são raros (496 e 194 processos em todo o índice); a janela foi escolhida por agregação numérica mensal de dataAjuizamento, sem registrar processos.",
+    "recuperacao_judicial.por_assunto: apenas o assunto 13277 foi observado; 4993 não apareceu nas amostras.",
+    "dataAjuizamento é indexado como número YYYYMMDDHHMMSS; date_histogram o interpreta como epoch ms, por isso a agregação usou histogram numérico com intervalo 10^8."
+  ],
+  "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+  "evidence_id": "SPEC-010-S5-2026-10-10",
+  "items": {
+    "execucoes.amplas": {
+      "query_status": "VALIDATED",
+      "run": "geral-2026-05",
+      "sample_status": "VALIDATED",
+      "window": [
+        "2026-05-01",
+        "2026-06-01"
+      ]
+    },
+    "recuperacao_judicial.por_assunto": {
+      "query_status": "VALIDATED",
+      "run": "rj-assunto-2024-05",
+      "sample_status": "VALIDATED",
+      "window": [
+        "2024-05-01",
+        "2024-06-01"
+      ]
+    },
+    "recuperacao_judicial.por_classe": {
+      "query_status": "VALIDATED",
+      "run": "geral-2026-05",
+      "sample_status": "VALIDATED",
+      "window": [
+        "2026-05-01",
+        "2026-06-01"
+      ]
+    },
+    "rural.credito_contratos": {
+      "query_status": "VALIDATED",
+      "run": "geral-2026-05",
+      "sample_status": "VALIDATED",
+      "window": [
+        "2026-05-01",
+        "2026-06-01"
+      ]
+    },
+    "sinal.leilao": {
+      "query_status": "VALIDATED",
+      "run": "leilao-2015-09",
+      "sample_status": "VALIDATED",
+      "window": [
+        "2015-09-01",
+        "2015-10-01"
+      ]
+    },
+    "sinal.penhora": {
+      "query_status": "INCONCLUSIVE",
+      "run": "geral-2026-05",
+      "sample_status": "INCONCLUSIVE",
+      "window": [
+        "2026-05-01",
+        "2026-06-01"
+      ]
+    },
+    "sinal.recuperacao_judicial": {
+      "query_status": "VALIDATED",
+      "run": "rj-movimento-2020-02",
+      "sample_status": "VALIDATED",
+      "window": [
+        "2020-02-01",
+        "2020-03-01"
+      ]
+    }
+  },
+  "kind": "s5_catalog_probe_consolidated",
+  "limitations": [
+    "Amostras observam até 100 hits por item; não demonstram cobertura completa nem vínculo rural.",
+    "Janelas diferentes por item foram usadas apenas para obter exemplos; não indicam frequência atual.",
+    "Nenhum CNJ, _id, cursor ou chave foi registrado."
+  ],
+  "runs": {
+    "geral-2026-05": {
+      "catalog_version": "1.0.0",
+      "criteria": {
+        "query_status": "VALIDATED quando total > 0 e todos os hits observados contêm algum código pedido em cada dimensão filtrada; INCOMPATIBLE se algum hit não contém; INCONCLUSIVE sem hits ou sem resposta.",
+        "sample_status": "VALIDATED com ao menos 3 documentos distintos contendo o código estruturado; INCONCLUSIVE abaixo disso."
+      },
+      "duration_ms": 112827,
+      "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+      "filed_from": "2026-05-01",
+      "filed_to_exclusive": "2026-06-01",
+      "items": [
+        {
+          "filters": {
+            "class": [],
+            "movement": [],
+            "subject": [
+              4964,
+              4976,
+              10501
+            ]
+          },
+          "id": "rural.credito_contratos",
+          "kind": "preset",
+          "query_status": {
+            "evidence": {
+              "matched_codes": {
+                "subject": {
+                  "10501": 25,
+                  "4964": 74,
+                  "4976": 2
+                }
+              },
+              "matching_hits": 100,
+              "mismatched_hits": 0,
+              "reason": "Todos os hits observados contêm um código pedido por dimensão.",
+              "sample_count": 100
+            },
+            "state": "VALIDATED"
+          },
+          "requests": [
+            {
+              "duration_ms": 27293,
+              "hit_count": 100,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20260501000000",
+                            "lt": "20260601000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "assuntos.codigo": [
+                            4964,
+                            4976,
+                            10501
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "distinct_matching_documents": 100,
+              "matched_codes": {
+                "subject": {
+                  "10501": 25,
+                  "4964": 74,
+                  "4976": 2
+                }
+              },
+              "minimum_required": 3,
+              "reason": "Exemplos estruturados reais do TJGO observados no recorte."
+            },
+            "state": "VALIDATED"
+          },
+          "total": {
+            "relation": "eq",
+            "value": 183
+          },
+          "version": "1.0.0"
+        },
+        {
+          "filters": {
+            "class": [
+              155,
+              156,
+              159,
+              1116,
+              12078,
+              12079,
+              12154
+            ],
+            "movement": [],
+            "subject": []
+          },
+          "id": "execucoes.amplas",
+          "kind": "preset",
+          "query_status": {
+            "evidence": {
+              "matched_codes": {
+                "class": {
+                  "1116": 2,
+                  "12078": 4,
+                  "12154": 68,
+                  "156": 26
+                }
+              },
+              "matching_hits": 100,
+              "mismatched_hits": 0,
+              "reason": "Todos os hits observados contêm um código pedido por dimensão.",
+              "sample_count": 100
+            },
+            "state": "VALIDATED"
+          },
+          "requests": [
+            {
+              "duration_ms": 16407,
+              "hit_count": 100,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20260501000000",
+                            "lt": "20260601000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "classe.codigo": [
+                            155,
+                            156,
+                            159,
+                            1116,
+                            12078,
+                            12079,
+                            12154
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "distinct_matching_documents": 100,
+              "matched_codes": {
+                "class": {
+                  "1116": 2,
+                  "12078": 4,
+                  "12154": 68,
+                  "156": 26
+                }
+              },
+              "minimum_required": 3,
+              "reason": "Exemplos estruturados reais do TJGO observados no recorte."
+            },
+            "state": "VALIDATED"
+          },
+          "total": {
+            "relation": "gte",
+            "value": 10000
+          },
+          "version": "1.0.0"
+        },
+        {
+          "filters": {
+            "class": [
+              108,
+              129
+            ],
+            "movement": [],
+            "subject": []
+          },
+          "id": "recuperacao_judicial.por_classe",
+          "kind": "preset",
+          "query_status": {
+            "evidence": {
+              "matched_codes": {
+                "class": {
+                  "108": 8,
+                  "129": 14
+                }
+              },
+              "matching_hits": 22,
+              "mismatched_hits": 0,
+              "reason": "Todos os hits observados contêm um código pedido por dimensão.",
+              "sample_count": 22
+            },
+            "state": "VALIDATED"
+          },
+          "requests": [
+            {
+              "duration_ms": 17112,
+              "hit_count": 22,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20260501000000",
+                            "lt": "20260601000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "classe.codigo": [
+                            108,
+                            129
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "distinct_matching_documents": 22,
+              "matched_codes": {
+                "class": {
+                  "108": 8,
+                  "129": 14
+                }
+              },
+              "minimum_required": 3,
+              "reason": "Exemplos estruturados reais do TJGO observados no recorte."
+            },
+            "state": "VALIDATED"
+          },
+          "total": {
+            "relation": "eq",
+            "value": 22
+          },
+          "version": "1.0.0"
+        },
+        {
+          "filters": {
+            "class": [],
+            "movement": [],
+            "subject": [
+              4993,
+              13277
+            ]
+          },
+          "id": "recuperacao_judicial.por_assunto",
+          "kind": "preset",
+          "query_status": {
+            "evidence": {
+              "matched_codes": {
+                "subject": {
+                  "13277": 1
+                }
+              },
+              "matching_hits": 1,
+              "mismatched_hits": 0,
+              "reason": "Todos os hits observados contêm um código pedido por dimensão.",
+              "sample_count": 1
+            },
+            "state": "VALIDATED"
+          },
+          "requests": [
+            {
+              "duration_ms": 10036,
+              "hit_count": 1,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20260501000000",
+                            "lt": "20260601000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "assuntos.codigo": [
+                            4993,
+                            13277
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "distinct_matching_documents": 1,
+              "matched_codes": {
+                "subject": {
+                  "13277": 1
+                }
+              },
+              "minimum_required": 3,
+              "reason": "Exemplos estruturados insuficientes no recorte observado."
+            },
+            "state": "INCONCLUSIVE"
+          },
+          "total": {
+            "relation": "eq",
+            "value": 1
+          },
+          "version": "1.0.0"
+        },
+        {
+          "filters": {
+            "class": [],
+            "movement": [
+              11382
+            ],
+            "subject": []
+          },
+          "id": "sinal.penhora",
+          "kind": "candidate_signal",
+          "query_status": {
+            "evidence": {
+              "reason": "A consulta não retornou hits no recorte; ausência não prova incompatibilidade."
+            },
+            "state": "INCONCLUSIVE"
+          },
+          "requests": [
+            {
+              "duration_ms": 9302,
+              "hit_count": 0,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20260501000000",
+                            "lt": "20260601000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "movimentos.codigo": [
+                            11382
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "reason": "A consulta não retornou hits no recorte; ausência não prova incompatibilidade."
+            },
+            "state": "INCONCLUSIVE"
+          },
+          "total": {
+            "relation": "eq",
+            "value": 0
+          },
+          "version": "1.0.0"
+        },
+        {
+          "filters": {
+            "class": [],
+            "movement": [
+              311
+            ],
+            "subject": []
+          },
+          "id": "sinal.leilao",
+          "kind": "candidate_signal",
+          "query_status": {
+            "evidence": {
+              "reason": "A consulta não retornou hits no recorte; ausência não prova incompatibilidade."
+            },
+            "state": "INCONCLUSIVE"
+          },
+          "requests": [
+            {
+              "duration_ms": 15795,
+              "hit_count": 0,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20260501000000",
+                            "lt": "20260601000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "movimentos.codigo": [
+                            311
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "reason": "A consulta não retornou hits no recorte; ausência não prova incompatibilidade."
+            },
+            "state": "INCONCLUSIVE"
+          },
+          "total": {
+            "relation": "eq",
+            "value": 0
+          },
+          "version": "1.0.0"
+        },
+        {
+          "filters": {
+            "class": [],
+            "movement": [
+              12041
+            ],
+            "subject": []
+          },
+          "id": "sinal.recuperacao_judicial",
+          "kind": "candidate_signal",
+          "query_status": {
+            "evidence": {
+              "reason": "A consulta não retornou hits no recorte; ausência não prova incompatibilidade."
+            },
+            "state": "INCONCLUSIVE"
+          },
+          "requests": [
+            {
+              "duration_ms": 10877,
+              "hit_count": 0,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20260501000000",
+                            "lt": "20260601000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "movimentos.codigo": [
+                            12041
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "reason": "A consulta não retornou hits no recorte; ausência não prova incompatibilidade."
+            },
+            "state": "INCONCLUSIVE"
+          },
+          "total": {
+            "relation": "eq",
+            "value": 0
+          },
+          "version": "1.0.0"
+        }
+      ],
+      "kind": "s5_catalog_probe",
+      "report_version": 1,
+      "request_budget": {
+        "automatic_retries": false,
+        "max_requests_per_item": 2,
+        "page_size": 100,
+        "spacing_seconds": 1.0,
+        "writes_to_product_database": false
+      },
+      "requests_made": 7,
+      "started_at": "2026-10-10T14:51:11.089172+00:00",
+      "stopped_reason": null
+    },
+    "leilao-2015-09": {
+      "catalog_version": "1.0.0",
+      "criteria": {
+        "query_status": "VALIDATED quando total > 0 e todos os hits observados contêm algum código pedido em cada dimensão filtrada; INCOMPATIBLE se algum hit não contém; INCONCLUSIVE sem hits ou sem resposta.",
+        "sample_status": "VALIDATED com ao menos 3 documentos distintos contendo o código estruturado; INCONCLUSIVE abaixo disso."
+      },
+      "duration_ms": 17297,
+      "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+      "filed_from": "2015-09-01",
+      "filed_to_exclusive": "2015-10-01",
+      "items": [
+        {
+          "filters": {
+            "class": [],
+            "movement": [
+              311
+            ],
+            "subject": []
+          },
+          "id": "sinal.leilao",
+          "kind": "candidate_signal",
+          "query_status": {
+            "evidence": {
+              "matched_codes": {
+                "movement": {
+                  "311": 8
+                }
+              },
+              "matching_hits": 8,
+              "mismatched_hits": 0,
+              "reason": "Todos os hits observados contêm um código pedido por dimensão.",
+              "sample_count": 8
+            },
+            "state": "VALIDATED"
+          },
+          "requests": [
+            {
+              "duration_ms": 17294,
+              "hit_count": 8,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20150901000000",
+                            "lt": "20151001000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "movimentos.codigo": [
+                            311
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "distinct_matching_documents": 8,
+              "matched_codes": {
+                "movement": {
+                  "311": 8
+                }
+              },
+              "minimum_required": 3,
+              "reason": "Exemplos estruturados reais do TJGO observados no recorte."
+            },
+            "state": "VALIDATED"
+          },
+          "total": {
+            "relation": "eq",
+            "value": 8
+          },
+          "version": "1.0.0"
+        }
+      ],
+      "kind": "s5_catalog_probe",
+      "report_version": 1,
+      "request_budget": {
+        "automatic_retries": false,
+        "max_requests_per_item": 2,
+        "page_size": 100,
+        "spacing_seconds": 1.0,
+        "writes_to_product_database": false
+      },
+      "requests_made": 1,
+      "started_at": "2026-10-10T14:56:01.257901+00:00",
+      "stopped_reason": null
+    },
+    "rj-assunto-2024-05": {
+      "catalog_version": "1.0.0",
+      "criteria": {
+        "query_status": "VALIDATED quando total > 0 e todos os hits observados contêm algum código pedido em cada dimensão filtrada; INCOMPATIBLE se algum hit não contém; INCONCLUSIVE sem hits ou sem resposta.",
+        "sample_status": "VALIDATED com ao menos 3 documentos distintos contendo o código estruturado; INCONCLUSIVE abaixo disso."
+      },
+      "duration_ms": 20369,
+      "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+      "filed_from": "2024-05-01",
+      "filed_to_exclusive": "2024-06-01",
+      "items": [
+        {
+          "filters": {
+            "class": [],
+            "movement": [],
+            "subject": [
+              4993,
+              13277
+            ]
+          },
+          "id": "recuperacao_judicial.por_assunto",
+          "kind": "preset",
+          "query_status": {
+            "evidence": {
+              "matched_codes": {
+                "subject": {
+                  "13277": 100
+                }
+              },
+              "matching_hits": 100,
+              "mismatched_hits": 0,
+              "reason": "Todos os hits observados contêm um código pedido por dimensão.",
+              "sample_count": 100
+            },
+            "state": "VALIDATED"
+          },
+          "requests": [
+            {
+              "duration_ms": 20366,
+              "hit_count": 100,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20240501000000",
+                            "lt": "20240601000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "assuntos.codigo": [
+                            4993,
+                            13277
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "distinct_matching_documents": 100,
+              "matched_codes": {
+                "subject": {
+                  "13277": 100
+                }
+              },
+              "minimum_required": 3,
+              "reason": "Exemplos estruturados reais do TJGO observados no recorte."
+            },
+            "state": "VALIDATED"
+          },
+          "total": {
+            "relation": "eq",
+            "value": 249
+          },
+          "version": "1.0.0"
+        }
+      ],
+      "kind": "s5_catalog_probe",
+      "report_version": 1,
+      "request_budget": {
+        "automatic_retries": false,
+        "max_requests_per_item": 2,
+        "page_size": 100,
+        "spacing_seconds": 1.0,
+        "writes_to_product_database": false
+      },
+      "requests_made": 1,
+      "started_at": "2026-10-10T14:57:04.222885+00:00",
+      "stopped_reason": null
+    },
+    "rj-movimento-2020-02": {
+      "catalog_version": "1.0.0",
+      "criteria": {
+        "query_status": "VALIDATED quando total > 0 e todos os hits observados contêm algum código pedido em cada dimensão filtrada; INCOMPATIBLE se algum hit não contém; INCONCLUSIVE sem hits ou sem resposta.",
+        "sample_status": "VALIDATED com ao menos 3 documentos distintos contendo o código estruturado; INCONCLUSIVE abaixo disso."
+      },
+      "duration_ms": 24441,
+      "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+      "filed_from": "2020-02-01",
+      "filed_to_exclusive": "2020-03-01",
+      "items": [
+        {
+          "filters": {
+            "class": [],
+            "movement": [
+              12041
+            ],
+            "subject": []
+          },
+          "id": "sinal.recuperacao_judicial",
+          "kind": "candidate_signal",
+          "query_status": {
+            "evidence": {
+              "matched_codes": {
+                "movement": {
+                  "12041": 14
+                }
+              },
+              "matching_hits": 14,
+              "mismatched_hits": 0,
+              "reason": "Todos os hits observados contêm um código pedido por dimensão.",
+              "sample_count": 14
+            },
+            "state": "VALIDATED"
+          },
+          "requests": [
+            {
+              "duration_ms": 24439,
+              "hit_count": 14,
+              "http_status": 200,
+              "outcome": "SUCCESS",
+              "page": 1,
+              "query": {
+                "query": {
+                  "bool": {
+                    "filter": [
+                      {
+                        "match": {
+                          "tribunal": "TJGO"
+                        }
+                      },
+                      {
+                        "range": {
+                          "dataAjuizamento": {
+                            "gte": "20200201000000",
+                            "lt": "20200301000000"
+                          }
+                        }
+                      },
+                      {
+                        "terms": {
+                          "movimentos.codigo": [
+                            12041
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "size": 100,
+                "sort": [
+                  {
+                    "@timestamp": {
+                      "order": "asc"
+                    }
+                  },
+                  {
+                    "id.keyword": {
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "sample_status": {
+            "evidence": {
+              "distinct_matching_documents": 14,
+              "matched_codes": {
+                "movement": {
+                  "12041": 14
+                }
+              },
+              "minimum_required": 3,
+              "reason": "Exemplos estruturados reais do TJGO observados no recorte."
+            },
+            "state": "VALIDATED"
+          },
+          "total": {
+            "relation": "eq",
+            "value": 14
+          },
+          "version": "1.0.0"
+        }
+      ],
+      "kind": "s5_catalog_probe",
+      "report_version": 1,
+      "request_budget": {
+        "automatic_retries": false,
+        "max_requests_per_item": 2,
+        "page_size": 100,
+        "spacing_seconds": 1.0,
+        "writes_to_product_database": false
+      },
+      "requests_made": 1,
+      "started_at": "2026-10-10T14:56:19.942436+00:00",
+      "stopped_reason": null
+    }
+  }
+}

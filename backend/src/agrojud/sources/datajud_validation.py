@@ -193,7 +193,7 @@ class TJGOValidationProbe:
             },
             "requests_made": len(self._requests),
             "duration_ms": report_duration_ms,
-            "planned_recorte_query": _sanitize_payload(
+            "planned_recorte_query": sanitize_payload(
                 build_datajud_payload(self._query, None, PAGE_SIZE)
             ),
             "requests": self._requests,
@@ -220,7 +220,7 @@ class TJGOValidationProbe:
         request_payload = build_datajud_payload(payload_query, cursor, PAGE_SIZE)
         sort_fields = tuple(term.field_name for term in payload_query.sort)
 
-        safe_payload = cast(dict[str, object], _sanitize_payload(request_payload))
+        safe_payload = cast(dict[str, object], sanitize_payload(request_payload))
         request_started = perf_counter()
         try:
             response: DataJudProbeResponse = self._adapter.fetch_probe_page(
@@ -673,7 +673,7 @@ def missing_key_report(
         },
         "requests_made": 0,
         "duration_ms": 0,
-        "planned_recorte_query": _sanitize_payload(build_datajud_payload(query, None, PAGE_SIZE)),
+        "planned_recorte_query": sanitize_payload(build_datajud_payload(query, None, PAGE_SIZE)),
         "requests": [],
         "repeat_comparison": None,
         "capabilities": capabilities,
@@ -945,16 +945,15 @@ def _json_type(value: object) -> str:
     return "other"
 
 
-def _sanitize_payload(value: object, *, parent_key: str | None = None) -> object:
+def sanitize_payload(value: object, *, parent_key: str | None = None) -> object:
     if parent_key == "search_after" and isinstance(value, list):
         return ["<cursor-redigido>" for _ in value]
     if isinstance(value, Mapping):
         return {
-            str(key): _sanitize_payload(nested, parent_key=str(key))
-            for key, nested in value.items()
+            str(key): sanitize_payload(nested, parent_key=str(key)) for key, nested in value.items()
         }
     if isinstance(value, list):
-        return [_sanitize_payload(nested, parent_key=parent_key) for nested in value]
+        return [sanitize_payload(nested, parent_key=parent_key) for nested in value]
     if isinstance(value, str) and _CNJ.fullmatch(value):
         return "<numeroProcesso-observado-redigido>"
     return value
