@@ -2,6 +2,7 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { describeError } from "@/api/client";
 import { useRefreshProcess, useSetProcessWatch, useWatchlist } from "@/api/queries";
+import { useCurrentEnvironment } from "@/app/environment-context";
 import type { WatchlistItem } from "@/api/types";
 import { PageHeader } from "@/components/page-header";
 import { ProcessRefreshStatus } from "@/components/process-refresh-status";
@@ -27,6 +28,7 @@ const PAGE_SIZE = 25;
 
 function WatchlistRow({ item }: { item: WatchlistItem }) {
   const navigate = useNavigate();
+  const environment = useCurrentEnvironment();
   const refresh = useRefreshProcess(item.process_id);
   const setWatch = useSetProcessWatch(item.process_id);
   const actionError = refresh.error ?? setWatch.error;
@@ -68,7 +70,11 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
       </TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={update} disabled={refresh.isPending}>
+          <Button
+            onClick={update}
+            disabled={refresh.isPending || !environment.source_enabled}
+            title={environment.source_enabled ? undefined : (environment.source_disabled_reason ?? undefined)}
+          >
             {refresh.isPending ? "Enfileirando…" : "Atualizar"}
           </Button>
           <Button

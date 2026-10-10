@@ -35,6 +35,7 @@ from agrojud.services.collection import build_collection_request
 from agrojud.services.news import watch_baselines
 from agrojud.services.watchlist import lock_process_watch, set_process_watch
 from agrojud.sources.contracts import build_query_by_case_number
+from agrojud.sources.factory import real_source_unavailable_reason
 
 router = APIRouter(prefix="/api/v1", tags=["watchlist"])
 _ACTIVE_JOB_STATUSES = ("queued", "running", "retry_wait")
@@ -149,10 +150,9 @@ def refresh_process(
 ) -> JobCreatedResponse:
     settings = request.app.state.settings
     mode, source = _source_for_environment(settings)
-    if mode == "real":
-        raise SourceCapabilityUnavailable(
-            "A consulta DataJud permanece desabilitada enquanto S1/S2 não forem aprovados."
-        )
+    unavailable = real_source_unavailable_reason(settings)
+    if unavailable is not None:
+        raise SourceCapabilityUnavailable(unavailable)
 
     with request.app.state.session_factory() as session, session.begin():
         process, entry = lock_process_watch(session, process_id=process_id)

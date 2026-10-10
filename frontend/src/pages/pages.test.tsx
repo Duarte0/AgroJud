@@ -213,10 +213,10 @@ describe("RadarPage", () => {
         environment: "real",
         source: "datajud",
         source_enabled: false,
-        source_disabled_reason: "S1/S2 não aprovados.",
+        source_disabled_reason: "DATAJUD_API_KEY não está configurada.",
       },
     });
-    expect(await screen.findByText("S1/S2 não aprovados.")).toBeInTheDocument();
+    expect(await screen.findByText("DATAJUD_API_KEY não está configurada.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Iniciar coleta" })).toBeDisabled();
   });
 });

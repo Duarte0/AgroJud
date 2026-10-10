@@ -11,6 +11,7 @@ from uuid import UUID
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 from sqlalchemy import func, select, text, update
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import DBAPIError
@@ -432,7 +433,7 @@ def test_rolling_window_uses_calendar_months_and_new_runs_freeze_their_dates(
     assert second_result.job_id != first_result.job_id
 
 
-def test_invalid_real_source_is_visible_and_never_enqueued(
+def test_real_saved_search_compiles_real_snapshot_and_schedules_datajud_job(
     scratch_database_url: URL,
 ) -> None:
     engine = make_engine(scratch_database_url.render_as_string(hide_password=False))
@@ -441,14 +442,18 @@ def test_invalid_real_source_is_visible_and_never_enqueued(
     settings = Settings(
         environment="real",
         database_url=scratch_database_url.render_as_string(hide_password=False),
+        datajud_api_key=SecretStr("saved-search-real-key"),
     )
     app = create_app(settings, engine)
     with TestClient(app) as client:
         search = create_search(client, enabled=True)
-        assert search["availability"]["enabled"] is False
-        assert search["availability"]["reasons"]
+        assert search["availability"]["enabled"] is True
         run = client.post(f"/api/v1/saved-searches/{search['id']}/run")
-        assert run.status_code == 422
+        assert run.status_code == 202, run.text
+        manual_job = client.get(f"/api/v1/jobs/{run.json()['job_id']}").json()
+        assert manual_job["environment"] == "real"
+        assert manual_job["source"] == "datajud"
+        client.post(f"/api/v1/jobs/{manual_job['id']}/cancel")
         set_search_due(app, str(search["id"]), date(2026, 10, 4))
         assert (
             DailyScheduler(
@@ -458,8 +463,11 @@ def test_invalid_real_source_is_visible_and_never_enqueued(
         )
         with Session(engine) as session:
             dispatch = session.scalar(select(ScheduleDispatch))
-            jobs = session.scalar(select(func.count()).select_from(Job))
-        assert dispatch is not None and dispatch.status == "blocked"
-        assert dispatch.reason
-        assert jobs == 0
+            snapshots = session.scalars(select(Job.parameters_snapshot)).all()
+        assert dispatch is not None and dispatch.status != "blocked"
+        assert dispatch.reason is None
+        assert snapshots
+        assert all(
+            snapshot["query"]["catalog_snapshot"]["environment"] == "real" for snapshot in snapshots
+        )
     engine.dispose()

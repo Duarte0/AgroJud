@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from importlib.resources import files
 from typing import Any
@@ -16,6 +17,8 @@ from agrojud.services.collection import (
     source_query_from_snapshot,
 )
 from agrojud.sources.catalog import (
+    CatalogItem,
+    Evidence,
     compile_preset,
     get_item_availability,
     list_candidate_signals,
@@ -39,7 +42,7 @@ def raw_catalog() -> dict[str, Any]:
 def test_catalog_records_all_families_and_validates_every_included_tpu_code() -> None:
     catalog = load_catalog()
 
-    assert catalog.catalog_version == "1.0.0"
+    assert catalog.catalog_version == "1.1.0"
     assert catalog.tpu_version == "06/10/2026"
     assert {family.id for family in catalog.families} == {
         "rural_explicit",
@@ -80,13 +83,15 @@ def test_descendant_expansion_requires_separate_code_level_evidence() -> None:
         validate_catalog_document(document)
 
 
-def test_real_presets_stay_disabled_and_demo_is_labeled_synthetic() -> None:
+def test_real_presets_follow_s5_evidence_and_demo_is_labeled_synthetic() -> None:
     for item in list_presets():
         real = get_item_availability(item.id, "real")
         demo = get_item_availability(item.id, "demo")
-        assert not real.enabled
-        assert any("query_status: inconclusive" in reason for reason in real.reasons)
-        assert any("sample_status: inconclusive" in reason for reason in real.reasons)
+        assert real.enabled
+        assert real.label == "habilitado no real"
+        for name in ("query_status", "sample_status"):
+            assert item.evidence[name].state == "validated"
+            assert "s5:catalogo-tematico-datajud-2026-10-10" in item.evidence[name].evidence_ids
         assert demo.enabled
         assert demo.label == "demonstrativo sintético"
         assert any("não valida o TJGO" in reason for reason in demo.reasons)
@@ -96,7 +101,26 @@ def test_real_presets_stay_disabled_and_demo_is_labeled_synthetic() -> None:
         assert not get_item_availability(signal.id, "demo").enabled
 
 
-def test_real_compile_reports_why_the_preset_is_unavailable() -> None:
+def test_real_compile_uses_validated_preset() -> None:
+    compiled = compile_preset("rural.credito_contratos", environment="real")
+
+    assert compiled.environment == "real"
+    assert compiled.query.subject_codes == (4964, 4976, 10501)
+
+
+def test_real_compile_reports_why_the_preset_is_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original = catalog_module._item_by_id
+
+    def with_inconclusive_evidence(item_id: str) -> CatalogItem:
+        item = original(item_id)
+        pending = Evidence(state="inconclusive", reason="evidência pendente")
+        return replace(
+            item, evidence={**item.evidence, "query_status": pending, "sample_status": pending}
+        )
+
+    monkeypatch.setattr(catalog_module, "_item_by_id", with_inconclusive_evidence)
     with pytest.raises(SourceError) as captured:
         compile_preset("rural.credito_contratos", environment="real")
 
@@ -213,7 +237,7 @@ def test_saved_collection_freezes_catalog_version_justification_and_codes(
         catalog_snapshot=compiled.snapshot(),
     )
     saved = request.resolved_query["catalog_snapshot"]
-    assert saved["catalog_version"] == "1.0.0"  # type: ignore[index]
+    assert saved["catalog_version"] == "1.1.0"  # type: ignore[index]
     assert saved["evidence_report"] == "docs/evidence/catalogo-tematico-tpu-2026-10-09.json"  # type: ignore[index]
     assert saved["preset_version"] == "1.0.0"  # type: ignore[index]
     assert saved["justification"] == compiled.item.justification  # type: ignore[index]

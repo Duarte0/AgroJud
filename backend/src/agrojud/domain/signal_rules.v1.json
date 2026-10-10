@@ -10,7 +10,7 @@
       "explanation": "O movimento TPU 11382 foi observado nesta representação. O código é um sinal para revisão e não confirma constrição de bem rural.",
       "enablement": {
         "demo": {"enabled": true, "state": "synthetic_only", "reason": "Regra demonstrativa exercitada por fixtures sintéticas locais.", "evidence_ids": ["fixture:signal-rules-v1"]},
-        "real": {"enabled": false, "state": "inconclusive", "reason": "Falta exemplo estruturado real que valide este movimento como sinal.", "evidence_ids": ["movement:11382", "sample_status:inconclusive"]}
+        "real": {"enabled": false, "state": "inconclusive", "reason": "O movimento 11382 não aparece em nenhum processo do TJGO no DataJud (probe S5 de 10/10/2026).", "evidence_ids": ["movement:11382", "s5:catalogo-tematico-datajud-2026-10-10", "sample_status:inconclusive"]}
       }
     },
     {
@@ -22,7 +22,7 @@
       "explanation": "O movimento TPU 311 foi observado nesta representação. O código registra evento observado e não calcula urgência ou resultado jurídico.",
       "enablement": {
         "demo": {"enabled": true, "state": "synthetic_only", "reason": "Regra demonstrativa exercitada por fixtures sintéticas locais.", "evidence_ids": ["fixture:signal-rules-v1"]},
-        "real": {"enabled": false, "state": "inconclusive", "reason": "Falta exemplo estruturado real que valide este movimento como sinal.", "evidence_ids": ["movement:311", "sample_status:inconclusive"]}
+        "real": {"enabled": true, "state": "validated", "reason": "Exemplos estruturados reais do TJGO com o movimento 311 observados na probe S5 de 10/10/2026.", "evidence_ids": ["movement:311", "s5:catalogo-tematico-datajud-2026-10-10", "sample_status:validated"]}
       }
     },
     {
@@ -34,7 +34,7 @@
       "explanation": "O movimento TPU 12041 foi observado nesta representação. O código não confirma vínculo rural nem o estado atual do processo.",
       "enablement": {
         "demo": {"enabled": true, "state": "synthetic_only", "reason": "Regra demonstrativa exercitada por fixtures sintéticas locais.", "evidence_ids": ["fixture:signal-rules-v1"]},
-        "real": {"enabled": false, "state": "inconclusive", "reason": "Falta exemplo estruturado real que valide este movimento como sinal.", "evidence_ids": ["movement:12041", "sample_status:inconclusive"]}
+        "real": {"enabled": true, "state": "validated", "reason": "Exemplos estruturados reais do TJGO com o movimento 12041 observados na probe S5 de 10/10/2026.", "evidence_ids": ["movement:12041", "s5:catalogo-tematico-datajud-2026-10-10", "sample_status:validated"]}
       }
     }
   ]

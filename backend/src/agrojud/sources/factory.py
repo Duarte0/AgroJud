@@ -23,6 +23,17 @@ class SourceKind(StrEnum):
     DATAJUD = "datajud"
 
 
+def real_source_unavailable_reason(settings: Settings) -> str | None:
+    """Explain why the real DataJud source cannot be used, or return None when it can."""
+
+    if settings.environment != "real":
+        return None
+    key = settings.datajud_api_key
+    if key is None or not key.get_secret_value().strip():
+        return "DATAJUD_API_KEY não está configurada no backend do ambiente real."
+    return None
+
+
 def build_source_adapter(
     settings: Settings,
     kind: SourceKind,

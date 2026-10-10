@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
@@ -9,16 +10,21 @@ from threading import Event
 from typing import Any
 from uuid import UUID
 
+import httpx
 import pytest
+from pydantic import SecretStr
 from sqlalchemy import func, select, text, update
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
+import agrojud.services.jobs as jobs_module
+from agrojud.config import Settings
 from agrojud.db.engine import make_engine
 from agrojud.db.migrations_runner import upgrade_database
 from agrojud.db.models import (
     CollectionObservation,
     Job,
+    Process,
     QuarantineRejection,
     Representation,
 )
@@ -41,6 +47,7 @@ from agrojud.sources.contracts import (
     build_query_by_case_number,
     parse_source_page,
 )
+from agrojud.sources.datajud import DataJudSourceAdapter
 from agrojud.sources.synthetic import (
     SyntheticPageFixture,
     SyntheticQueryFixture,
@@ -245,7 +252,7 @@ def test_enqueued_collection_persists_the_compiled_catalog_snapshot(
     query_snapshot = saved["query"]
     catalog_snapshot = query_snapshot["catalog_snapshot"]
 
-    assert catalog_snapshot["catalog_version"] == "1.0.0"
+    assert catalog_snapshot["catalog_version"] == "1.1.0"
     assert catalog_snapshot["preset_id"] == "rural.credito_contratos"
     assert catalog_snapshot["preset_version"] == "1.0.0"
     assert catalog_snapshot["justification"] == compiled.item.justification
@@ -641,26 +648,103 @@ def test_error_after_confirmed_page_schedules_retry_with_progress_preserved(
     assert inspection.coverage["http_attempts"] == 2
 
 
-def test_real_source_stays_blocked_until_spec003_approves_pagination(
-    migrated_engine: Engine,
+def real_datajud_factory(
+    handler: Callable[[httpx.Request], httpx.Response],
+    adapters: list[DataJudSourceAdapter],
+) -> Callable[[JobLease], DataJudSourceAdapter]:
+    settings = Settings(
+        environment="test",
+        database_url="postgresql+psycopg://agrojud:secret@localhost:5432/agrojud_demo",
+        test_database_url="postgresql+psycopg://agrojud:secret@localhost:5432/agrojud_x_test",
+        datajud_api_key=SecretStr("collection-test-key"),
+    )
+
+    def factory(_lease: JobLease) -> DataJudSourceAdapter:
+        adapter = DataJudSourceAdapter(settings, transport=httpx.MockTransport(handler))
+        adapters.append(adapter)
+        return adapter
+
+    return factory
+
+
+def datajud_body(hits: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    return {"hits": {"total": {"value": len(hits), "relation": "eq"}, "hits": list(hits)}}
+
+
+def test_real_discovery_paginates_datajud_with_compound_sort_and_closes_adapter(
+    migrated_engine: Engine, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setattr(jobs_module, "MIN_REQUEST_INTERVAL", timedelta(0))
     query = discovery_query()
     jobs = make_jobs(migrated_engine)
     job_id = enqueue(jobs, query, mode="real", source="datajud")
-    factory_called = False
+    pages = [
+        [
+            source_hit("real-one", 1, process_number="10000000000000000001"),
+            source_hit("real-two", 2, process_number="10000000000000000002"),
+        ],
+        [source_hit("real-three", 3, process_number="10000000000000000003")],
+        [],
+    ]
+    bodies: list[dict[str, Any]] = []
 
-    def source_factory(_lease: JobLease) -> Any:
-        nonlocal factory_called
-        factory_called = True
-        raise AssertionError("DataJud must not be called before S2 approval.")
+    def handler(request: httpx.Request) -> httpx.Response:
+        bodies.append(json.loads(request.content))
+        return httpx.Response(200, json=datajud_body(pages[len(bodies) - 1]))
 
-    run_worker(jobs, "discovery", CollectionJobHandler(source_factory))
+    adapters: list[DataJudSourceAdapter] = []
+    run_worker(jobs, "discovery", CollectionJobHandler(real_datajud_factory(handler, adapters)))
+
     inspection = jobs.inspect(job_id)
-    assert inspection.status == "failed"
-    assert inspection.reason == "capability_not_approved"
-    assert inspection.attempts[-1].error_code == "DATAJUD_PAGINATION_NOT_APPROVED"
-    assert not factory_called
-    assert inspection.checkpoint.revision == 0
+    assert inspection.status == "completed", inspection.reason
+    assert inspection.coverage is not None
+    assert inspection.coverage["hits_confirmed"] == 3
+    assert len(bodies) == 3
+    assert bodies[0]["sort"] == [
+        {"@timestamp": {"order": "asc"}},
+        {"id.keyword": {"order": "asc"}},
+    ]
+    assert {"range": {"dataAjuizamento": {"gte": "20260101000000", "lt": "20260201000000"}}} in (
+        bodies[0]["query"]["bool"]["filter"]
+    )
+    assert "search_after" not in bodies[0]
+    assert bodies[1]["search_after"] == ["2026-01-01T00:00:02Z", "real-two"]
+    assert bodies[2]["search_after"] == ["2026-01-01T00:00:03Z", "real-three"]
+    assert len(adapters) == 1
+    assert adapters[0]._client.is_closed  # type: ignore[attr-defined]
+    with Session(migrated_engine) as session:
+        assert session.scalar(select(func.count()).select_from(Process)) == 3
+
+
+def test_real_refresh_number_uses_exact_cnj_query(
+    migrated_engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(jobs_module, "MIN_REQUEST_INTERVAL", timedelta(0))
+    jobs = make_jobs(migrated_engine)
+    job_id = enqueue(
+        jobs,
+        build_query_by_case_number(CNJ),
+        job_type="refresh_number",
+        mode="real",
+        source="datajud",
+    )
+    bodies: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        bodies.append(json.loads(request.content))
+        return httpx.Response(
+            200, json=datajud_body([source_hit("real-cnj", 1)] if len(bodies) == 1 else [])
+        )
+
+    adapters: list[DataJudSourceAdapter] = []
+    run_worker(
+        jobs, "refresh_number", CollectionJobHandler(real_datajud_factory(handler, adapters))
+    )
+
+    inspection = jobs.inspect(job_id)
+    assert inspection.status == "completed", inspection.reason
+    assert {"match": {"numeroProcesso": CNJ}} in bodies[0]["query"]["bool"]["filter"]
+    assert adapters[0]._client.is_closed  # type: ignore[attr-defined]
 
 
 def test_owned_page_commit_rejects_a_late_possession(migrated_engine: Engine) -> None:

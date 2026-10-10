@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 from sqlalchemy import func, select
 from sqlalchemy.engine import URL, Engine
 from sqlalchemy.orm import Session
@@ -343,27 +344,51 @@ def test_job_commands_follow_persisted_transitions_and_reject_incompatible_actio
     assert _domain_counts(api_app.state.database_engine) == counts_before_conflicts
 
 
-def test_real_source_and_presets_remain_disabled_without_external_approval(
+def test_real_source_is_enabled_with_key_and_presets_follow_s5_evidence(
     api_app: FastAPI,
 ) -> None:
     settings = Settings(
         environment="real",
         database_url=api_app.state.settings.database_url,
+        datajud_api_key=SecretStr("real-key-for-test"),
     )
     app = create_app(settings, api_app.state.database_engine)
     with TestClient(app, raise_server_exceptions=False) as client:
         environment = client.get("/api/v1/environment")
         assert environment.status_code == 200
-        assert environment.json()["source"] == "datajud"
-        assert environment.json()["source_enabled"] is False
-        assert "S1/S2" in environment.json()["source_disabled_reason"]
+        assert environment.json() == {
+            "environment": "real",
+            "source": "datajud",
+            "source_enabled": True,
+            "source_disabled_reason": None,
+        }
 
         presets = client.get("/api/v1/presets")
         assert presets.status_code == 200
         items = presets.json()["items"]
         assert items
-        assert all(not item["availability"]["enabled"] for item in items)
-        assert all(item["availability"]["reasons"] for item in items)
+        assert all(item["availability"]["enabled"] for item in items)
+        assert all(item["availability"]["label"] == "habilitado no real" for item in items)
+
+        accepted = client.post("/api/v1/jobs", json=DEFAULT_JOB_REQUEST)
+        assert accepted.status_code == 202, accepted.text
+        job = client.get(f"/api/v1/jobs/{accepted.json()['job_id']}")
+        assert job.json()["environment"] == "real"
+        assert job.json()["source"] == "datajud"
+
+
+def test_real_source_without_key_is_disabled_with_reason(api_app: FastAPI) -> None:
+    settings = Settings(
+        environment="real",
+        database_url=api_app.state.settings.database_url,
+        datajud_api_key=None,
+    )
+    app = create_app(settings, api_app.state.database_engine)
+    with TestClient(app, raise_server_exceptions=False) as client:
+        environment = client.get("/api/v1/environment")
+        assert environment.status_code == 200
+        assert environment.json()["source_enabled"] is False
+        assert "DATAJUD_API_KEY" in environment.json()["source_disabled_reason"]
 
         blocked = client.post(
             "/api/v1/jobs",

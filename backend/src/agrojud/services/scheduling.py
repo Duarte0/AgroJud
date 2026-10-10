@@ -190,41 +190,35 @@ class DailyScheduler:
         local_today = now.astimezone(SCHEDULE_TIMEZONE).date()
         missed = now > due_at
         dispatch_id = uuid4()
-        request: EnqueueRequest | None = None
-        reason: str | None = None
-        if self.mode == "real":
-            reason = "A consulta DataJud permanece desabilitada enquanto S1/S2 não forem aprovados."
-        else:
-            request = build_collection_request(
-                mode=self.mode,
-                source=self.source,
-                job_type="refresh_number",
-                query=build_query_by_case_number(process.numero_cnj),
-            )
-            request = _with_schedule_metadata(
-                request,
-                dispatch_id=dispatch_id,
-                process_id=entry.process_id,
-                process_number=process.numero_cnj,
-            )
+        request = build_collection_request(
+            mode=self.mode,
+            source=self.source,
+            job_type="refresh_number",
+            query=build_query_by_case_number(process.numero_cnj),
+        )
+        request = _with_schedule_metadata(
+            request,
+            dispatch_id=dispatch_id,
+            process_id=entry.process_id,
+            process_number=process.numero_cnj,
+        )
         dispatch = ScheduleDispatch(
             id=dispatch_id,
             target_kind="watch",
             saved_search_id=None,
             process_id=entry.process_id,
             scheduled_for_date=local_today,
-            status="blocked" if reason else "pending",
-            request_snapshot=_request_snapshot(request) if request is not None else None,
+            status="pending",
+            request_snapshot=_request_snapshot(request),
             missed_from=local_schedule_date(due_at) if missed else None,
             missed_through=local_today if missed else None,
-            reason=reason,
+            reason=None,
             created_at=now,
             updated_at=now,
         )
         session.add(dispatch)
         entry.next_run_at = next_daily_occurrence(now)
-        if request is not None:
-            self._enqueue_or_defer(session, dispatch, request, entry)
+        self._enqueue_or_defer(session, dispatch, request, entry)
 
     def _enqueue_or_defer(
         self,

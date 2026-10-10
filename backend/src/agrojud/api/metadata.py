@@ -16,11 +16,9 @@ from agrojud.api.schemas import (
 )
 from agrojud.config import Settings
 from agrojud.sources.catalog import get_item_availability, list_presets
+from agrojud.sources.factory import real_source_unavailable_reason
 
 router = APIRouter(prefix="/api/v1", tags=["metadata"])
-_REAL_SOURCE_DISABLED_REASON = (
-    "A consulta DataJud permanece desabilitada enquanto as validações S1/S2 não forem aprovadas."
-)
 
 
 @router.get(
@@ -75,10 +73,10 @@ def get_presets(request: Request) -> PresetsResponse:
 )
 def get_environment(request: Request) -> EnvironmentResponse:
     settings: Settings = request.app.state.settings
-    is_real = settings.environment == "real"
+    disabled_reason = real_source_unavailable_reason(settings)
     return EnvironmentResponse(
         environment=settings.environment,
-        source="datajud" if is_real else "synthetic",
-        source_enabled=not is_real,
-        source_disabled_reason=_REAL_SOURCE_DISABLED_REASON if is_real else None,
+        source="datajud" if settings.environment == "real" else "synthetic",
+        source_enabled=disabled_reason is None,
+        source_disabled_reason=disabled_reason,
     )

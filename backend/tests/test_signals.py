@@ -29,7 +29,12 @@ from agrojud.db.models import (
 from agrojud.domain.canonical_json import sha256_json
 from agrojud.domain.movement_normalization import NORMALIZER_VERSION
 from agrojud.domain.occurrence_identity import NORMALIZER_VERSION as OCCURRENCE_VERSION
-from agrojud.domain.signals import SIGNAL_RULES, evaluate_rule
+from agrojud.domain.signals import (
+    SIGNAL_RULES,
+    InactiveSignalRuleError,
+    evaluate_rule,
+    select_signal_rules,
+)
 from agrojud.services import signal_reprocessing as signal_reprocessing_module
 from agrojud.services.job_worker import LeasedWorker
 from agrojud.services.movement_ingestion import persist_movement_snapshot
@@ -380,3 +385,12 @@ def test_empty_selection_completes_and_real_rules_remain_gated(
     }
     assert hidden_demo_run.status_code == 404
     assert hidden_demo_resume.status_code == 404
+
+
+def test_real_signal_rules_follow_s5_evidence() -> None:
+    enabled = select_signal_rules("real", ["sinal.leilao", "sinal.recuperacao_judicial"])
+
+    assert [rule.id for rule in enabled] == ["sinal.leilao", "sinal.recuperacao_judicial"]
+    assert all(rule.enablement["real"].state == "validated" for rule in enabled)
+    with pytest.raises(InactiveSignalRuleError, match="11382"):
+        select_signal_rules("real", ["sinal.penhora"])

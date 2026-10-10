@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import random
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import ExitStack
 from dataclasses import dataclass, replace
 from datetime import date
 from typing import Any, Literal, cast
@@ -54,8 +55,6 @@ from agrojud.sources.synthetic import build_demo_fixture
 INITIAL_HIT_BUDGET = 2_000
 DEFAULT_PAGE_SIZE = 100
 MAX_CONTINUATION_BUDGET = 2_000
-# SPEC-003 has not validated remote sorting or pagination for TJGO.
-DATAJUD_PAGINATION_APPROVED = False
 LOGGER = logging.getLogger(__name__)
 
 type SourceAdapterFactory = Callable[[JobLease], SourceAdapter]
@@ -299,21 +298,15 @@ class CollectionJobHandler:
         self.random_value = random_value
 
     def __call__(self, lease: JobLease, context: JobExecutionContext) -> JobOutcome:
+        with ExitStack() as resources:
+            return self._execute(lease, context, resources)
+
+    def _execute(
+        self, lease: JobLease, context: JobExecutionContext, resources: ExitStack
+    ) -> JobOutcome:
         coverage: dict[str, Any] = {}
         try:
             coverage = self._read_coverage(context, lease)
-            if lease.mode == "real" and not DATAJUD_PAGINATION_APPROVED:
-                blocked = dict(coverage)
-                blocked["query_status"] = "blocked"
-                blocked["has_persisted_data"] = bool(blocked.get("has_persisted_data", False))
-                return JobOutcome(
-                    status="failed",
-                    coverage=cast(dict[str, JSONValue], blocked),
-                    reason="capability_not_approved",
-                    error_code="DATAJUD_PAGINATION_NOT_APPROVED",
-                    error_summary="A paginação TJGO aguarda validação de S2 na SPEC-003.",
-                )
-
             query = source_query_from_snapshot(
                 lease.parameters_snapshot.get("query"),
                 lease.parameters_snapshot.get("sort"),
@@ -334,6 +327,9 @@ class CollectionJobHandler:
                 return self._terminal_from_exhaustion(coverage)
 
             adapter = self.source_factory(lease)
+            close = getattr(adapter, "close", None)
+            if callable(close):
+                resources.callback(close)
             cursor = _cursor_from_json(checkpoint.cursor)
             revision = checkpoint.revision
             while True:

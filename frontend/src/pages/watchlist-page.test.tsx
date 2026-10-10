@@ -58,6 +58,39 @@ describe("WatchlistPage", () => {
     expect(api.count("POST", `/api/v1/processes/${processId}/refresh`)).toBe(1);
   });
 
+  it("disables manual refresh when the environment source is unavailable", async () => {
+    mockApi({
+      "GET /api/v1/watchlist": () =>
+        json({
+          items: [
+            {
+              process_id: processId,
+              numero_cnj: "00000010020268090001",
+              included_at: "2026-10-09T10:00:00Z",
+              last_refresh: null,
+            },
+          ],
+          page: 1,
+          page_size: 25,
+          total: 1,
+        }),
+    });
+    renderRoute(<WatchlistPage />, {
+      path: "/watchlist",
+      url: "/watchlist",
+      environment: {
+        environment: "real",
+        source: "datajud",
+        source_enabled: false,
+        source_disabled_reason: "DATAJUD_API_KEY não está configurada.",
+      },
+    });
+
+    const button = await screen.findByRole("button", { name: "Atualizar" });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("title", "DATAJUD_API_KEY não está configurada.");
+  });
+
   it("removes an entry from the active list without presenting removal as cancellation", async () => {
     let active = true;
     const api = mockApi({

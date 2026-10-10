@@ -170,12 +170,6 @@ def request_for_revision(
 ) -> EnqueueRequest:
     """Resolve a pinned preset revision into one bounded collection request."""
 
-    if mode == "real":
-        raise SourceError(
-            SourceErrorCode.VALIDATION,
-            "A execução DataJud permanece desabilitada enquanto S1/S2 não forem aprovados.",
-            validation_code="SOURCE_UNAVAILABLE",
-        )
     filters = _normalized_filter_dict(revision.filters)
     filed_from = _optional_date(filters["filed_from"])
     filed_through = _optional_date(filters["filed_through"])
@@ -284,10 +278,9 @@ def _make_revision(
             SourceErrorCode.VALIDATION,
             "Janela fixa exige início e fim; janela rolling_12_months não aceita datas fixas.",
         )
-    compile_mode: SearchMode = "demo" if mode == "real" else mode
     compiled = compile_preset(
         preset_id,
-        environment=compile_mode,
+        environment=mode,
         reference_time=reference_time,
         filed_from=filed_from,
         filed_through_inclusive=filed_through,
