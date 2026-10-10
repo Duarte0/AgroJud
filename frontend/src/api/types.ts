@@ -24,6 +24,10 @@ export type JobPage = Schemas["PaginationResponse_JobSummaryResponse_"];
 export type ProcessSummary = Schemas["ProcessSummaryResponse"];
 export type ProcessDetail = Schemas["ProcessDetailResponse"];
 export type ProcessPage = Schemas["PaginationResponse_ProcessSummaryResponse_"];
+export type Overview = Schemas["OverviewResponse"];
+export type OverviewQuery = NonNullable<
+  paths["/api/v1/overview"]["get"]["parameters"]["query"]
+>;
 export type ProcessTriage = Schemas["ProcessTriageStateResponse"];
 export type ProcessTriagePatch = Schemas["ProcessTriagePatchRequest"];
 export type ProcessTriageHistoryEntry = Schemas["ProcessTriageHistoryEntryResponse"];

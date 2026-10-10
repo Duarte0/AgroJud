@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter } from "react-router";
 
 import { AppShell } from "@/app/app-shell";
 import { JobDetailPage } from "@/pages/job-detail-page";
@@ -14,8 +14,12 @@ export const router = createBrowserRouter([
   {
     element: <AppShell />,
     children: [
-      // No overview exists yet; the root opens the radar.
-      { index: true, element: <Navigate to="/radar" replace /> },
+      {
+        index: true,
+        lazy: async () => ({
+          Component: (await import("@/pages/overview-page")).OverviewPage,
+        }),
+      },
       { path: "radar", element: <RadarPage /> },
       { path: "jobs", element: <JobsPage /> },
       { path: "jobs/:jobId", element: <JobDetailPage /> },

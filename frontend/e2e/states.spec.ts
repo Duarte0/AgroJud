@@ -156,6 +156,11 @@ test("AC5: teclado, foco visível e largura de 390px", async ({ page }) => {
   await expect(skip).toBeFocused();
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
+  const overviewLink = page
+    .getByRole("navigation", { name: "Principal" })
+    .getByRole("link", { name: "Visão geral" });
+  await expect(overviewLink).toBeFocused();
+  await page.keyboard.press("Tab");
   const radarLink = page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Radar" });
   await expect(radarLink).toBeFocused();
   const outline = await radarLink.evaluate((element) => getComputedStyle(element).outlineStyle);

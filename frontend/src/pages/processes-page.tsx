@@ -49,17 +49,27 @@ const RURAL_LINKS = ["unconfirmed", "confirmed"] as const satisfies readonly Rur
 const FILTER_FIELDS = [
   { key: "process_number", label: "Número CNJ", placeholder: "0000000-00.0000.0.00.0000" },
   { key: "subject", label: "Assunto", placeholder: "Nome ou código" },
+  { key: "subject_code", label: "Código exato do tema", placeholder: "ex.: 4968" },
+  { key: "subject_name_exact", label: "Nome exato do tema", placeholder: "Nome cadastrado" },
   { key: "class", label: "Classe", placeholder: "Nome ou código" },
   { key: "court_unit", label: "Órgão julgador", placeholder: "Nome ou código" },
   { key: "preset_id", label: "Preset", placeholder: "ex.: rural.credito_contratos" },
   { key: "collection_id", label: "Coleta (ID)", placeholder: "UUID da coleta" },
+  { key: "signal_category", label: "Categoria de sinal vigente", placeholder: "ex.: penhora" },
 ] as const;
 
 type FilterKey = (typeof FILTER_FIELDS)[number]["key"];
 type FilterValues = Record<FilterKey, string> & {
   decision: TriageDecision | "";
   rural_link: RuralLink | "";
+  followed: "" | "true" | "false";
+  pending_news: "" | "true" | "false";
 };
+
+function readBooleanFilter(params: URLSearchParams, key: string): FilterValues["followed"] {
+  const value = params.get(key);
+  return value === "true" || value === "false" ? value : "";
+}
 
 function readFilters(params: URLSearchParams): FilterValues {
   const textFilters = Object.fromEntries(
@@ -69,6 +79,8 @@ function readFilters(params: URLSearchParams): FilterValues {
     ...textFilters,
     decision: readEnum(params, "decision", DECISIONS) ?? "",
     rural_link: readEnum(params, "rural_link", RURAL_LINKS) ?? "",
+    followed: readBooleanFilter(params, "followed"),
+    pending_news: readBooleanFilter(params, "pending_news"),
   };
 }
 
@@ -102,7 +114,13 @@ function FilterForm({
               placeholder={field.placeholder}
               pattern={field.key === "collection_id" ? UUID_PATTERN : undefined}
               title={field.key === "collection_id" ? "Informe um UUID válido." : undefined}
-              maxLength={field.key === "process_number" ? 30 : 160}
+              maxLength={
+                field.key === "process_number"
+                  ? 30
+                  : field.key === "subject_code"
+                    ? 80
+                    : 160
+              }
               onChange={(event) =>
                 setValues((current) => ({ ...current, [field.key]: event.target.value }))
               }
@@ -110,7 +128,7 @@ function FilterForm({
           </div>
         ))}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="filter-decision">Decisão da triagem</Label>
           <NativeSelect
@@ -127,6 +145,40 @@ function FilterForm({
             <option value="pending">Pendente</option>
             <option value="relevant">Relevante</option>
             <option value="discarded">Descartado</option>
+          </NativeSelect>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="filter-followed">Acompanhamento ativo</Label>
+          <NativeSelect
+            id="filter-followed"
+            value={values.followed}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                followed: event.target.value as FilterValues["followed"],
+              }))
+            }
+          >
+            <option value="">Todos</option>
+            <option value="true">Acompanhados</option>
+            <option value="false">Sem acompanhamento ativo</option>
+          </NativeSelect>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="filter-pending-news">Novidades pendentes</Label>
+          <NativeSelect
+            id="filter-pending-news"
+            value={values.pending_news}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                pending_news: event.target.value as FilterValues["pending_news"],
+              }))
+            }
+          >
+            <option value="">Todos</option>
+            <option value="true">Com novidades pendentes</option>
+            <option value="false">Sem novidades pendentes</option>
           </NativeSelect>
         </div>
         <div className="space-y-1.5">
@@ -249,14 +301,27 @@ export function ProcessesPage() {
   }
   if (filters.decision) query.decision = filters.decision;
   if (filters.rural_link) query.rural_link = filters.rural_link;
+  if (filters.followed) query.followed = filters.followed === "true";
+  if (filters.pending_news) query.pending_news = filters.pending_news === "true";
   const processes = useProcessList(query);
   const filtered = Object.values(filters).some(Boolean);
+  const overviewParams = new URLSearchParams(searchParams);
+  overviewParams.delete("page");
+  const overviewHref = overviewParams.size ? `/?${overviewParams.toString()}` : "/";
 
   return (
     <>
       <PageHeader
         title="Processos"
         description="Base local agrupada por número CNJ. Os dados mostrados vêm de coletas já persistidas."
+        actions={
+          <Link
+            to={overviewHref}
+            className="inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-medium text-primary underline-offset-4 hover:bg-accent hover:underline"
+          >
+            Ver indicadores deste recorte
+          </Link>
+        }
       />
       <Card>
         <CardContent className="space-y-6">

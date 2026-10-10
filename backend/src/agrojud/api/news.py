@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Annotated, cast
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 
 from agrojud.api.errors import ERROR_RESPONSES
+from agrojud.api.process_filters import (
+    ProcessFilters,
+    SignalEnvironment,
+    process_filters_dependency,
+    process_predicates,
+)
 from agrojud.api.schemas import (
     NewsCategory,
     NewsProvenance,
@@ -18,7 +24,6 @@ from agrojud.api.schemas import (
     ProcessNewsStatusPatchRequest,
 )
 from agrojud.db.models import Process, ProcessNews, Representation
-from agrojud.sources.contracts import build_query_by_case_number
 
 router = APIRouter(prefix="/api/v1/news", tags=["news"])
 
@@ -31,8 +36,8 @@ router = APIRouter(prefix="/api/v1/news", tags=["news"])
 )
 def list_news(
     request: Request,
+    filters: Annotated[ProcessFilters, Depends(process_filters_dependency)],
     process_id: UUID | None = None,
-    process_number: str | None = Query(default=None, min_length=1, max_length=30),
     status: NewsStatus | None = None,
     category: NewsCategory | None = None,
     page: int = Query(default=1, ge=1),
@@ -41,16 +46,17 @@ def list_news(
     predicates = []
     if process_id is not None:
         predicates.append(ProcessNews.process_id == process_id)
-    if process_number is not None:
-        normalized_number = build_query_by_case_number(process_number).process_number
-        predicates.append(
-            ProcessNews.process_id
-            == select(Process.id).where(Process.numero_cnj == normalized_number).scalar_subquery()
-        )
     if status is not None:
         predicates.append(ProcessNews.status == status)
     if category is not None:
         predicates.append(ProcessNews.category == category)
+    environment: SignalEnvironment = (
+        "real" if request.app.state.settings.environment == "real" else "demo"
+    )
+    selected_processes = select(Process.id).where(
+        *process_predicates(filters, environment=environment)
+    )
+    predicates.append(ProcessNews.process_id.in_(selected_processes))
 
     with request.app.state.session_factory() as session:
         total = (

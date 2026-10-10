@@ -14,6 +14,7 @@ import type {
   JobCommandResult,
   JobListQuery,
   NewsListQuery,
+  OverviewQuery,
   ProcessDetail,
   ProcessNewsStatusPatch,
   ProcessListQuery,
@@ -48,6 +49,7 @@ export const queryKeys = {
   processes: (env: EnvironmentName) => [env, "processes"] as const,
   processList: (env: EnvironmentName, query: ProcessListQuery) =>
     [env, "processes", "list", query] as const,
+  overview: (env: EnvironmentName, query: OverviewQuery) => [env, "overview", query] as const,
   process: (env: EnvironmentName, id: string) => [env, "processes", "detail", id] as const,
   processWatch: (env: EnvironmentName, id: string) =>
     [env, "processes", "detail", id, "watch"] as const,
@@ -171,6 +173,15 @@ export function useProcessList(query: ProcessListQuery) {
     queryFn: ({ signal }) =>
       request(() => api.GET("/api/v1/processes", { params: { query }, signal })),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useOverview(query: OverviewQuery) {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.overview(environment, query),
+    queryFn: ({ signal }) =>
+      request(() => api.GET("/api/v1/overview", { params: { query }, signal })),
   });
 }
 

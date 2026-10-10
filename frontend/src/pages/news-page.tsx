@@ -139,19 +139,74 @@ function queryCategory(value: string | null): NewsCategory | undefined {
     : undefined;
 }
 
+function processFiltersFromUrl(params: URLSearchParams): Partial<NewsListQuery> {
+  const query: Partial<NewsListQuery> = {};
+  const text = (key: string) => params.get(key)?.trim() || undefined;
+  const boolean = (key: string): boolean | undefined => {
+    const value = params.get(key);
+    return value === "true" ? true : value === "false" ? false : undefined;
+  };
+  const processNumber = text("process_number");
+  const subject = text("subject");
+  const subjectCode = text("subject_code");
+  const subjectName = text("subject_name_exact");
+  const className = text("class");
+  const courtUnit = text("court_unit");
+  const collectionId = text("collection_id");
+  const presetId = text("preset_id");
+  const signalCategory = text("signal_category");
+  const decision = params.get("decision");
+  const ruralLink = params.get("rural_link");
+  if (processNumber) query.process_number = processNumber;
+  if (subject) query.subject = subject;
+  if (subjectCode) query.subject_code = subjectCode;
+  if (subjectName) query.subject_name_exact = subjectName;
+  if (className) query["class"] = className;
+  if (courtUnit) query.court_unit = courtUnit;
+  if (collectionId) query.collection_id = collectionId;
+  if (presetId) query.preset_id = presetId;
+  if (signalCategory) query.signal_category = signalCategory;
+  if (decision === "pending" || decision === "relevant" || decision === "discarded") {
+    query.decision = decision;
+  }
+  if (ruralLink === "unconfirmed" || ruralLink === "confirmed") query.rural_link = ruralLink;
+  const followed = boolean("followed");
+  const pendingNews = boolean("pending_news");
+  if (followed !== undefined) query.followed = followed;
+  if (pendingNews !== undefined) query.pending_news = pendingNews;
+  return query;
+}
+
+function processFilterSummary(params: URLSearchParams): string[] {
+  const labels: Array<[string, string | null]> = [
+    ["Assunto", params.get("subject")],
+    ["Tema", params.get("subject_name_exact") ?? params.get("subject_code")],
+    ["Classe", params.get("class")],
+    ["Órgão julgador", params.get("court_unit")],
+    ["Preset", params.get("preset_id")],
+    ["Coleta", params.get("collection_id")],
+    ["Triagem", params.get("decision")],
+    ["Vínculo rural", params.get("rural_link")],
+    ["Acompanhamento", params.get("followed")],
+    ["Sinal vigente", params.get("signal_category")],
+  ];
+  return labels.flatMap(([label, value]) => (value ? [`${label}: ${value}`] : []));
+}
+
 export function NewsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [processNumberDraft, setProcessNumberDraft] = useState(
     searchParams.get("process_number") ?? "",
   );
   const page = readPage(searchParams);
-  const processNumber = searchParams.get("process_number")?.trim() || undefined;
   const status = queryStatus(searchParams.get("status"));
   const category = queryCategory(searchParams.get("category"));
+  const processFilters = processFiltersFromUrl(searchParams);
+  const processFilterLabels = processFilterSummary(searchParams);
   const query: NewsListQuery = {
     page,
     page_size: PAGE_SIZE,
-    ...(processNumber ? { process_number: processNumber } : {}),
+    ...processFilters,
     ...(status ? { status } : {}),
     ...(category ? { category } : {}),
   };
@@ -223,6 +278,12 @@ export function NewsPage() {
           </div>
         </CardContent>
       </Card>
+      {processFilterLabels.length ? (
+        <Alert>
+          <AlertTitle>Recorte de processos aplicado</AlertTitle>
+          <AlertDescription>{processFilterLabels.join(" · ")}</AlertDescription>
+        </Alert>
+      ) : null}
       <Card>
         <CardContent className="space-y-4 pt-6">
           {news.isPending ? (

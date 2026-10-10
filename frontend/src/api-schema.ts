@@ -192,6 +192,23 @@ export interface paths {
         patch: operations["update_news_status_api_v1_news__news_id__patch"];
         trace?: never;
     };
+    "/api/v1/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resume indicadores descritivos da base local */
+        get: operations["get_overview_api_v1_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/presets": {
         parameters: {
             query?: never;
@@ -861,6 +878,120 @@ export interface components {
              * Format: uuid
              */
             representation_id: string;
+        };
+        /** OverviewCollectionResponse */
+        OverviewCollectionResponse: {
+            /**
+             * Collection Id
+             * Format: uuid
+             */
+            collection_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "demo" | "real";
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "retry_wait" | "completed" | "partial" | "failed" | "cancelled";
+        };
+        /** OverviewFiltersResponse */
+        OverviewFiltersResponse: {
+            /** Class */
+            class?: string | null;
+            /** Collection Id */
+            collection_id?: string | null;
+            /** Court Unit */
+            court_unit?: string | null;
+            /** Decision */
+            decision?: ("pending" | "relevant" | "discarded") | null;
+            /** Followed */
+            followed?: boolean | null;
+            /** Pending News */
+            pending_news?: boolean | null;
+            /** Preset Id */
+            preset_id?: string | null;
+            /** Process Number */
+            process_number?: string | null;
+            /** Rural Link */
+            rural_link?: ("unconfirmed" | "confirmed") | null;
+            /** Signal Category */
+            signal_category?: string | null;
+            /** Subject */
+            subject?: string | null;
+            /** Subject Code */
+            subject_code?: string | null;
+            /** Subject Name Exact */
+            subject_name_exact?: string | null;
+        };
+        /** OverviewMetricResponse */
+        OverviewMetricResponse: {
+            /**
+             * Unit
+             * @enum {string}
+             */
+            unit: "processes" | "representations" | "occurrences" | "jobs";
+            /** Value */
+            value: number;
+        };
+        /** OverviewResponse */
+        OverviewResponse: {
+            /** Current Signals */
+            current_signals: components["schemas"]["OverviewSignalCategoryResponse"][];
+            /**
+             * Data Source
+             * @enum {string}
+             */
+            data_source: "synthetic" | "datajud";
+            filters: components["schemas"]["OverviewFiltersResponse"];
+            followed_processes: components["schemas"]["OverviewMetricResponse"];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Latest Collections */
+            latest_collections: components["schemas"]["OverviewCollectionResponse"][];
+            /** Latest Observation At */
+            latest_observation_at: string | null;
+            pending_news: components["schemas"]["OverviewMetricResponse"];
+            processes: components["schemas"]["OverviewMetricResponse"];
+            representations: components["schemas"]["OverviewMetricResponse"];
+            /** Themes */
+            themes: components["schemas"]["OverviewThemeResponse"][];
+            triage: components["schemas"]["OverviewTriageResponse"];
+        };
+        /** OverviewSignalCategoryResponse */
+        OverviewSignalCategoryResponse: {
+            /** Category */
+            category: string;
+            processes: components["schemas"]["OverviewMetricResponse"];
+        };
+        /** OverviewThemeResponse */
+        OverviewThemeResponse: {
+            processes: components["schemas"]["OverviewMetricResponse"];
+            /** Subject Code */
+            subject_code: string | null;
+            /** Subject Name */
+            subject_name: string | null;
+        };
+        /** OverviewTriageResponse */
+        OverviewTriageResponse: {
+            discarded: components["schemas"]["OverviewMetricResponse"];
+            pending: components["schemas"]["OverviewMetricResponse"];
+            relevant: components["schemas"]["OverviewMetricResponse"];
         };
         /** PaginationResponse[JobSummaryResponse] */
         PaginationResponse_JobSummaryResponse_: {
@@ -2212,11 +2343,23 @@ export interface operations {
         parameters: {
             query?: {
                 process_id?: string | null;
-                process_number?: string | null;
                 status?: ("pending" | "reviewed") | null;
                 category?: ("NEW_OBSERVATION" | "ALTERATION_OBSERVED" | "NEW_REPRESENTATION") | null;
                 page?: number;
                 page_size?: number;
+                process_number?: string | null;
+                subject?: string | null;
+                subject_code?: string | null;
+                subject_name_exact?: string | null;
+                class?: string | null;
+                court_unit?: string | null;
+                collection_id?: string | null;
+                preset_id?: string | null;
+                decision?: ("pending" | "relevant" | "discarded") | null;
+                rural_link?: ("unconfirmed" | "confirmed") | null;
+                followed?: boolean | null;
+                pending_news?: boolean | null;
+                signal_category?: string | null;
             };
             header?: never;
             path?: never;
@@ -2333,6 +2476,76 @@ export interface operations {
             };
         };
     };
+    get_overview_api_v1_overview_get: {
+        parameters: {
+            query?: {
+                process_number?: string | null;
+                subject?: string | null;
+                subject_code?: string | null;
+                subject_name_exact?: string | null;
+                class?: string | null;
+                court_unit?: string | null;
+                collection_id?: string | null;
+                preset_id?: string | null;
+                decision?: ("pending" | "relevant" | "discarded") | null;
+                rural_link?: ("unconfirmed" | "confirmed") | null;
+                followed?: boolean | null;
+                pending_news?: boolean | null;
+                signal_category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     get_presets_api_v1_presets_get: {
         parameters: {
             query?: never;
@@ -2396,12 +2609,17 @@ export interface operations {
                 page_size?: number;
                 process_number?: string | null;
                 subject?: string | null;
+                subject_code?: string | null;
+                subject_name_exact?: string | null;
                 class?: string | null;
                 court_unit?: string | null;
                 collection_id?: string | null;
                 preset_id?: string | null;
                 decision?: ("pending" | "relevant" | "discarded") | null;
                 rural_link?: ("unconfirmed" | "confirmed") | null;
+                followed?: boolean | null;
+                pending_news?: boolean | null;
+                signal_category?: string | null;
             };
             header?: never;
             path?: never;

@@ -4,14 +4,20 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Any, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Request
-from sqlalchemy import exists, func, or_, select
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from agrojud.api.errors import ERROR_RESPONSES
+from agrojud.api.process_filters import (
+    ProcessFilters,
+    SignalEnvironment,
+    process_filters_dependency,
+    process_predicates,
+)
 from agrojud.api.schemas import (
     JobStatus,
     LatestCollectionResponse,
@@ -23,8 +29,6 @@ from agrojud.api.schemas import (
     ProcessRepresentationResponse,
     ProcessSummaryResponse,
     ProcessTriageStateResponse,
-    RuralLink,
-    TriageDecision,
 )
 from agrojud.db.models import (
     Collection,
@@ -36,10 +40,8 @@ from agrojud.db.models import (
     Process,
     ProcessTriage,
     Representation,
-    RepresentationSubject,
 )
 from agrojud.services.triage import state_from_record
-from agrojud.sources.contracts import build_query_by_case_number
 
 router = APIRouter(prefix="/api/v1/processes", tags=["processes"])
 
@@ -52,40 +54,18 @@ router = APIRouter(prefix="/api/v1/processes", tags=["processes"])
 )
 def list_processes(
     request: Request,
+    filters: Annotated[ProcessFilters, Depends(process_filters_dependency)],
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=25, ge=1, le=100),
-    process_number: str | None = Query(default=None, min_length=1, max_length=30),
-    subject: str | None = Query(default=None, min_length=1, max_length=160),
-    class_filter: str | None = Query(default=None, alias="class", min_length=1, max_length=160),
-    court_unit: str | None = Query(default=None, min_length=1, max_length=160),
-    collection_id: UUID | None = None,
-    preset_id: str | None = Query(default=None, min_length=1, max_length=120),
-    decision: TriageDecision | None = None,
-    rural_link: RuralLink | None = None,
 ) -> PaginationResponse[ProcessSummaryResponse]:
-    predicates = _process_predicates(
-        process_number=process_number,
-        subject=subject,
-        class_filter=class_filter,
-        court_unit=court_unit,
-        collection_id=collection_id,
-        preset_id=preset_id,
-        decision=decision,
-        rural_link=rural_link,
+    environment: SignalEnvironment = (
+        "real" if request.app.state.settings.environment == "real" else "demo"
     )
+    predicates = process_predicates(filters, environment=environment)
     with request.app.state.session_factory() as session:
-        total = (
-            session.scalar(
-                select(func.count(Process.id))
-                .select_from(Process)
-                .outerjoin(ProcessTriage, ProcessTriage.process_id == Process.id)
-                .where(*predicates)
-            )
-            or 0
-        )
+        total = session.scalar(select(func.count()).select_from(Process).where(*predicates)) or 0
         processes = session.scalars(
             select(Process)
-            .outerjoin(ProcessTriage, ProcessTriage.process_id == Process.id)
             .where(*predicates)
             .order_by(Process.numero_cnj.asc(), Process.id.asc())
             .offset((page - 1) * page_size)
@@ -238,84 +218,6 @@ def list_movements(
         process_id=process_id,
         diagnostics=list(diagnostics.values()),
     )
-
-
-def _process_predicates(
-    *,
-    process_number: str | None,
-    subject: str | None,
-    class_filter: str | None,
-    court_unit: str | None,
-    collection_id: UUID | None,
-    preset_id: str | None,
-    decision: TriageDecision | None,
-    rural_link: RuralLink | None,
-) -> list[Any]:
-    predicates: list[Any] = []
-    if process_number is not None:
-        normalized = build_query_by_case_number(process_number).process_number
-        predicates.append(Process.numero_cnj == normalized)
-    if decision is not None:
-        predicates.append(func.coalesce(ProcessTriage.decision, "pending") == decision)
-    if rural_link is not None:
-        predicates.append(func.coalesce(ProcessTriage.rural_link, "unconfirmed") == rural_link)
-
-    representation_filters: list[Any] = []
-    if subject is not None:
-        subject_pattern = _contains_pattern(subject)
-        representation_filters.append(
-            exists(
-                select(RepresentationSubject.id).where(
-                    RepresentationSubject.representation_id == Representation.id,
-                    or_(
-                        RepresentationSubject.subject_name.ilike(subject_pattern, escape="\\"),
-                        RepresentationSubject.subject_code.ilike(subject_pattern, escape="\\"),
-                    ),
-                )
-            )
-        )
-    if class_filter is not None:
-        class_pattern = _contains_pattern(class_filter)
-        representation_filters.append(
-            or_(
-                Representation.class_name.ilike(class_pattern, escape="\\"),
-                Representation.class_code.ilike(class_pattern, escape="\\"),
-            )
-        )
-    if court_unit is not None:
-        court_pattern = _contains_pattern(court_unit)
-        representation_filters.append(
-            or_(
-                Representation.court_unit_name.ilike(court_pattern, escape="\\"),
-                Representation.court_unit_code.ilike(court_pattern, escape="\\"),
-            )
-        )
-    if collection_id is not None or preset_id is not None:
-        collection_filters: list[Any] = [CollectionResult.representation_id == Representation.id]
-        if collection_id is not None:
-            collection_filters.append(CollectionResult.collection_id == collection_id)
-        if preset_id is not None:
-            collection_filters.append(
-                Job.parameters_snapshot["query"]["preset_id"].astext == preset_id
-            )
-        representation_filters.append(
-            exists(
-                select(CollectionResult.id)
-                .join(Job, Job.collection_id == CollectionResult.collection_id)
-                .where(*collection_filters)
-            )
-        )
-
-    if representation_filters:
-        predicates.append(
-            exists(
-                select(Representation.id).where(
-                    Representation.process_id == Process.id,
-                    *representation_filters,
-                )
-            )
-        )
-    return predicates
 
 
 def _load_process_summaries(
@@ -507,8 +409,3 @@ def _require_process(session: Session, process_id: UUID) -> Process:
     if process is None:
         raise HTTPException(status_code=404)
     return process
-
-
-def _contains_pattern(value: str) -> str:
-    escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    return f"%{escaped}%"

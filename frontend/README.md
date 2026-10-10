@@ -1,6 +1,6 @@
 # Frontend — AgroJud Radar
 
-Aplicação React da SPEC-012: radar de coleta, lista/detalhe de coletas e lista/detalhe de processos com timeline. Consome exclusivamente o contrato OpenAPI da SPEC-011; não há triagem, notas, dashboard ou gráficos nesta etapa.
+Aplicação React do AgroJud Radar: radar de coleta, listas/detalhes de jobs e processos, acompanhamento, novidades e visão geral da base local. Consome exclusivamente o contrato OpenAPI; os tipos são gerados a partir da API.
 
 ## Stack
 
@@ -19,7 +19,7 @@ Vite escuta somente em `127.0.0.1` e encaminha `/api` para `AGROJUD_API_URL` (pa
 
 ## Rotas e comportamento
 
-- `/` redireciona para `/radar` enquanto não existir visão geral.
+- `/`: indicadores descritivos da amostra persistida localmente, com filtros do processo, triagem, acompanhamento, novidades pendentes, sinais vigentes, temas e últimas coletas. Os cartões e temas abrem listas com o recorte correspondente; a tela distingue base vazia de falha de API e informa que a amostra não representa todo o TJGO.
 - `/radar`: presets com versão, vínculo rural e disponibilidade; itens indisponíveis ficam desabilitados com o motivo. Janela padrão de 12 meses resolvida pelo servidor, ou janela editável; limite de 1 a 2.000 registros.
 - `/jobs` e `/jobs/:id`: estado persistido, progresso confirmado, tentativas, rejeições, cobertura, erros e comandos (cancelar, retomar, continuar, reiniciar varredura). A porcentagem só aparece quando o total remoto é exato.
 - `/processes` e `/processes/:id`: filtros e página na URL; capas por origem, timeline com data do evento, atualização da fonte e observação local, triagem, sinais e acompanhamento manual. A atualização por número só é aceita para processo local acompanhado e não usa a janela de descoberta.

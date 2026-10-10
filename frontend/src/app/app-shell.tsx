@@ -9,6 +9,7 @@ import { environmentLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
+  { to: "/", label: "Visão geral" },
   { to: "/radar", label: "Radar" },
   { to: "/jobs", label: "Coletas" },
   { to: "/processes", label: "Processos" },
@@ -50,7 +51,7 @@ function Header() {
   return (
     <header className="border-b bg-card">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3">
-        <NavLink to="/radar" className="flex items-center gap-2 rounded-md font-semibold">
+        <NavLink to="/" className="flex items-center gap-2 rounded-md font-semibold">
           <Radar className="size-5 text-primary" aria-hidden="true" />
           AgroJud Radar
         </NavLink>

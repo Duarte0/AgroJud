@@ -129,7 +129,7 @@ A fila utilizará reserva transacional com `FOR UPDATE SKIP LOCKED`. Esse mecani
 
 A fonte indisponível permite avançar com o adaptador sintético e contratos provisórios documentados. Os testes locais não encerram S1/S2, e o modo real permanece sem aceite.
 
-Não iniciar indicadores, gráficos ou exportação antes de demonstrar interrupção e retomada no núcleo.
+A visão geral da base local foi entregue depois do gate de recuperação do núcleo na SPEC-018. A exportação e a operação integrada seguem nas SPEC-019 e SPEC-020.
 
 ## 4. Validation Spikes
 
@@ -432,15 +432,19 @@ M8 está concluído localmente. A automação usa dados sintéticos; os gates de
 
 **Dependência:** M8.
 
+**Estado local:** SPEC-018 implementada e validada em 09/10/2026. Exportação (SPEC-019), operação integrada e aceite real (SPEC-020) permanecem pendentes; M9 não está concluído.
+
+**Validação da SPEC-018:** 266 testes backend, 54 frontend e 14 cenários Playwright aprovados; Ruff, formatação, mypy, ESLint, typecheck, build e OpenAPI aprovados. Planos das quatro consultas foram inspecionados com `EXPLAIN ANALYZE` em amostra de 102 processos/103 representações. A evidência detalhada e os limites locais estão na [SPEC-018](specs/SPEC-018-indicadores-da-base-local.md); isso não altera os gates externos DataJud/TJGO.
+
 **Implementar:**
 
-- Contadores locais e distribuições simples.
-- CSV reutilizando os filtros da consulta de processos.
-- Neutralização de fórmulas, encoding e escape testados.
-- Compose completo, incluindo frontend.
-- Procedimentos de backup/restauração e reset somente do ambiente demonstrativo.
-- README, arquitetura, operação de jobs e roteiro de demonstração.
-- Medição de uma coleta controlada: duração, páginas, retries, volume e crescimento do banco.
+- [x] Contadores locais e distribuições simples — SPEC-018 DONE localmente, com amostra sintética.
+- [ ] CSV reutilizando os filtros da consulta de processos.
+- [ ] Neutralização de fórmulas, encoding e escape testados.
+- [ ] Compose completo, incluindo frontend.
+- [ ] Procedimentos de backup/restauração e reset somente do ambiente demonstrativo.
+- [ ] README, arquitetura, operação de jobs e roteiro de demonstração.
+- [ ] Medição de uma coleta controlada: duração, páginas, retries, volume e crescimento do banco.
 
 **Concluir quando:**
 
@@ -514,6 +518,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [ ] S5 — Catálogo temático validado.
 - [x] M7 — Triagem e regras concluídas localmente (SPEC-013/014); habilitação real continua condicionada a S5.
 - [x] M8 — Acompanhamento, novidades e agendamento estão concluídos localmente (SPEC-015/016/017); fonte real continua condicionada a S5/S1/S2.
+- [x] SPEC-018 — Indicadores da base local concluídos localmente; amostra sintética e não representativa do universo TJGO.
 - [ ] M9 — Indicadores, CSV e operação documentada.
 - [ ] Aceite sintético completo.
 - [ ] Aceite real TJGO registrado separadamente.
@@ -522,7 +527,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-017 estão DONE localmente; SPEC-018 a SPEC-020 permanecem BLOCKED_DEPENDENCY. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição aprovada está em [specs/README.md](specs/README.md). São 20 unidades implementáveis. SPEC-001 a SPEC-018 estão DONE localmente; SPEC-019 e SPEC-020 permanecem pendentes. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |

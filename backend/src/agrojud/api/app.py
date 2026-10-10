@@ -29,6 +29,7 @@ from agrojud.api.jobs import SourceCapabilityUnavailable
 from agrojud.api.jobs import router as jobs_router
 from agrojud.api.metadata import router as metadata_router
 from agrojud.api.news import router as news_router
+from agrojud.api.overview import router as overview_router
 from agrojud.api.processes import router as processes_router
 from agrojud.api.saved_searches import router as saved_searches_router
 from agrojud.api.signals import router as signals_router
@@ -242,6 +243,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         return response
 
     app.include_router(jobs_router)
+    app.include_router(overview_router)
     app.include_router(processes_router)
     app.include_router(news_router)
     app.include_router(signals_router)

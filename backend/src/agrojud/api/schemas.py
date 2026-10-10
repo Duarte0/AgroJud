@@ -438,6 +438,67 @@ class ProcessSummaryResponse(APIModel):
     triage: ProcessTriageStateResponse
 
 
+class OverviewMetricResponse(APIModel):
+    value: int = Field(ge=0)
+    unit: Literal["processes", "representations", "occurrences", "jobs"]
+
+
+class OverviewFiltersResponse(APIModel):
+    process_number: str | None = None
+    subject: str | None = None
+    subject_code: str | None = None
+    subject_name_exact: str | None = None
+    class_filter: str | None = Field(default=None, alias="class")
+    court_unit: str | None = None
+    collection_id: UUID | None = None
+    preset_id: str | None = None
+    decision: TriageDecision | None = None
+    rural_link: RuralLink | None = None
+    followed: bool | None = None
+    pending_news: bool | None = None
+    signal_category: str | None = None
+
+
+class OverviewTriageResponse(APIModel):
+    pending: OverviewMetricResponse
+    relevant: OverviewMetricResponse
+    discarded: OverviewMetricResponse
+
+
+class OverviewSignalCategoryResponse(APIModel):
+    category: str
+    processes: OverviewMetricResponse
+
+
+class OverviewThemeResponse(APIModel):
+    subject_code: str | None
+    subject_name: str | None
+    processes: OverviewMetricResponse
+
+
+class OverviewCollectionResponse(APIModel):
+    collection_id: UUID
+    job_id: UUID
+    environment: Literal["demo", "real"]
+    status: JobStatus
+    created_at: datetime
+
+
+class OverviewResponse(APIModel):
+    generated_at: datetime
+    data_source: Literal["synthetic", "datajud"]
+    filters: OverviewFiltersResponse
+    processes: OverviewMetricResponse
+    representations: OverviewMetricResponse
+    triage: OverviewTriageResponse
+    followed_processes: OverviewMetricResponse
+    pending_news: OverviewMetricResponse
+    current_signals: list[OverviewSignalCategoryResponse]
+    themes: list[OverviewThemeResponse]
+    latest_collections: list[OverviewCollectionResponse]
+    latest_observation_at: datetime | None
+
+
 class MovementDiagnosticResponse(APIModel):
     representation_id: UUID
     available: bool

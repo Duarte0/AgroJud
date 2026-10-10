@@ -20,8 +20,7 @@ test.afterEach(() => {
 
 test("AC1/AC4: inicia, acompanha e abre o processo sem envio duplicado", async ({ page }) => {
   const requests = trackApiRequests(page);
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/radar$/);
+  await page.goto("/radar");
   await expect(page.getByRole("region", { name: "Ambiente" })).toContainText(
     "Demonstração — dados sintéticos",
   );
