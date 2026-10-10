@@ -100,7 +100,7 @@ def source_hit(source_id: str = "one", second: int = 1) -> dict[str, object]:
             "@timestamp": timestamp,
             "movimentos": [],
         },
-        "sort": [timestamp],
+        "sort": [timestamp, source_id],
     }
 
 
@@ -713,7 +713,7 @@ page = parse_source_page(
             "@timestamp": "2026-01-01T00:00:01Z",
             "movimentos": [],
         },
-        "sort": ["2026-01-01T00:00:01Z"],
+        "sort": ["2026-01-01T00:00:01Z", "subprocess-hit"],
     }]}},
     datetime.now(UTC),
 )

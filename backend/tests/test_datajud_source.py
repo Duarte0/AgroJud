@@ -40,12 +40,14 @@ def response_body(*, hits: list[dict[str, object]] | None = None) -> dict[str, o
     }
 
 
+SOURCE_ID = "TJGO_100_G1_123_00000010020248090001"
+
+
 def data_hit(sort: list[object]) -> dict[str, object]:
-    source_id = "TJGO_100_G1_123_00000010020248090001"
     return {
-        "_id": source_id,
+        "_id": SOURCE_ID,
         "_source": {
-            "id": source_id,
+            "id": SOURCE_ID,
             "numeroProcesso": "00000010020248090001",
             "tribunal": "TJGO",
             "campoOpcional": {"versao": 3},
@@ -61,8 +63,8 @@ def query() -> SourceQuery:
 def test_posts_to_fixed_tjgo_endpoint_and_preserves_cursor_without_retry() -> None:
     requests: list[httpx.Request] = []
     bodies = [
-        response_body(hits=[data_hit([1700000000000])]),
-        response_body(hits=[data_hit([1700000000123])]),
+        response_body(hits=[data_hit([1700000000000, SOURCE_ID])]),
+        response_body(hits=[data_hit([1700000000123, SOURCE_ID])]),
     ]
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -80,13 +82,35 @@ def test_posts_to_fixed_tjgo_endpoint_and_preserves_cursor_without_retry() -> No
         adapter.close()
 
     assert len(requests) == 2
-    assert first.cursor_final == (1700000000000,)
-    assert second.cursor_final == (1700000000123,)
+    assert first.cursor_final == (1700000000000, SOURCE_ID)
+    assert second.cursor_final == (1700000000123, SOURCE_ID)
     second_body = json.loads(requests[1].content)
-    assert second_body["search_after"] == [1700000000000]
+    assert second_body["search_after"] == [1700000000000, SOURCE_ID]
     assert second_body["size"] == 100
     assert second_body["query"]["bool"]["filter"][0] == {"match": {"tribunal": "TJGO"}}
-    assert second_body["sort"] == [{"@timestamp": {"order": "asc"}}]
+    assert second_body["sort"] == [
+        {"@timestamp": {"order": "asc"}},
+        {"id.keyword": {"order": "asc"}},
+    ]
+
+
+def test_cursor_must_match_the_query_sort_before_any_request() -> None:
+    calls = 0
+
+    def handler(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, json=response_body())
+
+    adapter = DataJudSourceAdapter(make_settings(), transport=httpx.MockTransport(handler))
+    try:
+        with pytest.raises(SourceError) as error:
+            adapter.fetch_page(query(), (1700000000000,), 10)
+    finally:
+        adapter.close()
+
+    assert error.value.code is SourceErrorCode.VALIDATION
+    assert calls == 0
 
 
 def test_query_compilation_uses_only_allowlisted_filters_and_half_open_dates() -> None:
@@ -188,7 +212,7 @@ def test_only_an_explicit_cursor_rejection_is_classified_as_cursor_invalid() -> 
     )
     try:
         with pytest.raises(SourceError) as captured:
-            explicit.fetch_page(query(), (1700000000000,), 10)
+            explicit.fetch_page(query(), (1700000000000, SOURCE_ID), 10)
     finally:
         explicit.close()
     assert captured.value.code is SourceErrorCode.CURSOR_INVALID
@@ -201,7 +225,7 @@ def test_only_an_explicit_cursor_rejection_is_classified_as_cursor_invalid() -> 
     )
     try:
         with pytest.raises(SourceError) as captured:
-            generic.fetch_page(query(), (1700000000000,), 10)
+            generic.fetch_page(query(), (1700000000000, SOURCE_ID), 10)
     finally:
         generic.close()
     assert captured.value.code is SourceErrorCode.VALIDATION
@@ -221,7 +245,7 @@ def test_malformed_json_or_envelope_is_contract_error(
     adapter = DataJudSourceAdapter(make_settings(), transport=httpx.MockTransport(handler))
     try:
         with pytest.raises(SourceError) as captured:
-            adapter.fetch_page(query(), (1700000000000,), 10)
+            adapter.fetch_page(query(), (1700000000000, SOURCE_ID), 10)
     finally:
         adapter.close()
 

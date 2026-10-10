@@ -62,14 +62,19 @@ class SortTerm:
     order: Literal["asc", "desc"] = "asc"
 
     def __post_init__(self) -> None:
-        if self.field_name != "@timestamp" or self.order not in ("asc", "desc"):
+        if self.field_name not in _ALLOWED_SORT_FIELDS or self.order not in ("asc", "desc"):
             raise SourceError(
                 SourceErrorCode.VALIDATION,
                 "A ordenação informada não é permitida nesta versão do contrato.",
             )
 
 
-DEFAULT_SORT: tuple[SortTerm, ...] = (SortTerm(),)
+_ALLOWED_SORT_FIELDS = frozenset({"@timestamp", "id.keyword"})
+TIMESTAMP_SORT: tuple[SortTerm, ...] = (SortTerm(),)
+# Pagination was validated against TJGO with this compound sort (SPEC-003, 10/10/2026);
+# id.keyword breaks @timestamp ties so search_after never skips or repeats documents.
+SOURCE_ID_TIEBREAKER_SORT: tuple[SortTerm, ...] = (SortTerm(), SortTerm("id.keyword"))
+DEFAULT_SORT: tuple[SortTerm, ...] = SOURCE_ID_TIEBREAKER_SORT
 _CNJ_DIGITS = re.compile(r"^\d{20}$")
 _CNJ_FORMATTED = re.compile(r"^\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}$")
 
@@ -143,6 +148,12 @@ class SourceQuery:
         if not self.sort or not all(isinstance(term, SortTerm) for term in self.sort):
             raise SourceError(
                 SourceErrorCode.VALIDATION, "A consulta precisa de uma ordenação permitida."
+            )
+        sort_fields = [term.field_name for term in self.sort]
+        if sort_fields[0] != "@timestamp" or len(set(sort_fields)) != len(sort_fields):
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "A ordenação deve começar por @timestamp e não repetir campos.",
             )
         object.__setattr__(self, "sort", tuple(self.sort))
 
@@ -254,6 +265,11 @@ def validate_fetch_arguments(
         return None
     if isinstance(cursor, (str, bytes)) or not isinstance(cursor, Sequence) or not cursor:
         raise SourceError(SourceErrorCode.VALIDATION, "O cursor deve ser uma lista não vazia.")
+    if len(cursor) != len(query.sort):
+        raise SourceError(
+            SourceErrorCode.VALIDATION,
+            "O cursor não corresponde à ordenação da consulta.",
+        )
     values: list[JSONScalar] = []
     for value in cursor:
         if isinstance(value, float) and not isfinite(value):

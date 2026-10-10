@@ -8,7 +8,7 @@ import os
 import re
 import sys
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
@@ -19,6 +19,8 @@ from pydantic import ValidationError
 
 from agrojud.config import Settings, get_settings
 from agrojud.sources.contracts import (
+    SOURCE_ID_TIEBREAKER_SORT,
+    TIMESTAMP_SORT,
     Cursor,
     SourceError,
     SourceErrorCode,
@@ -93,7 +95,7 @@ class TJGOValidationProbe:
         if filed_from >= filed_to:
             raise ValueError("A data inicial precisa ser anterior à data final exclusiva.")
         self._adapter = adapter
-        self._query = SourceQuery(filed_from=filed_from, filed_to=filed_to)
+        self._query = SourceQuery(filed_from=filed_from, filed_to=filed_to, sort=TIMESTAMP_SORT)
         self._filed_from = filed_from
         self._filed_to = filed_to
         self._requests: list[dict[str, object]] = []
@@ -120,7 +122,9 @@ class TJGOValidationProbe:
             observed_number = _first_cnj(first.page.hits)
             exact: ProbeRequestResult | None = None
             if observed_number is not None and not self._stopped:
-                exact_query = build_query_by_case_number(observed_number)
+                exact_query = replace(
+                    build_query_by_case_number(observed_number), sort=TIMESTAMP_SORT
+                )
                 exact = self._request("consulta_cnj_observado", exact_query)
                 self._assess_case_number_query(exact, observed_number, capabilities)
             elif observed_number is None:
@@ -210,16 +214,11 @@ class TJGOValidationProbe:
         if self._stopped or len(self._requests) >= MAX_REQUESTS:
             return None
 
-        request_payload = build_datajud_payload(query, cursor, PAGE_SIZE)
-        sort_fields = tuple(
-            next(iter(term)) for term in cast(list[dict[str, object]], request_payload["sort"])
-        )
+        payload_query = query
         if include_source_id_tiebreaker:
-            request_payload["sort"] = [
-                {"@timestamp": {"order": "asc"}},
-                {"id.keyword": {"order": "asc"}},
-            ]
-            sort_fields = ("@timestamp", "id.keyword")
+            payload_query = replace(query, sort=SOURCE_ID_TIEBREAKER_SORT)
+        request_payload = build_datajud_payload(payload_query, cursor, PAGE_SIZE)
+        sort_fields = tuple(term.field_name for term in payload_query.sort)
 
         safe_payload = cast(dict[str, object], _sanitize_payload(request_payload))
         request_started = perf_counter()
@@ -660,7 +659,7 @@ def missing_key_report(
 ) -> dict[str, object]:
     """Build the required local failure report without initializing an HTTP client."""
 
-    query = SourceQuery(filed_from=filed_from, filed_to=filed_to)
+    query = SourceQuery(filed_from=filed_from, filed_to=filed_to, sort=TIMESTAMP_SORT)
     capabilities = _initial_capabilities(reason)
     return {
         "report_version": 1,

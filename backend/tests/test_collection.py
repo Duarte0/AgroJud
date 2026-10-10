@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from threading import Event
 from typing import Any
@@ -30,6 +31,7 @@ from agrojud.services.job_worker import JobExecutionContext, JobOutcome, LeasedW
 from agrojud.services.jobs import JobLease, JobService
 from agrojud.sources.catalog import compile_preset
 from agrojud.sources.contracts import (
+    TIMESTAMP_SORT,
     Cursor,
     SourceError,
     SourceErrorCode,
@@ -77,7 +79,7 @@ def source_hit(
             "@timestamp": timestamp,
             "movimentos": [],
         },
-        "sort": [timestamp],
+        "sort": [timestamp, source_id],
     }
 
 
@@ -279,7 +281,7 @@ def test_budget_bounds_each_request_and_continuation_keeps_progress(
     inspection = jobs.inspect(job_id)
     assert inspection.status == "partial"
     assert inspection.reason == "limit"
-    assert inspection.checkpoint.cursor == ["2026-01-01T00:00:03Z"]
+    assert inspection.checkpoint.cursor == ["2026-01-01T00:00:03Z", "three"]
     assert adapter.sizes == [2, 1]
     assert inspection.coverage is not None
     assert inspection.coverage["hits_confirmed"] == 3
@@ -387,7 +389,7 @@ def test_quarantine_write_failure_rolls_back_data_and_checkpoint_then_replays(
     from agrojud.db.movement_repositories import QuarantineRepository
 
     query = discovery_query()
-    invalid_hit = {"_id": "invalid", "sort": ["2026-01-01T00:00:01Z"]}
+    invalid_hit = {"_id": "invalid", "sort": ["2026-01-01T00:00:01Z", "invalid"]}
     adapter = RecordingAdapter(fixture_adapter(query, ((invalid_hit,),)))
     jobs = make_jobs(migrated_engine)
     job_id = enqueue(jobs, query)
@@ -443,7 +445,7 @@ def test_cursor_repetition_fails_without_committing_the_invalid_page(
         def __init__(self) -> None:
             self.pages = [
                 source_page((source_hit("one", 1),)),
-                source_page((source_hit("two", 1),)),
+                source_page((source_hit("one", 1),)),
             ]
 
         def fetch_page(
@@ -466,7 +468,7 @@ def test_cursor_repetition_fails_without_committing_the_invalid_page(
     assert inspection.status == "failed"
     assert inspection.attempts[-1].error_code == SourceErrorCode.CONTRACT.value
     assert inspection.checkpoint.revision == 1
-    assert inspection.checkpoint.cursor == ["2026-01-01T00:00:01Z"]
+    assert inspection.checkpoint.cursor == ["2026-01-01T00:00:01Z", "one"]
     assert inspection.coverage is not None
     assert inspection.coverage["query_status"] == "failed"
     assert inspection.coverage["has_persisted_data"] is True
@@ -686,3 +688,20 @@ def test_owned_page_commit_rejects_a_late_possession(migrated_engine: Engine) ->
     assert inspection.checkpoint.revision == 0
     with Session(migrated_engine) as session:
         assert session.scalar(select(func.count()).select_from(CollectionObservation)) == 0
+
+
+def test_refresh_number_accepts_legacy_single_term_sort_but_not_extra_filters() -> None:
+    legacy = replace(build_query_by_case_number(CNJ), sort=TIMESTAMP_SORT)
+
+    request = build_collection_request(
+        mode="demo", source="synthetic", job_type="refresh_number", query=legacy
+    )
+
+    assert request.sort == [{"field_name": "@timestamp", "order": "asc"}]
+    with pytest.raises(SourceError, match="CNJ exata"):
+        build_collection_request(
+            mode="demo",
+            source="synthetic",
+            job_type="refresh_number",
+            query=replace(legacy, class_codes=(1116,)),
+        )

@@ -204,7 +204,10 @@ def build_demo_fixture(query: SourceQuery) -> SyntheticQueryFixture:
         ],
         "demonstracaoSintetica": True,
     }
-    hit: dict[str, JSONValue] = {"_id": source_id, "_source": source, "sort": [timestamp]}
+    sort_values: list[JSONValue] = [
+        timestamp if term.field_name == "@timestamp" else source_id for term in query.sort
+    ]
+    hit: dict[str, JSONValue] = {"_id": source_id, "_source": source, "sort": sort_values}
     return SyntheticQueryFixture(
         pages=(SyntheticPageFixture(hits=(hit,), total_value=1, total_relation="eq"),)
     )

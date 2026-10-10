@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import pytest
 
 from agrojud.sources import (
+    TIMESTAMP_SORT,
     SourceError,
     SourceErrorCode,
     SourceQuery,
@@ -15,7 +16,7 @@ from agrojud.sources import (
 )
 
 FIXED_TIME = datetime(2026, 10, 8, tzinfo=UTC)
-QUERY = SourceQuery(class_codes=(1116,))
+QUERY = SourceQuery(class_codes=(1116,), sort=TIMESTAMP_SORT)
 
 
 def hit(index: int, cursor_value: object) -> dict[str, object]:

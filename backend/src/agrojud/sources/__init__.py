@@ -1,6 +1,9 @@
 """Source contracts and adapters for SPEC-002."""
 
 from agrojud.sources.contracts import (
+    DEFAULT_SORT,
+    SOURCE_ID_TIEBREAKER_SORT,
+    TIMESTAMP_SORT,
     Cursor,
     NormalizedSourceCover,
     SortTerm,
@@ -22,6 +25,9 @@ from agrojud.sources.synthetic import (
 )
 
 __all__ = [
+    "DEFAULT_SORT",
+    "SOURCE_ID_TIEBREAKER_SORT",
+    "TIMESTAMP_SORT",
     "Cursor",
     "DataJudSourceAdapter",
     "NormalizedSourceCover",

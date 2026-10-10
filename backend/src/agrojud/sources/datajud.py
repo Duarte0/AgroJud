@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 
 import httpx
 
 from agrojud.config import Settings
 from agrojud.sources.contracts import (
+    SOURCE_ID_TIEBREAKER_SORT,
     Cursor,
     SourceError,
     SourceErrorCode,
@@ -94,18 +95,13 @@ class DataJudSourceAdapter:
         *,
         include_source_id_tiebreaker: bool = False,
     ) -> DataJudProbeResponse:
-        """Fetch one allowlisted validation page using the documented or candidate sort."""
+        """Fetch one allowlisted validation page using the documented or compound sort."""
 
+        if include_source_id_tiebreaker:
+            query = replace(query, sort=SOURCE_ID_TIEBREAKER_SORT)
         normalized_cursor = validate_fetch_arguments(query, cursor, page_size)
         payload = build_datajud_payload(query, normalized_cursor, page_size)
-        expected_sort_count = len(query.sort)
-        if include_source_id_tiebreaker:
-            payload["sort"] = [
-                {"@timestamp": {"order": "asc"}},
-                {"id.keyword": {"order": "asc"}},
-            ]
-            expected_sort_count = 2
-        return self._fetch_payload(payload, expected_sort_count, cursor_present=cursor is not None)
+        return self._fetch_payload(payload, len(query.sort), cursor_present=cursor is not None)
 
     def _fetch_payload(
         self,

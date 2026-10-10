@@ -61,6 +61,7 @@ AC1/AC2: HTTPX MockTransport para 200 válido/vazio, 400, 401, 403, 429, 5xx, ti
 ### Revisão em 10/10/2026
 
 - O índice TJGO armazena `dataAjuizamento` como `YYYYMMDDHHMMSS`. Um filtro de intervalo com datas ISO (`2026-05-01`) é aceito pelo endpoint, mas não casa nenhum documento; a mesma semana em formato compacto retornou 17.817 processos. O payload agora serializa os limites do intervalo semiaberto como `YYYYMMDD000000`.
+- O sort padrão passou a `@timestamp` asc + `id.keyword` asc, o mesmo validado na paginação real (SPEC-003). O contrato aceita somente esses campos, exige `@timestamp` primeiro e rejeita cursor com quantidade de valores diferente do sort antes do HTTP. Snapshots persistidos com sort de um termo continuam retomáveis; a atualização por CNJ compara a consulta ignorando o sort legado. Como o sort integra o `operation_key`, jobs novos não coalescem com jobs ativos antigos equivalentes. A fixture demo emite um valor por termo do sort.
 - O read timeout de 20 s foi insuficiente: respostas reais levaram de 8 a 32 s em 10/10/2026 e 57 s na amostra de 09/10/2026. O padrão passou a 60 s configurável. Heartbeats usam sessão própria e o limite real permanece abaixo do lease, evitando que uma chamada bloqueada ultrapasse a posse do job.
 
 ## Erros e edge cases

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import random
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from typing import Any, Literal, cast
 
@@ -99,9 +99,7 @@ def build_collection_request(
             SourceErrorCode.VALIDATION,
             "Atualização por número exige consulta CNJ exata; descoberta exige outros filtros.",
         )
-    if job_type == "refresh_number" and query != build_query_by_case_number(
-        query.process_number or ""
-    ):
+    if job_type == "refresh_number" and not _is_exact_case_number_query(query):
         raise SourceError(
             SourceErrorCode.VALIDATION,
             "Atualização por número exige a consulta CNJ exata sem filtros adicionais.",
@@ -602,9 +600,7 @@ class CollectionJobHandler:
                 SourceErrorCode.CONTRACT,
                 "Atualização por número não contém um número CNJ exato.",
             )
-        if lease.job_type == "refresh_number" and query != build_query_by_case_number(
-            query.process_number or ""
-        ):
+        if lease.job_type == "refresh_number" and not _is_exact_case_number_query(query):
             raise SourceError(
                 SourceErrorCode.CONTRACT,
                 "Atualização por número contém filtros além do CNJ exato.",
@@ -935,3 +931,10 @@ def _cursor_advances(previous: Cursor, current: Cursor, sort: Sequence[SortTerm]
             "Os valores de ordenação não permitem provar avanço do cursor.",
         )
     return False
+
+
+def _is_exact_case_number_query(query: SourceQuery) -> bool:
+    """Accept the exact CNJ query under the current or a persisted legacy sort."""
+
+    expected = build_query_by_case_number(query.process_number or "")
+    return replace(query, sort=expected.sort) == expected
