@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { JobStatusBadge } from "@/components/job-status-badge";
 import { Link, useSearchParams } from "react-router";
 
-import { useOverview } from "@/api/queries";
+import { useOverview, useProcessFilterOptions } from "@/api/queries";
 import type { Overview, OverviewQuery } from "@/api/types";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, LoadingState, StaleNotice } from "@/components/query-feedback";
@@ -145,7 +145,7 @@ function ruralLinkLabel(value: NonNullable<OverviewFilters["rural_link"]>): stri
   return RURAL_LINK_LABELS[value];
 }
 
-function resolvedFilterLabels(filters: OverviewFilters): Array<[string, string]> {
+function resolvedFilterLabels(filters: OverviewFilters, collectionLabel?: string): Array<[string, string]> {
   const labels: Array<[string, string | null | undefined]> = [
     ["Número CNJ", filters.process_number],
     ["Assunto", filters.subject],
@@ -153,7 +153,7 @@ function resolvedFilterLabels(filters: OverviewFilters): Array<[string, string]>
     ["Nome exato do tema", filters.subject_name_exact],
     ["Classe", filters["class"]],
     ["Órgão julgador", filters.court_unit],
-    ["Coleta", filters.collection_id],
+    ["Coleta", filters.collection_id ? collectionLabel ?? "Coleta não localizada" : null],
     ["Preset", filters.preset_id],
     ["Triagem", filters.decision ? decisionLabel(filters.decision) : null],
     ["Vínculo rural", filters.rural_link ? ruralLinkLabel(filters.rural_link) : null],
@@ -357,6 +357,18 @@ export function OverviewPage() {
   const [searchParams] = useSearchParams();
   const query = queryFromSearchParams(searchParams);
   const overview = useOverview(query);
+  const collectionOptions = useProcessFilterOptions(
+    "collection_id",
+    "",
+    query.collection_id ?? undefined,
+    Boolean(query.collection_id),
+  );
+  const selectedCollection = collectionOptions.data?.items.find(
+    option => option.value === query.collection_id,
+  );
+  const collectionLabel = selectedCollection?.label ?? (query.collection_id
+    ? collectionOptions.isPending ? "Carregando coleta…" : "Coleta não localizada"
+    : undefined);
 
   return (
     <div className="space-y-6">
@@ -389,7 +401,7 @@ export function OverviewPage() {
               <div>
                 <CardTitle>Recorte dos indicadores</CardTitle>
                 <CardDescription>
-                  {resolvedFilterLabels(overview.data.filters).length
+                  {resolvedFilterLabels(overview.data.filters, collectionLabel).length
                     ? "Os indicadores abaixo usam estes filtros resolvidos pela API."
                     : "Todos os processos conhecidos na base local."}
                 </CardDescription>
@@ -402,9 +414,9 @@ export function OverviewPage() {
               </Link>
             </CardHeader>
             <CardContent className="space-y-4">
-              {resolvedFilterLabels(overview.data.filters).length ? (
+              {resolvedFilterLabels(overview.data.filters, collectionLabel).length ? (
                 <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-                  {resolvedFilterLabels(overview.data.filters).map(([label, value]) => (
+                  {resolvedFilterLabels(overview.data.filters, collectionLabel).map(([label, value]) => (
                     <div key={label}>
                       <dt className="text-xs text-muted-foreground">{label}</dt>
                       <dd className="break-all">{value}</dd>

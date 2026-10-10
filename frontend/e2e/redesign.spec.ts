@@ -58,7 +58,9 @@ test("redesign preserva contexto, rascunho e protege a saída", async ({ page })
   await page.getByRole("link", { name: "Voltar à lista" }).click();
   await page.getByRole("button", { name: "Sair sem salvar", exact: true }).click();
   await expect(page).toHaveURL(listUrl);
-  await expect(page.getByRole("list", { name: "Filtros aplicados" })).toContainText("Coleta");
+  const collectionChip = page.getByRole("list", { name: "Filtros aplicados" }).getByRole("button", { name: "Remover filtro Coleta" });
+  await expect(collectionChip).toContainText("Coleta");
+  await expect(collectionChip).not.toContainText(/[0-9a-f]{8}-[0-9a-f-]{27}/i);
   await page.getByRole("button", { name: "Remover filtro Coleta" }).click();
   await expect(page).not.toHaveURL(/collection_id/);
 });

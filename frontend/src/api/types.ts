@@ -24,6 +24,12 @@ export type JobPage = Schemas["PaginationResponse_JobSummaryResponse_"];
 export type ProcessSummary = Schemas["ProcessSummaryResponse"];
 export type ProcessDetail = Schemas["ProcessDetailResponse"];
 export type ProcessPage = Schemas["PaginationResponse_ProcessSummaryResponse_"];
+export type ProcessFilterOption = Schemas["ProcessFilterOptionResponse"];
+export type ProcessFilterOptions = Schemas["ProcessFilterOptionsResponse"];
+export type ProcessFilterField = ProcessFilterOptions["field"];
+export type ProcessFilterOptionsQuery = NonNullable<
+  paths["/api/v1/process-filter-options"]["get"]["parameters"]["query"]
+>;
 export type Overview = Schemas["OverviewResponse"];
 export type OverviewQuery = NonNullable<
   paths["/api/v1/overview"]["get"]["parameters"]["query"]

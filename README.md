@@ -1,158 +1,155 @@
 # AgroJud Radar
 
-Aplicação local de monitoramento e triagem de processos públicos relacionados ao agronegócio. O Compose completo inclui frontend, API, worker e PostgreSQL persistente. A demonstração usa fixtures sintéticas; DataJud/TJGO permanece desabilitado enquanto as capacidades externas necessárias não forem aprovadas. Consulte o [runbook de operação e aceite](docs/operacao-e-aceite-integrado.md) para arquitetura, semântica dos dados, backup/restauração, reset demo e limites.
+**Monitor local de contencioso do produtor rural.** O AgroJud Radar descobre, consulta, tria e acompanha processos judiciais públicos potencialmente relacionados ao agronegócio. O foco inicial é o TJGO, a partir de metadados e movimentações da API pública DataJud/CNJ.
 
-## Requisitos locais
+O sistema organiza evidências para revisão humana. Ele não substitui a consulta ao tribunal nem a análise jurídica.
 
-- Docker Engine e Docker Compose v2.
-- `curl` para os probes HTTP documentados.
-- Para comandos Python no host: uv **0.12.22** e CPython **3.14.8**. O fluxo Compose usa a mesma versão fixada e não depende do Python global.
-- Node.js **26.8.1** para os testes/build frontend executados no host; o container de produção constrói os assets sem instalar Node no host.
+`React` · `TypeScript` · `FastAPI` · `PostgreSQL` · `Docker Compose`
 
-Instale a versão documentada do uv pelo instalador oficial:
+[Telas](#telas) · [Arquitetura](#arquitetura) · [Demo e real](#demonstração-e-ambiente-real) · [Executar a demo](#executar-a-demonstração) · [Configurar com IA](#configurar-o-ambiente-real-com-uma-ia) · [Limitações](#limitações) · [Documentação](#documentação)
 
-```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.12.22/uv-installer.sh | sh
+![Visão geral dos indicadores da base sintética local](docs/evidence/readme/visao-geral.png)
+
+<sub>Captura de uma execução local com fixtures sintéticas. Os dados exibidos não representam processos reais nem a cobertura do TJGO.</sub>
+
+## O que o sistema faz
+
+**Coleta**
+- Executa consultas assíncronas com fila persistida, progresso, checkpoints e recuperação de falhas.
+
+**Consolidação**
+- Agrupa resultados por número CNJ, preserva as representações de cada origem e exibe movimentações com datas e procedência.
+
+**Revisão humana**
+- Oferece triagem com histórico, acompanhamento, novidades, sinais estruturados, indicadores locais e exportação CSV.
+
+## Telas
+
+Todas as capturas usam fixtures sintéticas do ambiente de demonstração.
+
+| Processos e sugestões de filtro | Detalhe e movimentações |
+| --- | --- |
+| ![Lista sintética de processos com sugestões para o filtro de assunto](docs/evidence/readme/processos-filtro.png) | ![Detalhe sintético com timeline de movimentações e painel de triagem humana](docs/evidence/readme/detalhe-processo.png) |
+| Lista de processos com autocompletar nos filtros. | Timeline de movimentações e painel de triagem humana. |
+
+## Arquitetura
+
+API e worker são processos separados do mesmo backend. O PostgreSQL atende tanto a persistência quanto a fila de jobs, sem infraestrutura adicional.
+
+```mermaid
+flowchart LR
+  U[Navegador] --> F[Frontend<br/>React + Nginx]
+  F --> A[API<br/>FastAPI]
+  A --> DB[(PostgreSQL<br/>dados, fila, checkpoints)]
+  W[Worker<br/>Python] --> DB
+  W --> S{Fonte}
+  S -->|demo| FX[Fixtures sintéticas]
+  S -->|real| DJ[API pública DataJud/CNJ]
 ```
 
-Instale CPython 3.14.8 pelo gerenciador oficial do sistema quando quiser executar ferramentas no host. Os comandos Compose não dependem dessa instalação local.
+| Parte | Responsabilidade |
+| --- | --- |
+| Interface | React, TypeScript e Vite; servida por Nginx no Compose. |
+| API | FastAPI e Pydantic; o contrato OpenAPI gera os tipos do frontend. |
+| Worker | Processo Python separado que consome jobs persistidos. |
+| Persistência | PostgreSQL para processos, decisões humanas, fila, leases e checkpoints. |
+| Fontes | Fixtures determinísticas em `demo`; integração DataJud separada em `real`, sem fallback entre fontes. |
 
-As versões escolhidas foram conferidas em 08/10/2026: Python 3.14.8 está em manutenção estável, PostgreSQL 18.6 é a versão minor atual suportada, e o uv é fixado em 0.12.22 (atualizado em 09/10/2026: o 0.12.20 não oferece download gerenciado do CPython 3.14.8). Consulte a [política de versões do Python](https://devguide.python.org/versions/), a [política de versões do PostgreSQL](https://www.postgresql.org/support/versioning/) e o [lockfile do uv](https://docs.astral.sh/uv/guides/projects/).
+Decisões que orientam o backend:
 
-## Configurar e subir a demonstração
+- Chamadas HTTP externas acontecem fora de transações; página e checkpoint são gravados atomicamente sob posse válida do job.
+- Leituras não escrevem, e a ingestão preserva decisões humanas já registradas.
+- Falha da fonte é tratada como erro, nunca como resultado vazio.
+
+## Demonstração e ambiente real
+
+Os dois ambientes rodam o mesmo código, mas são isolados por projeto Compose, banco e arquivo de configuração. Não há fallback entre eles: se a fonte real falhar, o sistema não troca para dados sintéticos.
+
+| | Demonstração | Ambiente real |
+| --- | --- | --- |
+| Finalidade | Conhecer a interface sem credenciais | Consultar processos reais do TJGO |
+| Fonte de dados | Fixtures sintéticas determinísticas | API pública DataJud/CNJ |
+| Configuração | `.env.demo` (a partir de `.env.demo.example`) | `.env.real` (a partir de `.env.real.example`) |
+| Credenciais | Nenhuma externa | Chave DataJud e senha própria do banco |
+| Pré-condição | Docker Engine e Docker Compose | Docker, Compose e aceite dos [termos do CNJ](https://datajud-wiki.cnj.jus.br/api-publica/termo-uso/) |
+
+## Executar a demonstração
+
+Requer Docker Engine e Docker Compose. O Compose constrói os serviços, então não é necessário instalar Python ou Node.js no host.
 
 ```sh
 if [ ! -f .env.demo ]; then cp .env.demo.example .env.demo; fi
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml up --detach --wait db
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml run --rm --no-deps api uv run --no-sync alembic upgrade head
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml --profile worker up --build --detach --wait api frontend worker
-curl --fail http://127.0.0.1:5173/
-curl --fail http://127.0.0.1:8000/api/v1/health/live
-curl --fail http://127.0.0.1:8000/api/v1/health/ready
+
+compose() {
+  docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml "$@"
+}
+
+compose up --detach --wait db
+compose run --rm --no-deps api uv run --no-sync alembic upgrade head
+compose --profile worker up --build --detach --wait api frontend worker
 ```
 
-Frontend publica apenas em `127.0.0.1:5173` e API em `127.0.0.1:8000`; PostgreSQL fica somente na rede interna. `FRONTEND_PORT` e `API_PORT` permitem escolher outras portas. O Nginx encaminha `/api/` à API e serve o fallback SPA para rotas como `/processes`. Migrações são explícitas e devem ser aplicadas após subir o banco. API e worker usam a mesma imagem backend.
+| Serviço | Endereço padrão |
+| --- | --- |
+| Interface | <http://127.0.0.1:5173> |
+| API | <http://127.0.0.1:8000> |
+| Documentação interativa da API | <http://127.0.0.1:8000/api/v1/docs> |
 
-O worker executa um loop persistente com handlers para jobs `discovery` e `refresh_number`. No ambiente `demo`, as consultas usam fixtures determinísticas marcadas como sintéticas. No ambiente `real`, a fonte DataJud fica habilitada quando `DATAJUD_API_KEY` está configurada no backend; presets e regras de sinais seguem a evidência por item do catálogo. Para validar configuração e encerrar sem iniciar o loop:
+Se as portas estiverem ocupadas, ajuste `FRONTEND_PORT` e `API_PORT` em `.env.demo`.
+
+Para parar os serviços sem remover o banco persistente:
 
 ```sh
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml --profile worker run --rm --no-deps worker uv run --no-sync agrojud-worker --check
+docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml --profile worker stop
 ```
 
-O worker lê as opções `JOB_LEASE_SECONDS` (120), `JOB_HEARTBEAT_SECONDS` (20) e `JOB_POLL_SECONDS` (2) do ambiente. Heartbeats usam uma sessão PostgreSQL própria. O modo `--check` valida configuração sem acessar o banco.
+## Configurar o ambiente real com uma IA
 
-## Contratos de fonte (SPEC-002)
+O prompt abaixo pode ser colado em uma IA de programação com acesso ao terminal. Ela clona o repositório, lê a documentação do próprio projeto para descobrir como o ambiente real é configurado e deixa o sistema pronto para uso.
 
-`agrojud.sources` oferece consultas imutáveis TJGO, erros tipados, páginas com hits brutos e cursores preservados, além dos adaptadores HTTP DataJud e sintético. O adaptador HTTP faz uma tentativa por chamada, usa timeouts connect/read/write/pool de 5/20/20/5 segundos e não segue redirecionamentos. O endpoint é fixo em TJGO; a interface não aceita DSL livre.
+Antes de usar, considere:
 
-O seletor de fonte exige escolha explícita compatível com o ambiente: `demo` usa apenas fixtures sintéticas e `real` usa apenas DataJud com `DATAJUD_API_KEY`. Falhas de DataJud não acionam fallback sintético. Em `test`, o adaptador DataJud exige transporte HTTP simulado. O worker usa o seletor para processar jobs; a API mantém a criação no ambiente real desabilitada enquanto as evidências externas necessárias estiverem inconclusivas.
+- **A IA não instala software.** Se faltar Git, Docker, Docker Compose ou outra ferramenta exigida, ela informa o que falta e você mesmo instala.
+- **O uso da API DataJud depende dos termos do CNJ.** A IA resume os termos e pede sua confirmação; ela não aceita em seu nome.
+- **Segredos ficam locais.** Senha do banco e chave da API são gravadas apenas na configuração do backend e não devem aparecer na conversa.
 
-O contrato e o transporte foram validados com HTTPX MockTransport. Isso não comprova o shape real dos hits, a correspondência histórica entre IDs, a ordenação composta ou a paginação do TJGO; esses pontos seguem sob SPEC-003.
+```text
+Clone e configure o AgroJud Radar no ambiente real para eu usar. Execute o trabalho você mesmo; não fique só me dando instruções.
 
-## API operacional e OpenAPI (SPEC-011)
+Repositório: https://github.com/Duarte0/AgroJud.git
 
-A API expõe criação, listagem, detalhe e comandos de jobs em `/api/v1/jobs`, além de processos, representações, movimentos, triagem, sinais, acompanhados, presets e ambiente. A lista `/api/v1/watchlist` é paginada; inclusão/remoção usa `/api/v1/processes/{id}/watch`, e a atualização por número em `/api/v1/processes/{id}/refresh` exige processo local acompanhado ativo. Consultas usam paginação local estável; campos brutos completos e cursores remotos não são retornados por padrão. Erros têm estrutura uniforme e `X-Request-ID`. A documentação interativa fica em `http://127.0.0.1:8000/api/v1/docs`, e o contrato JSON em `/api/v1/openapi.json`.
+Regras:
+- Não instale, baixe ou atualize programas no computador e não peça senha de administrador. Se faltar algum pré-requisito, diga o que falta e o link oficial de instalação, espere eu instalar e continue de onde parou.
+- Use somente o ambiente real. Nunca use a demonstração, fixtures ou dados sintéticos como substituto.
+- Nunca mostre senhas, chaves ou o conteúdo do arquivo de configuração real, nem grave segredos em arquivos versionados.
+- Preserve dados e alterações existentes: não sobrescreva arquivos, não apague volumes ou bancos e não faça reset. Se algo exigir isso, pare e me pergunte.
+- Não esconda falhas. Se uma etapa falhar, explique o erro e o que você tentou.
 
-Exemplo de criação de coleta sintética no ambiente demo:
-
-```sh
-curl --fail-with-body -X POST http://127.0.0.1:8000/api/v1/jobs \
-  -H 'Content-Type: application/json' \
-  -d '{"kind":"discovery","criteria":{"preset_id":"rural.credito_contratos"}}'
+Passos:
+1. Se o diretório atual já for um clone deste repositório, use-o. Caso contrário, clone em uma pasta nova.
+2. Antes de executar qualquer coisa, leia README.md, AGENTS.md, a documentação de operação em docs/, o exemplo de configuração do ambiente real, o compose.yaml e os scripts em scripts/. Descubra a partir deles os pré-requisitos, os comandos, as portas e o procedimento atual para o ambiente real. Não presuma comandos que o repositório não documenta.
+3. Verifique se os pré-requisitos encontrados estão disponíveis.
+4. Crie a configuração do ambiente real a partir do exemplo, se ainda não existir. Garanta que ela seja ignorada pelo Git e acessível só ao meu usuário. Gere uma senha forte para o banco sem exibi-la. Se já existir um banco real com credenciais diferentes, pare e me avise.
+5. Se a chave DataJud não estiver configurada, obtenha a chave pública vigente na página oficial https://datajud-wiki.cnj.jus.br/api-publica/acesso/. Se não conseguir, peça para eu inseri-la diretamente no arquivo.
+6. Leia os termos em https://datajud-wiki.cnj.jus.br/api-publica/termo-uso/, resuma para mim os limites de uso, incluindo a finalidade não comercial, e peça minha confirmação explícita. Sem ela, não ative nada que consulte o DataJud.
+7. Aplique as migrations e suba os serviços seguindo o procedimento documentado no repositório. Se já existir um banco real, faça antes um backup com a ferramenta do repositório, fora da pasta do projeto. Se portas estiverem ocupadas, ajuste a configuração de forma consistente. Ative o worker somente depois do meu aceite. Não crie consultas nem faça chamadas de teste ao DataJud.
+8. Confira os endpoints de saúde da API e a interface. Ao final, informe as URLs, o estado dos serviços e o comando para parar o ambiente sem perder dados.
 ```
 
-A resposta HTTP 202 inclui o identificador persistido do job e o cabeçalho `Location`. Consulte esse endereço para acompanhar o estado; o worker separado processa a fila PostgreSQL.
+## Limitações
 
-Para gerar ou conferir o contrato e os tipos TypeScript, consulte [frontend/README.md](frontend/README.md). A CI executa `npm run openapi:check` sem chamadas ao DataJud.
+- **Uso local e individual.** O projeto opera localmente para um usuário e não tem autenticação.
+- **Sem autorização de uso comercial.** O projeto não declara autorização para uso profissional ou comercial. O uso dos dados é regido pelas orientações de [acesso](https://datajud-wiki.cnj.jus.br/api-publica/acesso/) e pelos [termos vigentes do CNJ](https://datajud-wiki.cnj.jus.br/api-publica/termo-uso/).
+- **Cobertura não garantida.** Uma coleta concluída descreve aquela consulta; não comprova cobertura integral nem atualização completa do tribunal.
+- **Regra de penhora desabilitada no real.** As evidências técnicas e seus limites estão na [SPEC-020](specs/SPEC-020-operacao-e-aceite-integrado.md).
+- **Configuração própria.** O modo real é separado da demonstração e exige configuração própria no backend.
 
-## Interface de coleta e consulta (SPEC-012)
+## Documentação
 
-O container frontend serve a interface em `http://127.0.0.1:5173`. Para desenvolvimento fora do Compose, a API demo deve estar em `127.0.0.1:8000`:
-
-```sh
-cd frontend
-npm ci
-npm run dev
-```
-
-A interface tem radar, coletas e processos, com barra permanente indicando demo/real. O servidor Vite de desenvolvimento publica somente em `127.0.0.1` e encaminha `/api` para a API local. O fluxo Playwright sobe a imagem frontend e valida proxy/fallback em stack demo isolada com banco efêmero. Detalhes em [frontend/README.md](frontend/README.md).
-
-## Probe limitada DataJud/TJGO (SPEC-003)
-
-O comando `agrojud-datajud-probe` executa uma consulta diagnóstica sem gravar no banco de produto. Exige `AGROJUD_ENV=real` e `DATAJUD_API_KEY` no ambiente do backend. Faz até seis requisições, limita cada página a 100 hits, não repete automaticamente e grava um JSON sanitizado no caminho indicado. Por padrão consulta os últimos 365 dias; `--from-date` e `--to-date` definem outro intervalo semiaberto. Prefira um recorte curto (um dia) já indexado: o TJGO respondeu em até 32 s por requisição em 10/10/2026, e o read timeout (`DATAJUD_READ_TIMEOUT_SECONDS`, padrão 60) deve ficar abaixo de `JOB_LEASE_SECONDS` no ambiente real.
-
-Com `.env.real` configurado, monte a pasta de evidências para guardar o relatório no repositório:
-
-```sh
-mkdir -p docs/evidence
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm --no-deps -v "$PWD/docs/evidence:/evidence" api uv run --no-sync agrojud-datajud-probe --output /evidence/datajud-tjgo-validacao.json
-```
-
-Timeout ou indisponibilidade gera diagnóstico `INCONCLUSIVE`, nunca resultado vazio nem habilitação da fonte real. O comando só pesquisa por CNJ depois de observar o número em um hit público. A matriz aprovada de S1/S2 está na [evidência de 10/10/2026](docs/evidence/datajud-tjgo-validacao-2026-10-10.json); a [execução de 08/10/2026](docs/evidence/datajud-tjgo-validacao-2026-10-08.json) expirou; a [amostra manual sanitizada](docs/evidence/datajud-tjgo-amostra-manual-2026-10-09.json) confirma apenas o envelope e alguns campos de um hit. O uso da API também permanece sujeito ao termo registrado no [PRD](PRD.md#2-decisões-e-premissas).
-
-O comando `agrojud-catalog-probe` valida o S5: consulta cada preset e sinal do catálogo com até 2 requisições, recorte de até 31 dias, sem retry e com 1 s de espaçamento, e grava relatório sanitizado com `query_status`/`sample_status`. `--item` restringe a um item. O resultado não altera a habilitação automaticamente; ela muda por edição revisável do catálogo (SPEC-010).
-
-```sh
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm --no-deps -v "$PWD/docs/evidence:/evidence" api uv run --no-sync agrojud-catalog-probe --from-date 2026-05-01 --to-date 2026-06-01 --output /evidence/catalogo-s5.json
-```
-
-## Ambientes separados
-
-Crie `.env.real` a partir de `.env.real.example`, configure credenciais somente localmente e escolha `API_PORT` e `FRONTEND_PORT` disponíveis. Suba projeto e volume próprios; migrations continuam explícitas:
-
-```sh
-if [ ! -f .env.real ]; then cp .env.real.example .env.real; fi
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml up --detach --wait db
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml run --rm --no-deps api uv run --no-sync alembic upgrade head
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml up --build --detach --wait api frontend
-```
-
-O frontend real fica em `http://127.0.0.1:5174`; a API em `http://127.0.0.1:8001`. O PostgreSQL não publica porta no host. Para uma inspeção administrativa local, use o próprio container:
-
-```sh
-docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml exec -T db sh -lc 'psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"'
-```
-
-O projeto `agrojud-demo` usa o banco `agrojud_demo` e o projeto `agrojud-real` usa `agrojud_real`; os nomes Compose distintos isolam rede e volume. Os arquivos locais `.env.*` não são versionados. `DATAJUD_API_KEY` é lida somente no backend e usada pelo adaptador DataJud no ambiente `real`; não é exposta ao frontend nem registrada nos logs.
-
-Pare e retome sem remover o volume:
-
-```sh
-docker compose --project-name agrojud-demo --profile worker --env-file .env.demo -f compose.yaml stop
-docker compose --project-name agrojud-demo --profile worker --env-file .env.demo -f compose.yaml start
-```
-
-O fluxo de backup, restore descartável e reset explícito da demo está em [operação e aceite integrado](docs/operacao-e-aceite-integrado.md#backup-restauração-e-reset). Nunca remova volumes para resolver migration pendente.
-
-## Testes, lint e typecheck
-
-O banco de teste é um projeto independente, usa o banco `agrojud_test` e publica PostgreSQL apenas em `127.0.0.1:55432`. Seu volume não é compartilhado com demo ou real.
-
-```sh
-if [ ! -f .env.test ]; then cp .env.test.example .env.test; fi
-docker compose --project-name agrojud-test --env-file .env.test -f compose.test.yaml --profile test run --rm --build tests uv run --no-sync ruff check src tests
-docker compose --project-name agrojud-test --env-file .env.test -f compose.test.yaml --profile test run --rm tests uv run --no-sync ruff format --check src tests
-docker compose --project-name agrojud-test --env-file .env.test -f compose.test.yaml --profile test run --rm tests uv run --no-sync mypy src
-docker compose --project-name agrojud-test --env-file .env.test -f compose.test.yaml --profile test run --rm tests uv run --no-sync pytest
-```
-
-Os testes criam bancos temporários com sufixo `_test`, verificam as respostas HTTP e os estados de migration sem tocar em banco operacional. A configuração rejeita `TEST_DATABASE_URL` idêntica a `DATABASE_URL` e qualquer banco de teste sem sufixo `_test`. Falha ao conectar ao PostgreSQL faz a suíte falhar; não há skip automático.
-
-Para repetir essas validações pelo script local:
-
-```sh
-./scripts/verify-persistence.sh
-```
-
-O script grava um registro diagnóstico somente em PostgreSQL com `AGROJUD_ENV=test`, para o banco reiniciar sem perder o volume, consulta o registro e remove a tabela diagnóstica ao final. Se uma etapa falhar, o script preserva o estado para inspeção.
-
-## Comandos úteis
-
-```sh
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml ps
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml logs api
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml stop
-docker compose --project-name agrojud-demo --env-file .env.demo -f compose.yaml start
-```
-
-`./scripts/smoke-compose.sh demo` constrói e valida frontend, proxy SPA/API, API, worker e PostgreSQL demo. Passe `real` somente para validar o stack real sem iniciar worker ou executar coleta. O reset demo exige `./scripts/reset-demo.sh --target demo --confirm`; não existe reset para o ambiente real.
+| Documento | Conteúdo |
+| --- | --- |
+| [PRD](PRD.md) | Requisitos do produto |
+| [Plano de implementação](IMPLEMENTATION_PLAN.md) | Fases e contratos de implementação |
+| [Índice das SPECs](specs/README.md) | Especificações, dependências, status e evidências |
+| [Operação e aceite integrado](docs/operacao-e-aceite-integrado.md) | Migrations, jobs, backup, testes e recuperação |
+| [Frontend](frontend/README.md) | Detalhes do frontend e do contrato OpenAPI |

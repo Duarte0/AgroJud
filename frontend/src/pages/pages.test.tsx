@@ -19,6 +19,26 @@ const page = (items: unknown[], total = items.length) => ({
   total,
 });
 
+function filterOptions(request: Request): Response {
+  const url = new URL(request.url);
+  const field = url.searchParams.get("field") ?? "";
+  const query = url.searchParams.get("q")?.toLowerCase() ?? "";
+  const values: Record<string, { value: string; label: string; detail?: string; process_count: number }[]> = {
+    class: [{ value: "execucao_canonica", label: "Execução rural", process_count: 3 }],
+    collection_id: [{
+      value: "22222222-2222-4222-8222-222222222222",
+      label: "10/10/2026 09:00 · rural.credito_contratos · Concluída",
+      detail: "1 processo",
+      process_count: 1,
+    }],
+  };
+  const selectedValue = url.searchParams.get("selected_value");
+  const items = (values[field] ?? []).filter(option =>
+    option.value === selectedValue || `${option.value} ${option.label}`.toLowerCase().includes(query),
+  );
+  return json({ field, items });
+}
+
 describe("ProcessesPage", () => {
   it("shows a read failure with retry instead of an empty list", async () => {
     let fail = true;
@@ -73,7 +93,10 @@ describe("ProcessesPage", () => {
   });
 
   it("applies the filter form to the URL and returns to the first page", async () => {
-    mockApi({ "GET /api/v1/processes": () => json(page([buildProcess()])) });
+    mockApi({
+      "GET /api/v1/processes": () => json(page([buildProcess()])),
+      "GET /api/v1/process-filter-options": filterOptions,
+    });
     renderRoute(<ProcessesPage />, { path: "/processes", url: "/processes?page=3" });
     await screen.findByText("0000001-00.2026.8.09.0001");
 
@@ -88,6 +111,45 @@ describe("ProcessesPage", () => {
       expect(screen.getByTestId("location")).toHaveTextContent("rural_link=confirmed");
       expect(screen.getByTestId("location")).not.toHaveTextContent("page=3");
     });
+  });
+
+  it("selects a canonical suggestion with the keyboard", async () => {
+    mockApi({
+      "GET /api/v1/processes": () => json(page([])),
+      "GET /api/v1/process-filter-options": filterOptions,
+    });
+    renderRoute(<ProcessesPage />, { path: "/processes", url: "/processes" });
+
+    await userEvent.click(screen.getByRole("button", { name: /Mais filtros/ }));
+    const classInput = screen.getByLabelText("Classe");
+    await userEvent.type(classInput, "execucao");
+    const suggestion = await screen.findByRole("option", { name: /Execução rural/ });
+    await userEvent.keyboard("{ArrowDown}{Enter}");
+
+    expect(classInput).toHaveValue("Execução rural");
+    await userEvent.click(screen.getByRole("button", { name: "Pesquisar" }));
+    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("class=execucao_canonica"));
+    expect(suggestion).not.toBeInTheDocument();
+  });
+
+  it("resolves a legacy collection URL without displaying its UUID", async () => {
+    const id = "22222222-2222-4222-8222-222222222222";
+    mockApi({
+      "GET /api/v1/processes": () => json(page([])),
+      "GET /api/v1/process-filter-options": filterOptions,
+    });
+    renderRoute(<ProcessesPage />, {
+      path: "/processes",
+      url: `/processes?collection_id=${id}`,
+    });
+
+    const chip = await screen.findByRole("button", { name: "Remover filtro Coleta" });
+    await waitFor(() => expect(chip).toHaveTextContent("10/10/2026 09:00 · rural.credito_contratos · Concluída"));
+    expect(chip).not.toHaveTextContent(id);
+
+    await userEvent.click(screen.getByRole("button", { name: /Mais filtros/ }));
+    expect(screen.getByLabelText("Coleta")).toHaveValue("10/10/2026 09:00 · rural.credito_contratos · Concluída");
+    expect(screen.getByLabelText("Coleta")).not.toHaveValue(id);
   });
 
   it("exports the active filters without pagination and shows the API limit error", async () => {

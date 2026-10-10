@@ -17,6 +17,17 @@ RuralLink = Literal["unconfirmed", "confirmed"]
 NewsCategory = Literal["NEW_OBSERVATION", "ALTERATION_OBSERVED", "NEW_REPRESENTATION"]
 NewsStatus = Literal["pending", "reviewed"]
 NewsProvenance = Literal["ingestion", "quarantine_reprocess"]
+ProcessFilterField = Literal[
+    "process_number",
+    "subject",
+    "subject_code",
+    "subject_name_exact",
+    "class",
+    "court_unit",
+    "preset_id",
+    "collection_id",
+    "signal_category",
+]
 
 
 class APIModel(BaseModel):
@@ -28,6 +39,18 @@ class PaginationResponse[ItemT](APIModel):
     page: int = Field(ge=1)
     page_size: int = Field(ge=1, le=100)
     total: int = Field(ge=0)
+
+
+class ProcessFilterOptionResponse(APIModel):
+    value: str
+    label: str
+    detail: str | None = None
+    process_count: int | None = Field(default=None, ge=0)
+
+
+class ProcessFilterOptionsResponse(APIModel):
+    field: ProcessFilterField
+    items: list[ProcessFilterOptionResponse]
 
 
 class DiscoveryCriteria(APIModel):

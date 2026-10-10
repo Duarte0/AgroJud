@@ -35,7 +35,9 @@ test("SPEC-019 baixa todos os resultados filtrados sem aplicar a página atual",
   await expect(page).toHaveTitle("Processos · AgroJud Radar");
   await expect(page.getByRole("heading", { name: "Processos" })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.getByLabel("Coleta (ID)")).toHaveValue(collectionId);
+  await page.getByRole("button", { name: /Mais filtros/ }).click();
+  await expect(page.getByRole("combobox", { name: "Coleta" })).toHaveValue(/rural\.credito_contratos · Concluída/);
+  await expect(page.getByRole("combobox", { name: "Coleta" })).not.toHaveValue(collectionId);
   await expect(page.getByText("Esta página não contém processos")).toBeVisible();
   await evidence(page, "spec019-exportacao-filtrada");
 

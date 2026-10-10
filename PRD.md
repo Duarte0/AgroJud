@@ -92,6 +92,8 @@ Cada candidato apresenta número processual, dados disponíveis da capa, assunto
 ### 3.3. Lista e detalhes de processos
 
 - Lista local paginada, com pesquisa por número CNJ e filtros por tema, classe, órgão, decisão de triagem, vínculo rural e acompanhamento.
+- Todos os filtros textuais de Processos devem aceitar texto livre e oferecer sugestões dos valores encontrados na base local inteira do ambiente atual. As sugestões acompanham a digitação, ignoram diferenças de caixa e acentuação e não são limitadas pelos demais filtros ativos. Seletores finitos de triagem, vínculo rural, acompanhamento e novidades permanecem seletores.
+- O filtro de coleta deve mostrar data, tema e estado da execução; seu identificador interno permanece compatível com URLs e consultas existentes, sem aparecer no campo, no chip ou no resumo dos filtros.
 - Uma entrada agrupada por número CNJ, preservando as representações da fonte no detalhe.
 - Exibir capas por origem/grau/órgão; divergências não serão ocultadas por uma mesclagem silenciosa.
 - Timeline cronológica com código, descrição, complementos disponíveis e origem de cada movimento.

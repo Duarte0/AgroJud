@@ -6,12 +6,16 @@ const LABELS: Record<string, string> = {
   decision: "Triagem", rural_link: "Vínculo rural", followed: "Acompanhado", pending_news: "Novidades pendentes",
 };
 const VALUES: Record<string, string> = { pending: "Pendente", relevant: "Relevante", discarded: "Descartado", confirmed: "Confirmado manualmente", unconfirmed: "Não confirmado", true: "Sim", false: "Não" };
-export function AppliedFilters({ values, onRemove }: { values: Record<string, string>; onRemove: (key: string) => void }) {
+export function AppliedFilters({ values, labels, onRemove }: {
+  values: Record<string, string>;
+  labels?: Record<string, string>;
+  onRemove: (key: string) => void;
+}) {
   const entries = Object.entries(values).filter(([, value]) => value);
   if (!entries.length) return null;
   return <ul aria-label="Filtros aplicados" className="flex flex-wrap gap-2">{entries.map(([key, value]) => (
     <li key={key}><button type="button" className="filter-chip" onClick={() => onRemove(key)} aria-label={`Remover filtro ${LABELS[key] ?? key}`}>
-      <span>{LABELS[key] ?? key}: {VALUES[value] ?? value}</span><X className="size-3 shrink-0" aria-hidden="true" />
+      <span>{LABELS[key] ?? key}: {labels?.[key] ?? VALUES[value] ?? value}</span><X className="size-3 shrink-0" aria-hidden="true" />
     </button></li>
   ))}</ul>;
 }

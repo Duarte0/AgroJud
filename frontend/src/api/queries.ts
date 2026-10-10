@@ -18,6 +18,8 @@ import type {
   ProcessDetail,
   ProcessNewsStatusPatch,
   ProcessListQuery,
+  ProcessFilterField,
+  ProcessFilterOptionsQuery,
   ProcessWatch,
   ProcessTriagePatch,
   SavedSearchCreate,
@@ -49,6 +51,8 @@ export const queryKeys = {
   processes: (env: EnvironmentName) => [env, "processes"] as const,
   processList: (env: EnvironmentName, query: ProcessListQuery) =>
     [env, "processes", "list", query] as const,
+  processFilterOptions: (env: EnvironmentName, query: ProcessFilterOptionsQuery) =>
+    [env, "process-filter-options", query] as const,
   overview: (env: EnvironmentName, query: OverviewQuery) => [env, "overview", query] as const,
   process: (env: EnvironmentName, id: string) => [env, "processes", "detail", id] as const,
   processWatch: (env: EnvironmentName, id: string) =>
@@ -173,6 +177,27 @@ export function useProcessList(query: ProcessListQuery) {
     queryFn: ({ signal }) =>
       request(() => api.GET("/api/v1/processes", { params: { query }, signal })),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useProcessFilterOptions(
+  field: ProcessFilterField,
+  q: string,
+  selectedValue?: string,
+  enabled = true,
+) {
+  const { environment } = useCurrentEnvironment();
+  const query: ProcessFilterOptionsQuery = {
+    field,
+    ...(q ? { q } : {}),
+    ...(selectedValue ? { selected_value: selectedValue } : {}),
+  };
+  return useQuery({
+    queryKey: queryKeys.processFilterOptions(environment, query),
+    queryFn: ({ signal }) =>
+      request(() => api.GET("/api/v1/process-filter-options", { params: { query }, signal })),
+    enabled,
+    staleTime: 30_000,
   });
 }
 

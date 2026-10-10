@@ -44,7 +44,10 @@ test("AC1/AC4: inicia, acompanha e abre o processo sem envio duplicado", async (
 
   await page.getByRole("link", { name: "Ver processos desta coleta" }).click();
   await expect(page).toHaveURL(/\/processes\?collection_id=/);
-  await expect(page.getByLabel("Coleta (ID)")).not.toHaveValue("");
+  await page.getByRole("button", { name: /Mais filtros/ }).click();
+  const collectionFilter = page.getByRole("combobox", { name: "Coleta" });
+  await expect(collectionFilter).toHaveValue(/rural\.credito_contratos · Concluída/);
+  await expect(collectionFilter).not.toHaveValue(/[0-9a-f]{8}-[0-9a-f-]{27}/i);
   const rows = page.getByRole("table").getByRole("row");
   await expect(rows).toHaveCount(2);
   await evidence(page, "03-processos-da-coleta");

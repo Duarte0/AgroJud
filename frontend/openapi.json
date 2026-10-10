@@ -1777,6 +1777,81 @@
         "title": "ProcessDetailResponse",
         "type": "object"
       },
+      "ProcessFilterOptionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "process_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process Count"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "ProcessFilterOptionResponse",
+        "type": "object"
+      },
+      "ProcessFilterOptionsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "enum": [
+              "process_number",
+              "subject",
+              "subject_code",
+              "subject_name_exact",
+              "class",
+              "court_unit",
+              "preset_id",
+              "collection_id",
+              "signal_category"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessFilterOptionResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "field",
+          "items"
+        ],
+        "title": "ProcessFilterOptionsResponse",
+        "type": "object"
+      },
       "ProcessMovementResponse": {
         "additionalProperties": false,
         "properties": {
@@ -5456,6 +5531,118 @@
         "summary": "Lista presets e sua disponibilidade neste ambiente",
         "tags": [
           "metadata"
+        ]
+      }
+    },
+    "/api/v1/process-filter-options": {
+      "get": {
+        "description": "Return common values or text matches without applying active process filters.",
+        "operationId": "list_process_filter_options_api_v1_process_filter_options_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "field",
+            "required": true,
+            "schema": {
+              "enum": [
+                "process_number",
+                "subject",
+                "subject_code",
+                "subject_name_exact",
+                "class",
+                "court_unit",
+                "preset_id",
+                "collection_id",
+                "signal_category"
+              ],
+              "title": "Field",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 160,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "selected_value",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 160,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Selected Value"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessFilterOptionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Sugere valores locais para filtros de processos",
+        "tags": [
+          "processes"
         ]
       }
     },

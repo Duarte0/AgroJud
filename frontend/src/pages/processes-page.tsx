@@ -2,15 +2,17 @@ import { Download, Search, SlidersHorizontal } from "lucide-react";
 import { useState, type SubmitEvent } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
 
-import { useProcessList } from "@/api/queries";
+import { useProcessFilterOptions, useProcessList } from "@/api/queries";
 import { describeError, downloadProcessCsv } from "@/api/client";
 import type {
+  ProcessFilterOption,
   ProcessListQuery,
   ProcessSummary,
   RuralLink,
   TriageDecision,
 } from "@/api/types";
 import { AppliedFilters } from "@/components/applied-filters";
+import { FilterAutocomplete } from "@/components/filter-autocomplete";
 import { ProcessState } from "@/components/process-state";
 import { PageHeader } from "@/components/page-header";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -24,7 +26,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
@@ -46,7 +47,6 @@ import {
 import { readEnum, readPage, readText, withFilters, withPage } from "@/lib/search-params";
 
 const PAGE_SIZE = 25;
-const UUID_PATTERN = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
 const DECISIONS = ["pending", "relevant", "discarded"] as const satisfies readonly TriageDecision[];
 const RURAL_LINKS = ["unconfirmed", "confirmed"] as const satisfies readonly RuralLink[];
 
@@ -58,7 +58,7 @@ const FILTER_FIELDS = [
   { key: "class", label: "Classe", placeholder: "Nome ou código" },
   { key: "court_unit", label: "Órgão julgador", placeholder: "Nome ou código" },
   { key: "preset_id", label: "Preset", placeholder: "ex.: rural.credito_contratos" },
-  { key: "collection_id", label: "Coleta (ID)", placeholder: "UUID da coleta" },
+  { key: "collection_id", label: "Coleta", placeholder: "Digite a data, o tema ou o status" },
   { key: "signal_category", label: "Categoria de sinal vigente", placeholder: "ex.: penhora" },
 ] as const;
 
@@ -88,19 +88,49 @@ function readFilters(params: URLSearchParams): FilterValues {
   };
 }
 
-function FilterForm({ initial, onApply, onClear }: {
-  initial: FilterValues; onApply: (values: FilterValues) => void; onClear: () => void;
+function FilterForm({ initial, collectionLabel, onApply, onClear }: {
+  initial: FilterValues;
+  collectionLabel: string | undefined;
+  onApply: (values: FilterValues) => void;
+  onClear: () => void;
 }) {
   const [values, setValues] = useState(initial);
+  const [drafts, setDrafts] = useState<Record<FilterKey, string>>(() =>
+    Object.fromEntries(FILTER_FIELDS.map(field => [field.key, field.key === "collection_id" ? "" : initial[field.key]])) as Record<FilterKey, string>,
+  );
+  const [collectionError, setCollectionError] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const advancedCount = Object.entries(initial).filter(([key, value]) => !["process_number", "subject", "decision"].includes(key) && value).length;
   function textField(field: (typeof FILTER_FIELDS)[number]) {
+    const value = field.key === "collection_id"
+      ? drafts.collection_id || (values.collection_id ? collectionLabel ?? "Carregando coleta…" : "")
+      : drafts[field.key];
     return <div key={field.key} className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={`filter-${field.key}`}>{field.label}</Label>
-      <Input id={`filter-${field.key}`} name={field.key} value={values[field.key]} placeholder={field.placeholder} autoComplete="off" spellCheck={false}
-        pattern={field.key === "collection_id" ? UUID_PATTERN : undefined} title={field.key === "collection_id" ? "Informe um UUID válido." : undefined}
+      <FilterAutocomplete
+        id={`filter-${field.key}`}
+        name={field.key}
+        value={value}
+        selectedValue={field.key === "collection_id" ? values.collection_id : undefined}
+        placeholder={field.placeholder}
         maxLength={field.key === "process_number" ? 30 : field.key === "subject_code" ? 80 : 160}
-        onChange={event => setValues(current => ({...current, [field.key]: event.target.value}))} />
+        onChange={next => {
+          setDrafts(current => ({ ...current, [field.key]: next }));
+          setValues(current => ({ ...current, [field.key]: field.key === "collection_id" ? "" : next }));
+          if (field.key === "collection_id") setCollectionError(false);
+        }}
+        onSelect={(option: ProcessFilterOption) => {
+          setDrafts(current => ({ ...current, [field.key]: option.label }));
+          setValues(current => ({ ...current, [field.key]: option.value }));
+          if (field.key === "collection_id") setCollectionError(false);
+        }}
+      />
+      {field.key === "collection_id" ? (
+        <>
+          <p className="text-xs text-muted-foreground">Escolha uma coleta sugerida para aplicar o filtro.</p>
+          {collectionError ? <p className="text-xs text-destructive" role="alert">Selecione uma coleta da lista para usar este filtro.</p> : null}
+        </>
+      ) : null}
     </div>;
   }
   function selectField(key: "decision" | "followed" | "pending_news" | "rural_link", label: string, options: [string, string][]) {
@@ -109,7 +139,15 @@ function FilterForm({ initial, onApply, onClear }: {
         {options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
       </NativeSelect></div>;
   }
-  return <form role="search" aria-label="Filtrar processos" onSubmit={(event: SubmitEvent<HTMLFormElement>) => {event.preventDefault(); onApply(values);}} className="flex flex-col gap-4">
+  return <form role="search" aria-label="Filtrar processos" onSubmit={(event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (drafts.collection_id.trim() && !values.collection_id) {
+      setCollectionError(true);
+      return;
+    }
+    setCollectionError(false);
+    onApply(values);
+  }} className="flex flex-col gap-4">
     <div className="grid gap-3 md:grid-cols-3">
       {FILTER_FIELDS.filter(field => ["process_number", "subject"].includes(field.key)).map(textField)}
       {selectField("decision", "Decisão da triagem", [["", "Todas as decisões"], ["pending", "Pendente"], ["relevant", "Relevante"], ["discarded", "Descartado"]])}
@@ -201,6 +239,18 @@ export function ProcessesPage() {
   const [exportError, setExportError] = useState<string | null>(null);
   const page = readPage(searchParams);
   const filters = readFilters(searchParams);
+  const collectionOptions = useProcessFilterOptions(
+    "collection_id",
+    "",
+    filters.collection_id,
+    Boolean(filters.collection_id),
+  );
+  const selectedCollection = collectionOptions.data?.items.find(
+    option => option.value === filters.collection_id,
+  );
+  const collectionLabel = selectedCollection?.label ?? (filters.collection_id
+    ? collectionOptions.isPending ? "Carregando coleta…" : "Coleta não localizada"
+    : undefined);
   const query: ProcessListQuery = { page, page_size: PAGE_SIZE };
   for (const field of FILTER_FIELDS) {
     const value = filters[field.key];
@@ -249,10 +299,11 @@ export function ProcessesPage() {
           <FilterForm
             key={searchParams.toString()}
             initial={filters}
+            collectionLabel={collectionLabel}
             onApply={(values) => setSearchParams(withFilters(searchParams, values))}
             onClear={() => setSearchParams(new URLSearchParams())}
           />
-          <AppliedFilters values={filters} onRemove={key => setSearchParams(withFilters(searchParams, { [key]: "" }))} />
+          <AppliedFilters values={filters} labels={{ collection_id: collectionLabel ?? "Coleta não localizada" }} onRemove={key => setSearchParams(withFilters(searchParams, { [key]: "" }))} />
           </CardContent>
       </Card>
       <Card className="mt-5">

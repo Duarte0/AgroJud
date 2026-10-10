@@ -246,6 +246,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/process-filter-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sugere valores locais para filtros de processos
+         * @description Return common values or text matches without applying active process filters.
+         */
+        get: operations["list_process_filter_options_api_v1_process_filter_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/processes": {
         parameters: {
             query?: never;
@@ -1155,6 +1175,27 @@ export interface components {
             /** Representation Count */
             representation_count: number;
             triage: components["schemas"]["ProcessTriageStateResponse"];
+        };
+        /** ProcessFilterOptionResponse */
+        ProcessFilterOptionResponse: {
+            /** Detail */
+            detail?: string | null;
+            /** Label */
+            label: string;
+            /** Process Count */
+            process_count?: number | null;
+            /** Value */
+            value: string;
+        };
+        /** ProcessFilterOptionsResponse */
+        ProcessFilterOptionsResponse: {
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "process_number" | "subject" | "subject_code" | "subject_name_exact" | "class" | "court_unit" | "preset_id" | "collection_id" | "signal_category";
+            /** Items */
+            items: components["schemas"]["ProcessFilterOptionResponse"][];
         };
         /** ProcessMovementResponse */
         ProcessMovementResponse: {
@@ -2652,6 +2693,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PresetsResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_process_filter_options_api_v1_process_filter_options_get: {
+        parameters: {
+            query: {
+                field: "process_number" | "subject" | "subject_code" | "subject_name_exact" | "class" | "court_unit" | "preset_id" | "collection_id" | "signal_category";
+                q?: string;
+                selected_value?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessFilterOptionsResponse"];
                 };
             };
             /** @description Recurso não encontrado. */

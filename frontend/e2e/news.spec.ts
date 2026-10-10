@@ -17,6 +17,7 @@ test("exibe baseline pendente, separa as datas e permite revisar e reabrir novid
   await expectJobStatus(page, "Concluído");
   await page.getByRole("link", { name: "Ver processos desta coleta" }).click();
   await page.getByRole("link", { name: "0000001-00.2026.8.09.0001" }).click();
+  await page.waitForURL(/\/processes\/[0-9a-f-]{36}$/i);
 
   const processId = page.url().split("/").pop()!;
   setProcessNumber(processId, uniqueProcessNumber());

@@ -72,6 +72,7 @@ test("jornada sintética integrada: reinício, coleta, revisão, acompanhamento,
   await page.getByRole("link", { name: "Ver processos desta coleta" }).click();
   await expect(page).toHaveURL(/\/processes\?collection_id=/);
   await page.getByRole("link", { name: "0000001-00.2026.8.09.0001" }).click();
+  await page.waitForURL(/\/processes\/[0-9a-f-]{36}$/i);
   const processId = page.url().split("/").pop()!;
   const processNumber = uniqueProcessNumber();
   const displayedProcessNumber = formatProcessNumber(processNumber);

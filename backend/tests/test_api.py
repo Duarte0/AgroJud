@@ -115,6 +115,32 @@ def test_http_collection_flow_is_read_only_and_hides_source_cursor(
     assert by_collection.status_code == by_preset.status_code == 200
     assert by_collection.json()["total"] == by_preset.json()["total"] == 1
 
+    subject_options = api_client.get(
+        "/api/v1/process-filter-options",
+        params={"field": "subject_name_exact", "q": "ASSÚNTO TPU"},
+    )
+    collection_options = api_client.get(
+        "/api/v1/process-filter-options",
+        params={"field": "collection_id", "selected_value": body["collection_id"]},
+    )
+    number_options = api_client.get(
+        "/api/v1/process-filter-options",
+        params={"field": "process_number", "q": "0000001-00.2026"},
+    )
+    assert (
+        subject_options.status_code
+        == collection_options.status_code
+        == number_options.status_code
+        == 200
+    )
+    assert subject_options.json()["items"][0]["value"] == "Assunto TPU 10501"
+    assert number_options.json()["items"][0]["value"] == "00000010020268090001"
+    selected_collection = collection_options.json()["items"][0]
+    assert selected_collection["value"] == body["collection_id"]
+    assert PRESET_ID in selected_collection["label"]
+    assert "Concluída" in selected_collection["label"]
+    assert body["collection_id"] not in selected_collection["label"]
+
     detail = api_client.get(f"/api/v1/processes/{process_id}")
     assert detail.status_code == 200
     representation_page = api_client.get(
@@ -449,6 +475,60 @@ def test_process_filters_match_one_representation_and_keep_processes_unique(
     assert beyond_end.json()["items"] == []
     assert beyond_end.json()["total"] == 2
     assert split_id != matching_id
+
+
+def test_process_filter_options_match_accents_and_ignore_other_active_filters(
+    api_app: FastAPI,
+    api_client: TestClient,
+) -> None:
+    with Session(api_app.state.database_engine) as session, session.begin():
+        _seed_process(
+            session,
+            process_number="00000050020268090001",
+            representations=(("Ação de cobrança", "Execução rural"),),
+        )
+
+    options = api_client.get(
+        "/api/v1/process-filter-options",
+        params={"field": "subject_name_exact", "q": "EXECUCAO", "decision": "relevant"},
+    )
+    assert options.status_code == 200
+    assert options.json()["items"] == [
+        {
+            "value": "Execução rural",
+            "label": "Execução rural",
+            "detail": None,
+            "process_count": 1,
+        }
+    ]
+
+
+def test_process_filter_options_cap_default_search_and_cnj_results(
+    api_app: FastAPI,
+    api_client: TestClient,
+) -> None:
+    with Session(api_app.state.database_engine) as session, session.begin():
+        for index in range(25):
+            _seed_process(
+                session,
+                process_number=f"{index + 1:07d}0020268090001",
+                representations=(("Classe", f"Tema persistido {index:02d}"),),
+            )
+
+    common = api_client.get(
+        "/api/v1/process-filter-options", params={"field": "subject_name_exact"}
+    )
+    searched = api_client.get(
+        "/api/v1/process-filter-options",
+        params={"field": "subject_name_exact", "q": "tema persistido"},
+    )
+    cnj_default = api_client.get(
+        "/api/v1/process-filter-options", params={"field": "process_number"}
+    )
+    assert common.status_code == searched.status_code == cnj_default.status_code == 200
+    assert len(common.json()["items"]) == 10
+    assert len(searched.json()["items"]) == 20
+    assert cnj_default.json()["items"] == []
 
 
 def test_unavailable_database_returns_sanitized_503(scratch_database_url: URL) -> None:

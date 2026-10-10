@@ -2,7 +2,7 @@
 
 Data: 10/10/2026.
 
-Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redesign do frontend jurídico e de dados em 10/10/2026, preservando as funcionalidades existentes. SPEC-020 foi aprovada local e realmente em 10/10/2026 após S1/S2/S5; `sinal.penhora` permanece desabilitado porque o movimento 11382 não aparece no TJGO.
+Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redesign do frontend jurídico e de dados em 10/10/2026, preservando as funcionalidades existentes. SPEC-022 implementou sugestões pesquisáveis para todos os filtros textuais de Processos e concluiu validação local em 10/10/2026. SPEC-020 foi aprovada local e realmente em 10/10/2026 após S1/S2/S5; `sinal.penhora` permanece desabilitado porque o movimento 11382 não aparece no TJGO.
 
 ## 1. Estado atual e orientação
 
@@ -129,7 +129,7 @@ A fila utilizará reserva transacional com `FOR UPDATE SKIP LOCKED`. Esse mecani
 
 A fonte indisponível permite avançar com o adaptador sintético e contratos provisórios documentados. Os testes locais não encerram S1/S2, e o modo real permanece sem aceite.
 
-A visão geral da base local foi entregue depois do gate de recuperação do núcleo na SPEC-018. A exportação foi concluída localmente na SPEC-019; SPEC-020 concluiu o aceite local e real em 10/10/2026. O redesign transversal do frontend está registrado na SPEC-021.
+A visão geral da base local foi entregue depois do gate de recuperação do núcleo na SPEC-018. A exportação foi concluída localmente na SPEC-019; SPEC-020 concluiu o aceite local e real em 10/10/2026. O redesign transversal do frontend está registrado na SPEC-021. Sugestões locais para os filtros textuais de Processos foram concluídas na SPEC-022.
 
 ## 4. Validation Spikes
 
@@ -487,6 +487,7 @@ Usar índices direcionados às consultas e à fila ativa, com restrições de un
 - Atualização diária: M8.
 - Indicadores e CSV: M9.
 - Redesign do frontend: concluído na SPEC-021 após M9.
+- Sugestões pesquisáveis para os filtros textuais de Processos: SPEC-022 após o redesign, preservando os filtros finitos como seletores.
 
 **Fora do MVP:**
 
@@ -525,6 +526,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] SPEC-018 — Indicadores da base local concluídos localmente; amostra sintética e não representativa do universo TJGO.
 - [x] M9 — Indicadores, CSV e operação documentada; aceite real concluído em 10/10/2026.
 - [x] SPEC-021 — Redesign visual, responsivo e acessível do frontend concluído com testes e evidências.
+- [x] SPEC-022 — Sugestões locais e pesquisáveis nos filtros textuais de Processos; filtros finitos, URLs e semântica da consulta preservados e validados localmente.
 - [x] Aceite sintético completo, conforme matriz da SPEC-020.
 - [x] Aceite real TJGO registrado separadamente na matriz da SPEC-020.
 - [x] Instalação em Compose descartável e restauração verificadas.
@@ -532,7 +534,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-001 a SPEC-021 estão DONE com os alcances descritos em cada documento. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-001 a SPEC-022 estão DONE com os alcances descritos em cada documento. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |
@@ -557,8 +559,9 @@ A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-
 | [SPEC-019](specs/SPEC-019-exportacao-csv.md) | M9 | Exportação CSV | SPEC-017 |
 | [SPEC-020](specs/SPEC-020-operacao-e-aceite-integrado.md) | M9 | Operação e aceite integrado | SPEC-018, SPEC-019 |
 | [SPEC-021](specs/SPEC-021-redesign-frontend.md) | Pós-M9 / UX | Redesign do frontend jurídico e de dados | SPEC-012–SPEC-020 |
+| [SPEC-022](specs/SPEC-022-sugestoes-filtros-processos.md) | Pós-M9 / UX | Sugestões pesquisáveis para todos os filtros textuais de Processos | SPEC-011, SPEC-012, SPEC-021 |
 
-Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021. SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017.
+Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022. SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017.
 
 ### Esclarecimentos técnicos registrados na especificação
 
