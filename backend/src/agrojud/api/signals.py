@@ -12,12 +12,16 @@ from agrojud.api.errors import ERROR_RESPONSES
 from agrojud.api.schemas import (
     ProcessSignalResponse,
     ProcessSignalsResponse,
+    SignalRuleCatalogItemResponse,
+    SignalRuleEnablementResponse,
+    SignalRulesResponse,
     SignalRunAcceptedResponse,
     SignalRunRequest,
     SignalRunStatusResponse,
 )
 from agrojud.db.models import Job, Process, ProcessSignal, SignalRunProcess
 from agrojud.domain.signals import (
+    SIGNAL_RULES,
     InactiveSignalRuleError,
     SignalEnvironment,
     UnknownSignalRuleError,
@@ -29,6 +33,38 @@ from agrojud.services.signal_reprocessing import (
 )
 
 router = APIRouter(tags=["signals"])
+
+
+@router.get(
+    "/api/v1/signal-rules",
+    response_model=SignalRulesResponse,
+    responses=ERROR_RESPONSES,
+    summary="Lista regras de sinais e habilitação no ambiente atual",
+)
+def list_signal_rules(request: Request) -> SignalRulesResponse:
+    environment = _environment(request)
+    items: list[SignalRuleCatalogItemResponse] = []
+    for rule in SIGNAL_RULES:
+        evidence = rule.enablement[environment]
+        items.append(
+            SignalRuleCatalogItemResponse(
+                id=rule.id,
+                version=rule.version,
+                category=rule.category,
+                name=rule.name,
+                explanation=rule.explanation,
+                enablement=SignalRuleEnablementResponse(
+                    enabled=evidence.enabled,
+                    state=evidence.state,
+                    reason=evidence.reason,
+                    evidence_ids=list(evidence.evidence_ids),
+                ),
+            )
+        )
+    return SignalRulesResponse(
+        environment=environment,
+        items=items,
+    )
 
 
 @router.post(

@@ -524,6 +524,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/signal-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista regras de sinais e habilitação no ambiente atual */
+        get: operations["list_signal_rules_api_v1_signal_rules_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/watchlist": {
         parameters: {
             query?: never;
@@ -1772,6 +1789,20 @@ export interface components {
              */
             updated_at: string;
         };
+        /** SignalRuleCatalogItemResponse */
+        SignalRuleCatalogItemResponse: {
+            /** Category */
+            category: string;
+            enablement: components["schemas"]["SignalRuleEnablementResponse"];
+            /** Explanation */
+            explanation: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Version */
+            version: string;
+        };
         /** SignalRuleEnablementResponse */
         SignalRuleEnablementResponse: {
             /** Enabled */
@@ -1782,6 +1813,16 @@ export interface components {
             reason: string;
             /** State */
             state: string;
+        };
+        /** SignalRulesResponse */
+        SignalRulesResponse: {
+            /**
+             * Environment
+             * @enum {string}
+             */
+            environment: "demo" | "real";
+            /** Items */
+            items: components["schemas"]["SignalRuleCatalogItemResponse"][];
         };
         /** SignalRunAcceptedResponse */
         SignalRunAcceptedResponse: {
@@ -3833,6 +3874,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobCreatedResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_signal_rules_api_v1_signal_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalRulesResponse"];
                 };
             };
             /** @description Recurso não encontrado. */

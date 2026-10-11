@@ -45,6 +45,7 @@ export const queryKeys = {
   environment: ["environment"] as const,
   presets: (env: EnvironmentName) => [env, "presets"] as const,
   savedSearches: (env: EnvironmentName) => [env, "saved-searches"] as const,
+  signalRules: (env: EnvironmentName) => [env, "signal-rules"] as const,
   jobs: (env: EnvironmentName) => [env, "jobs"] as const,
   jobList: (env: EnvironmentName, query: JobListQuery) => [env, "jobs", "list", query] as const,
   job: (env: EnvironmentName, id: string) => [env, "jobs", "detail", id] as const,
@@ -410,13 +411,24 @@ export function useProcessSignals(processId: string) {
   });
 }
 
+export function useSignalRules() {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.signalRules(environment),
+    queryFn: ({ signal }) => request(() => api.GET("/api/v1/signal-rules", { signal })),
+    staleTime: 60_000,
+  });
+}
+
 export function useCreateSignalRun(processId: string) {
   const { environment } = useCurrentEnvironment();
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () =>
+    mutationFn: (ruleIds: string[]) =>
       request(() =>
-        api.POST("/api/v1/rule-runs", { body: { process_ids: [processId] } satisfies SignalRunRequest }),
+        api.POST("/api/v1/rule-runs", {
+          body: { process_ids: [processId], rule_ids: ruleIds } satisfies SignalRunRequest,
+        }),
       ),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: queryKeys.processSignals(environment, processId) });

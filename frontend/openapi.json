@@ -3421,6 +3421,44 @@
         "title": "ScheduleDispatchResponse",
         "type": "object"
       },
+      "SignalRuleCatalogItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "enablement": {
+            "$ref": "#/components/schemas/SignalRuleEnablementResponse"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "category",
+          "name",
+          "explanation",
+          "enablement"
+        ],
+        "title": "SignalRuleCatalogItemResponse",
+        "type": "object"
+      },
       "SignalRuleEnablementResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3451,6 +3489,32 @@
           "evidence_ids"
         ],
         "title": "SignalRuleEnablementResponse",
+        "type": "object"
+      },
+      "SignalRulesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "environment": {
+            "enum": [
+              "demo",
+              "real"
+            ],
+            "title": "Environment",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SignalRuleCatalogItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "environment",
+          "items"
+        ],
+        "title": "SignalRulesResponse",
         "type": "object"
       },
       "SignalRunAcceptedResponse": {
@@ -7302,6 +7366,67 @@
         "summary": "Inicia explicitamente uma execução manual da busca salva",
         "tags": [
           "saved-searches"
+        ]
+      }
+    },
+    "/api/v1/signal-rules": {
+      "get": {
+        "operationId": "list_signal_rules_api_v1_signal_rules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalRulesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Lista regras de sinais e habilitação no ambiente atual",
+        "tags": [
+          "signals"
         ]
       }
     },

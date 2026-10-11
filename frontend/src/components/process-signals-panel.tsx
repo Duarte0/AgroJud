@@ -1,8 +1,14 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router";
 
 import { describeError } from "@/api/client";
-import { useCreateSignalRun, useProcessSignals, useResumeSignalRun } from "@/api/queries";
-import type { ProcessSignal, SignalRunStatus } from "@/api/types";
+import {
+  useCreateSignalRun,
+  useProcessSignals,
+  useResumeSignalRun,
+  useSignalRules,
+} from "@/api/queries";
+import type { ProcessSignal, SignalRule, SignalRules, SignalRunStatus } from "@/api/types";
 import { EmptyState, ErrorState, LoadingState, StaleNotice } from "@/components/query-feedback";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -106,9 +112,21 @@ function SignalCard({ processId, signal }: { processId: string; signal: ProcessS
 
 export function ProcessSignalsPanel({ processId }: { processId: string }) {
   const signals = useProcessSignals(processId);
+  const rules = useSignalRules();
   const createRun = useCreateSignalRun(processId);
   const resumeRun = useResumeSignalRun(processId);
+  const [ruleSelection, setRuleSelection] = useState<{
+    environment: SignalRules["environment"];
+    ruleIds: string[];
+  } | null>(null);
   const latestRun = signals.data?.latest_run;
+  const enabledRules = rules.data?.items.filter((rule) => rule.enablement.enabled) ?? [];
+  const enabledRuleIds = enabledRules.map((rule) => rule.id);
+  const selectedRuleIds =
+    rules.data && ruleSelection?.environment === rules.data.environment
+      ? ruleSelection.ruleIds.filter((ruleId) => enabledRuleIds.includes(ruleId))
+      : enabledRuleIds;
+  const selectedRuleIdSet = new Set(selectedRuleIds);
   const active =
     latestRun?.status === "queued" ||
     latestRun?.status === "running" ||
@@ -126,6 +144,14 @@ export function ProcessSignalsPanel({ processId }: { processId: string }) {
     );
   }
 
+  function updateRuleSelection(rule: SignalRule, checked: boolean) {
+    if (!rules.data || !rule.enablement.enabled) return;
+    const ruleIds = checked
+      ? [...new Set([...selectedRuleIds, rule.id])]
+      : selectedRuleIds.filter((ruleId) => ruleId !== rule.id);
+    setRuleSelection({ environment: rules.data.environment, ruleIds });
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -136,6 +162,52 @@ export function ProcessSignalsPanel({ processId }: { processId: string }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <StaleNotice query={signals} />
+        <fieldset className="space-y-3 rounded-lg border p-4">
+          <legend className="px-1 text-sm font-medium">Regras para este ambiente</legend>
+          <p className="text-sm text-muted-foreground">
+            As regras habilitadas começam selecionadas. Regras indisponíveis aparecem com o motivo e não podem ser executadas.
+          </p>
+          {rules.isPending ? (
+            <LoadingState label="Carregando regras…" variant="detail" />
+          ) : !rules.data ? (
+            <ErrorState
+              title="Não foi possível carregar as regras de sinais"
+              error={rules.error}
+              onRetry={() => void rules.refetch()}
+              retrying={rules.isFetching}
+            />
+          ) : (
+            <ul className="space-y-3">
+              {rules.data.items.map((rule) => (
+                <li key={rule.id} className="rounded-md border p-3">
+                  <label className="flex items-start gap-3">
+                    <input
+                      className="mt-1 size-4 accent-primary"
+                      type="checkbox"
+                      checked={selectedRuleIdSet.has(rule.id)}
+                      disabled={!rule.enablement.enabled}
+                      onChange={(event) => updateRuleSelection(rule, event.currentTarget.checked)}
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-medium">{rule.name}</span>
+                      <span className="block text-sm text-muted-foreground">
+                        {categories[rule.category] ?? rule.category} · regra {rule.id} · versão {rule.version}
+                      </span>
+                      <span className="block text-sm text-muted-foreground">
+                        {rule.enablement.enabled ? "Habilitada" : "Indisponível"}: {rule.enablement.reason}
+                      </span>
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+          {rules.data && selectedRuleIds.length === 0 ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              Selecione ao menos uma regra habilitada para reprocessar.
+            </p>
+          ) : null}
+        </fieldset>
         {latestRun ? (
           <SignalRunStatusCard
             run={latestRun}
@@ -145,7 +217,10 @@ export function ProcessSignalsPanel({ processId }: { processId: string }) {
         ) : null}
         {createRun.error ? <p role="alert" className="text-sm text-destructive">{describeError(createRun.error)}</p> : null}
         {resumeRun.error ? <p role="alert" className="text-sm text-destructive">{describeError(resumeRun.error)}</p> : null}
-        <Button onClick={() => createRun.mutate()} disabled={createRun.isPending || active}>
+        <Button
+          onClick={() => createRun.mutate(selectedRuleIds)}
+          disabled={createRun.isPending || active || !rules.data || selectedRuleIds.length === 0}
+        >
           {createRun.isPending ? "Enfileirando…" : "Reprocessar sinais deste processo"}
         </Button>
         {signals.data.items.length === 0 ? (

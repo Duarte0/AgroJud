@@ -28,8 +28,8 @@ Engine determinística, persistência versionada, job local, API e apresentaçã
 - Cursor local por ID de entrada, lotes de 100, commit dos sinais/progresso com a mesma verificação de posse. Pode reutilizar mecanismo de jobs, não cursor DataJud.
 - Versão de regras nova cria execução nova. Resultado vigente por processo só muda quando todas as entradas desse processo forem processadas; falha mantém versão anterior visível.
 - Sinais anteriores permanecem históricos; trocar versão não apaga decisões humanas ou revisões de novidades.
-- POST /rule-runs com seleção de processos ou filtro local resolvido retorna 202; GET /processes/{id}/signals informa vigente/histórico e proveniência.
-- UI no detalhe exibe categoria, regra/versão e evidência clicável na timeline; comando de reprocessamento limitado à seleção explícita.
+- POST /rule-runs com seleção de processos ou filtro local resolvido retorna 202; GET /processes/{id}/signals informa vigente/histórico e proveniência; GET /signal-rules informa o catálogo e os gates do ambiente atual.
+- UI no detalhe exibe categoria, regra/versão e evidência clicável na timeline; no reprocessamento, regras habilitadas começam selecionadas, regras inativas mostram o motivo, e o comando envia explicitamente os IDs selecionados.
 
 ## Comportamento esperado
 Reexecutar mesma regra/entrada mantém a mesma cardinalidade. Regra real não validada não roda como regra validada. Falha a meio da execução é visível e retomável.
@@ -55,9 +55,11 @@ Editor genérico de regras, classificação probabilística, análise documental
 
 ## Evidência e conclusão
 
-- **10/10/2026:** com a evidência S5 da SPEC-010, `sinal.leilao` e `sinal.recuperacao_judicial` passaram a `enablement.real.enabled = true` (`state: validated`), sem mudar predicado nem versão. `sinal.penhora` segue desabilitado no real: o movimento 11382 não aparece no índice TJGO. Execução sem `rule_ids` no real continua retornando 409 enquanto houver regra inativa; selecione as regras habilitadas.
+- **10/10/2026:** com a evidência S5 da SPEC-010, `sinal.leilao` e `sinal.recuperacao_judicial` passaram a `enablement.real.enabled = true` (`state: validated`), sem mudar predicado nem versão. `sinal.penhora` segue desabilitado no real: o movimento 11382 não aparece no índice TJGO. A API mantém 409 se a chamada direta omitir `rule_ids` ou incluir regra inativa; o painel consulta o catálogo, deixa somente regras habilitadas selecionáveis e envia os IDs selecionados.
 
-- O catálogo versionado registra `sinal.penhora` (11382), `sinal.leilao` (311) e `sinal.recuperacao_judicial` (12041). As três regras só estão habilitadas como `synthetic_only` em `demo`; todas permanecem desabilitadas em `real`, pois SPEC-010 não validou amostras estruturadas reais. Não se declarou capacidade real.
+- **11/10/2026:** o painel passou a consultar `GET /api/v1/signal-rules`, pré-selecionar as regras habilitadas no ambiente atual e enviar explicitamente os IDs escolhidos; regras inativas exibem o motivo e não podem ser selecionadas. OpenAPI, tipos gerados, lint, typecheck, build, Ruff, formatação Ruff e mypy passaram. Testes automatizados não foram executados nesta correção.
+
+- O catálogo versionado registra `sinal.penhora` (11382), `sinal.leilao` (311) e `sinal.recuperacao_judicial` (12041). As três regras estão habilitadas como `synthetic_only` em `demo`; em `real`, leilão e recuperação judicial estão habilitadas com estado `validated`, enquanto penhora permanece desabilitada por falta de ocorrência observada no TJGO.
 - As fixtures PostgreSQL exercitam correspondência positiva, negativa, código ausente e snapshot incompleto. O worker é executado com chamadas HTTPX bloqueadas pelo teste; a tentativa de HTTP falha o teste.
 - A persistência usa `process_signals` com unicidade regra/versão/evidência/fingerprint, `signal_evaluations` append-only, snapshots imutáveis por entrada, checkpoint por UUID, lotes de até 100 e publicação atômica sob posse do lease.
 - `test_signals.py` comprova cardinalidade idempotente, evidência consultável na timeline, preservação da triagem, sinal vigente marcado como defasado quando só existe versão completa anterior, interrupção após um lote, retomada no mesmo job e troca de versão com histórico preservado. Seleção vazia conclui com zero entradas; regra desconhecida e regra real inativa são rejeitadas. A API real não expõe sinais demo e não permite consultar ou retomar execução de outro ambiente.

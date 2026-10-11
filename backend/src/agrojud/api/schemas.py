@@ -424,6 +424,20 @@ class SignalRuleEnablementResponse(APIModel):
     evidence_ids: list[str]
 
 
+class SignalRuleCatalogItemResponse(APIModel):
+    id: str
+    version: str
+    category: str
+    name: str
+    explanation: str
+    enablement: SignalRuleEnablementResponse
+
+
+class SignalRulesResponse(APIModel):
+    environment: Literal["demo", "real"]
+    items: list[SignalRuleCatalogItemResponse]
+
+
 class ProcessSignalResponse(APIModel):
     id: UUID
     state: Literal["current", "historical"]

@@ -471,6 +471,51 @@ describe("ProcessDetailPage", () => {
       [`GET /api/v1/processes/${processId}/triage-history`]: () => json(page([])),
       [`GET /api/v1/processes/${processId}/signals`]: () =>
         json({ process_id: processId, items: [], latest_run: latestRun }),
+      "GET /api/v1/signal-rules": () =>
+        json({
+          environment: "demo",
+          items: [
+            {
+              id: "sinal.penhora",
+              version: "1.0.0",
+              category: "penhora",
+              name: "Bloqueio, penhora ou arresto observado",
+              explanation: "Evento observado para revisão.",
+              enablement: {
+                enabled: true,
+                state: "synthetic_only",
+                reason: "Regra demonstrativa local.",
+                evidence_ids: ["fixture:signal-rules-v1"],
+              },
+            },
+            {
+              id: "sinal.leilao",
+              version: "1.0.0",
+              category: "leilao",
+              name: "Leilão ou praça observado",
+              explanation: "Evento observado para revisão.",
+              enablement: {
+                enabled: true,
+                state: "synthetic_only",
+                reason: "Regra demonstrativa local.",
+                evidence_ids: ["fixture:signal-rules-v1"],
+              },
+            },
+            {
+              id: "sinal.recuperacao_judicial",
+              version: "1.0.0",
+              category: "recuperacao_judicial",
+              name: "Recuperação judicial observada",
+              explanation: "Evento observado para revisão.",
+              enablement: {
+                enabled: true,
+                state: "synthetic_only",
+                reason: "Regra demonstrativa local.",
+                evidence_ids: ["fixture:signal-rules-v1"],
+              },
+            },
+          ],
+        }),
       [`GET /api/v1/processes/${processId}/representations`]: () => json(page([])),
       [`GET /api/v1/processes/${processId}/movements`]: () =>
         json({ process_id: processId, page: 1, page_size: 25, total: 0, diagnostics: [], items: [] }),
@@ -506,9 +551,13 @@ describe("ProcessDetailPage", () => {
     });
 
     await userEvent.click(await screen.findByRole("tab", { name: "Sinais" }));
+    await screen.findByRole("checkbox", { name: /Bloqueio, penhora ou arresto observado/ });
     await userEvent.click(await screen.findByRole("button", { name: "Reprocessar sinais deste processo" }));
     expect(await screen.findByText("Último reprocessamento: Na fila")).toBeInTheDocument();
-    expect(submitted).toEqual({ process_ids: [processId] });
+    expect(submitted).toEqual({
+      process_ids: [processId],
+      rule_ids: ["sinal.penhora", "sinal.leilao", "sinal.recuperacao_judicial"],
+    });
     expect(api.count("POST", "/api/v1/rule-runs")).toBe(1);
   });
 
@@ -545,6 +594,20 @@ describe("ProcessDetailPage", () => {
       [`GET /api/v1/processes/${processId}/triage-history`]: () => json(page([])),
       [`GET /api/v1/processes/${processId}/signals`]: () =>
         json({ process_id: processId, items: [signal], latest_run: null }),
+      "GET /api/v1/signal-rules": () =>
+        json({
+          environment: "demo",
+          items: [
+            {
+              id: signal.rule_id,
+              version: signal.rule_version,
+              category: signal.category,
+              name: signal.rule_name,
+              explanation: signal.explanation,
+              enablement: signal.rule_enablement,
+            },
+          ],
+        }),
       [`GET /api/v1/processes/${processId}/representations`]: () => json(page([])),
       [`GET /api/v1/processes/${processId}/movements`]: (request) => {
         const evidenceId = new URL(request.url).searchParams.get("occurrence_id");
