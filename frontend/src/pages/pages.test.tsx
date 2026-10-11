@@ -301,6 +301,14 @@ describe("JobDetailPage", () => {
     const job = buildJob({
       status: "partial",
       reason: "limit",
+      events: [
+        {
+          event_number: 1,
+          event_type: "collection_started",
+          details: {},
+          created_at: "2026-10-09T10:00:00Z",
+        },
+      ],
       coverage: {
         hits_confirmed: 100,
         budget_limit: 100,
@@ -314,6 +322,7 @@ describe("JobDetailPage", () => {
     expect(await screen.findByTestId("no-percentage")).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(screen.getByText(/pelo menos 10.000/)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Lista de eventos recentes da coleta" })).toHaveTextContent("collection_started");
     expect(screen.getByRole("button", { name: "Continuar coleta" })).toBeEnabled();
     expect(screen.getByTestId("polling-status")).toHaveTextContent("Atualização automática encerrada");
   });
@@ -437,6 +446,7 @@ describe("ProcessDetailPage", () => {
 
     const items = await screen.findAllByTestId("movement");
     expect(items).toHaveLength(2);
+    expect(screen.getByRole("region", { name: "Lista de movimentações" })).toBeInTheDocument();
     expect(items[0]).toHaveTextContent("Ambígua: sem fuso na fonte");
     expect(items[0]).toHaveTextContent("original: 2025-02-01T10:00:00");
     expect(items[0]).toHaveTextContent("Ocorrência nº 2");

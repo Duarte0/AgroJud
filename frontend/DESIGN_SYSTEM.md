@@ -58,6 +58,7 @@ Pares foram conferidos por luminância relativa: texto principal no fundo geral 
 - Ações destrutivas usam `ConfirmAction`; edição de triagem protege navegação e saída da página.
 - Feedback: skeleton específico da área no carregamento; vazio explica ausência; erro oferece retry quando disponível; stale e parcial continuam explícitos.
 - Linha do tempo mantém datas do evento, da atualização na fonte e da observação local separadas; evidência selecionada recebe âncora e foco.
+- Listas extensas de eventos usam o componente compartilhado `ScrollArea`, com região nomeada e focável, rolagem vertical limitada a `min(70vh, 48rem)` e controles/paginação fora da área rolável.
 
 ## Breakpoints de validação
 

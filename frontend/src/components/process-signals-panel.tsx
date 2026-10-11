@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDateTime } from "@/lib/format";
 
 const categories: Record<string, string> = {
@@ -152,11 +153,13 @@ export function ProcessSignalsPanel({ processId }: { processId: string }) {
             O reprocessamento usa somente versões locais completamente normalizadas.
           </EmptyState>
         ) : (
-          <ul className="space-y-3">
-            {signals.data.items.map((signal) => (
-              <SignalCard key={signal.id} processId={processId} signal={signal} />
-            ))}
-          </ul>
+          <ScrollArea label="Lista de sinais vigentes e históricos">
+            <ul className="space-y-3">
+              {signals.data.items.map((signal) => (
+                <SignalCard key={signal.id} processId={processId} signal={signal} />
+              ))}
+            </ul>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>

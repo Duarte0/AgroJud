@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ErrorState, LoadingState, StaleNotice } from "@/components/query-feedback";
 import { formatDateTime } from "@/lib/format";
 import { readPage, withPage } from "@/lib/search-params";
@@ -318,11 +319,13 @@ export function ProcessTriageHistory({ processId }: { processId: string }) {
               {history.data.items.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhuma alteração humana registrada.</p>
               ) : (
-                <ol className="space-y-3">
-                  {history.data.items.map((entry) => (
-                    <HistoryEntry key={entry.id} entry={entry} />
-                  ))}
-                </ol>
+                <ScrollArea label="Lista do histórico de triagem">
+                  <ol className="space-y-3">
+                    {history.data.items.map((entry) => (
+                      <HistoryEntry key={entry.id} entry={entry} />
+                    ))}
+                  </ol>
+                </ScrollArea>
               )}
               {history.data.total > HISTORY_PAGE_SIZE ? (
                 <Pagination

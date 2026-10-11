@@ -9,6 +9,7 @@ import { ErrorState, LoadingState, StaleNotice } from "@/components/query-feedba
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDateTime } from "@/lib/format";
 
 export function ProcessWatchPanel({ processId, section = "controls" }: { processId: string; section?: "controls" | "history" | "baselines" }) {
@@ -130,14 +131,16 @@ export function ProcessWatchPanel({ processId, section = "controls" }: { process
               {watch.data.history.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sem alterações registradas.</p>
               ) : (
-                <ol className="space-y-1 text-sm text-muted-foreground">
-                  {watch.data.history.map((event) => (
-                    <li key={event.id} data-testid="watch-history-entry">
-                      {event.action === "included" ? "Incluído" : "Removido"} em{" "}
-                      {formatDateTime(event.created_at)}
-                    </li>
-                  ))}
-                </ol>
+                <ScrollArea label="Lista do histórico de acompanhamento">
+                  <ol className="space-y-1 text-sm text-muted-foreground">
+                    {watch.data.history.map((event) => (
+                      <li key={event.id} data-testid="watch-history-entry">
+                        {event.action === "included" ? "Incluído" : "Removido"} em{" "}
+                        {formatDateTime(event.created_at)}
+                      </li>
+                    ))}
+                  </ol>
+                </ScrollArea>
               )}
             </div>            ) : null}
 

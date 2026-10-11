@@ -137,6 +137,41 @@ export function setProcessMovementCode(processId: string, code: number): string 
   return occurrenceId;
 }
 
+/** Adds long synthetic movement evidence so Playwright can verify nested scrolling. */
+export function addLongMovementComplement(processId: string, occurrenceId: string): void {
+  if (!/^[0-9a-f-]{36}$/i.test(processId) || !/^[0-9a-f-]{36}$/i.test(occurrenceId)) {
+    throw new Error("Process ID ou ocorrência inválida para fixture E2E.");
+  }
+  const sql = `UPDATE movement_occurrences AS occurrence
+    SET normalized_content = jsonb_set(
+      occurrence.normalized_content,
+      '{complementosTabelados}',
+      coalesce(occurrence.normalized_content->'complementosTabelados', '[]'::jsonb)
+        || jsonb_build_array(jsonb_build_object(
+          'nome', 'Complemento sintético',
+          'descricao', repeat('texto longo sintético para validar rolagem interna ', 400)
+        ))
+    )
+    FROM representations AS representation
+    WHERE occurrence.representation_id = representation.id
+      AND representation.process_id = '${processId}'::uuid
+      AND occurrence.id = '${occurrenceId}'::uuid
+    RETURNING occurrence.id`;
+  const updatedId = compose(
+    "exec",
+    "-T",
+    "--env",
+    `SIGNAL_SCROLL_SQL=${sql}`,
+    "db",
+    "sh",
+    "-lc",
+    'psql --quiet --tuples-only --no-align --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --command "$SIGNAL_SCROLL_SQL"',
+  ).trim();
+  if (updatedId !== occurrenceId) {
+    throw new Error("A fixture E2E não encontrou a ocorrência exata para validar a rolagem.");
+  }
+}
+
 /** Seeds a disposable pending baseline and dated novelty for browser acceptance. */
 export function seedPendingNews(processId: string): string {
   if (!/^[0-9a-f-]{36}$/i.test(processId)) {

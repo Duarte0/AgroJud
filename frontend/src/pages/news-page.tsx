@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { formatCnj, formatDateTime } from "@/lib/format";
 import { readPage, withPage } from "@/lib/search-params";
@@ -281,7 +282,9 @@ export function NewsPage() {
                   Baselines pendentes aguardam uma lista de movimentos completa. Uma falha ou resposta parcial não é tratada como ausência de novidade.
                 </EmptyState>
               ) : (
-                news.data.items.map((item) => <NewsCard key={item.id} item={item} />)
+                <ScrollArea label="Lista de novidades" className="space-y-4">
+                  {news.data.items.map((item) => <NewsCard key={item.id} item={item} />)}
+                </ScrollArea>
               )}
               <Pagination
                 label="Paginação das novidades"

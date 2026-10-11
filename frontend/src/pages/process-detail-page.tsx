@@ -30,6 +30,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   captureOutcomeLabel,
   comparisonLabel,
@@ -367,15 +368,17 @@ function Timeline({
                 A ausência de movimentos na base local não indica encerramento nem sigilo.
               </EmptyState>
             ) : (
-              <ol aria-label="Movimentos do processo" className="pt-1">
-                {movements.data.items.map((movement) => (
-                  <TimelineItem
-                    key={movement.occurrence_id}
-                    movement={movement}
-                    representation={representations.get(movement.representation_id)}
-                  />
-                ))}
-              </ol>
+              <ScrollArea label="Lista de movimentações">
+                <ol aria-label="Movimentos do processo" className="pt-1">
+                  {movements.data.items.map((movement) => (
+                    <TimelineItem
+                      key={movement.occurrence_id}
+                      movement={movement}
+                      representation={representations.get(movement.representation_id)}
+                    />
+                  ))}
+                </ol>
+              </ScrollArea>
             )}
             <Pagination
               label="Paginação dos movimentos"

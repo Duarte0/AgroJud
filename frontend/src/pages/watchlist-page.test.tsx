@@ -184,6 +184,7 @@ describe("ProcessWatchPanel", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Acompanhar processo" }));
     expect(await screen.findByText("Acompanhamento ativo")).toBeInTheDocument();
     expect(screen.getByTestId("watch-history-entry")).toHaveTextContent("Incluído em");
+    expect(screen.getByRole("region", { name: "Lista do histórico de acompanhamento" })).toBeInTheDocument();
     expect(includeCount).toBe(1);
   });
 });

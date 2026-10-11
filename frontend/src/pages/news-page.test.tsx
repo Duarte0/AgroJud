@@ -50,6 +50,7 @@ describe("NewsPage", () => {
     renderRoute(<NewsPage />, { path: "/news", url: "/news" });
 
     const item = await screen.findByTestId("news-item");
+    expect(screen.getByRole("region", { name: "Lista de novidades" })).toBeInTheDocument();
     expect(within(item).getByText("Conteúdo recém-observado")).toBeInTheDocument();
     expect(within(item).getByText("01/04/2020, 00:04")).toBeInTheDocument();
     expect(within(item).getByText("09/10/2026, 09:00")).toBeInTheDocument();

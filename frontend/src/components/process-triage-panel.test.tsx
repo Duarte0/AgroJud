@@ -67,6 +67,7 @@ describe("ProcessTriagePanel", () => {
     await userEvent.click(screen.getByRole("button", { name: "Salvar triagem" }));
 
     expect(await screen.findByTestId("triage-history-entry")).toHaveTextContent("Relevante");
+    expect(screen.getByRole("region", { name: "Lista do histórico de triagem" })).toBeInTheDocument();
     expect(screen.getByLabelText("Nota de revisão")).toHaveValue("<script>alert(1)</script>");
     expect(screen.getAllByText("<script>alert(1)</script>")).toHaveLength(2);
     expect(screen.queryByRole("img")).not.toBeInTheDocument();

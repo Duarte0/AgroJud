@@ -17,6 +17,7 @@ import { ErrorState, LoadingState, StaleNotice } from "@/components/query-feedba
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -306,16 +307,18 @@ function AttemptsCard({ job }: { job: JobDetail }) {
           {events.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum evento registrado.</p>
           ) : (
-            <ol className="space-y-1.5 text-sm">
-              {events.map((event) => (
-                <li key={event.event_number} className="flex flex-wrap gap-x-3">
-                  <span className="whitespace-nowrap text-muted-foreground tabular-nums">
-                    {formatDateTime(event.created_at)}
-                  </span>
-                  <span className="font-medium">{event.event_type}</span>
-                </li>
-              ))}
-            </ol>
+            <ScrollArea label="Lista de eventos recentes da coleta">
+              <ol className="space-y-1.5 text-sm">
+                {events.map((event) => (
+                  <li key={event.event_number} className="flex flex-wrap gap-x-3">
+                    <span className="whitespace-nowrap text-muted-foreground tabular-nums">
+                      {formatDateTime(event.created_at)}
+                    </span>
+                    <span className="font-medium">{event.event_type}</span>
+                  </li>
+                ))}
+              </ol>
+            </ScrollArea>
           )}
         </div>
       </CardContent>
