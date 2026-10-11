@@ -1965,9 +1965,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         for request in _all_request_records(endpoint_report)
     )
     any_incompatible = any(
-        result.get("state") == EvidenceState.INCOMPATIBLE
+        _endpoint_has_incompatibility(endpoint_report)
         for endpoint_report in cast(list[dict[str, object]], report["tribunal_reports"])
-        for result in _s1_capability_values(endpoint_report)
     )
     return 1 if any_error or any_incompatible else 0
 
@@ -1996,6 +1995,22 @@ def _all_request_records(endpoint_report: Mapping[str, object]) -> list[dict[str
 def _s1_capability_values(endpoint_report: Mapping[str, object]) -> Sequence[dict[str, object]]:
     s1 = cast(dict[str, object], endpoint_report["s1_s2"])
     return tuple(cast(dict[str, dict[str, object]], s1["capabilities"]).values())
+
+
+def _endpoint_has_incompatibility(endpoint_report: Mapping[str, object]) -> bool:
+    if any(
+        result.get("state") == EvidenceState.INCOMPATIBLE
+        for result in _s1_capability_values(endpoint_report)
+    ):
+        return True
+    return any(
+        pair.get("pair_state") == EvidenceState.INCOMPATIBLE
+        or cast(dict[str, object], pair.get("query_status", {})).get("state")
+        == EvidenceState.INCOMPATIBLE
+        or cast(dict[str, object], pair.get("sample_status", {})).get("state")
+        == EvidenceState.INCOMPATIBLE
+        for pair in cast(list[dict[str, object]], endpoint_report.get("s5_pairs", []))
+    )
 
 
 def _write_batch_reports(report: Mapping[str, object], output_dir: Path) -> None:

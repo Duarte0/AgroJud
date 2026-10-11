@@ -2,7 +2,7 @@
 
 Data: 11/10/2026.
 
-Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redesign do frontend jurídico e de dados em 10/10/2026, preservando as funcionalidades existentes. SPEC-022 implementou sugestões pesquisáveis para todos os filtros textuais de Processos e concluiu validação local em 10/10/2026. SPEC-023 aplicou rolagem vertical acessível às listas de eventos compartilhadas e concluiu validação local em 11/10/2026. SPEC-020 foi aprovada local e realmente em 10/10/2026 após S1/S2/S5; `sinal.penhora` permanece desabilitado porque o movimento 11382 não aparece no TJGO. SPEC-024 concluiu em 11/10/2026 a implementação local do probe multitribunal e de sua matriz de evidências; nenhuma rodada externa ocorreu e o runtime segue restrito ao TJGO até execução e revisão explícitas.
+Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redesign do frontend jurídico e de dados em 10/10/2026, preservando as funcionalidades existentes. SPEC-022 implementou sugestões pesquisáveis para todos os filtros textuais de Processos e concluiu validação local em 10/10/2026. SPEC-023 aplicou rolagem vertical acessível às listas de eventos compartilhadas e concluiu validação local em 11/10/2026. SPEC-020 foi aprovada local e realmente em 10/10/2026 após S1/S2/S5; `sinal.penhora` permanece desabilitado porque o movimento 11382 não aparece no TJGO. SPEC-024 concluiu a implementação local do probe, do merge auditável de lotes, da revisão versionada e da classificação de incompatibilidade S5; nenhuma rodada multitribunal externa ocorreu e o runtime segue restrito ao TJGO.
 
 ## 1. Estado atual e orientação
 
@@ -530,7 +530,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] SPEC-021 — Redesign visual, responsivo e acessível do frontend concluído com testes e evidências.
 - [x] SPEC-022 — Sugestões locais e pesquisáveis nos filtros textuais de Processos; filtros finitos, URLs e semântica da consulta preservados e validados localmente.
 - [x] SPEC-023 — Rolagem vertical acessível nas listas de eventos, com paginação e evidência preservadas e validação local concluída.
-- [x] SPEC-024 — Probe multitribunal isolado, budgets S1/S2 e S5, allowlist de 33 endpoints, matriz de cobertura e testes locais concluídos; execução externa e revisão humana permanecem pendentes.
+- [x] SPEC-024 — Probe isolado, merge dos sete lotes, histórico de tentativas, revisão auditável e testes locais concluídos; execução externa e revisão operacional das evidências permanecem pendentes.
 - [x] Aceite sintético completo, conforme matriz da SPEC-020.
 - [x] Aceite real TJGO registrado separadamente na matriz da SPEC-020.
 - [x] Instalação em Compose descartável e restauração verificadas.
@@ -538,7 +538,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-001 a SPEC-024 estão DONE nos alcances registrados em cada documento; SPEC-024 concluiu a ferramenta e seus testes locais, sem execução externa nem habilitação de novos tribunais. A matriz gerada exige execução por lote e revisão humana; a conclusão da implementação não valida a fonte automaticamente.
+A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-001 a SPEC-024 estão DONE nos alcances registrados em cada documento; a SPEC-024 agora consolida lotes, preserva tentativas e permite revisão local auditável. Não houve execução externa nem habilitação de novos tribunais. A implementação da matriz não valida a fonte automaticamente.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |
@@ -569,7 +569,7 @@ A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-
 
 Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → 024. SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017.
 
-SPEC-024 implementa a validação DataJud dos 33 endpoints TJ/TJDFT/TRF em lotes explícitos de até cinco, com resultados separados por tribunal e por preset aplicável. A ferramenta foi validada localmente com HTTP simulado e não fez chamadas externas. A expansão da aplicação, incluindo buscas manuais/salvas/agendadas e atualização de acompanhamentos, depende de execuções reais, revisão humana da matriz e de uma SPEC de implementação posterior. Até lá, o runtime segue restrito ao TJGO.
+SPEC-024 valida localmente os 33 endpoints TJ/TJDFT/TRF em lotes explícitos de até cinco e oferece `agrojud-datajud-multitribunal-matrix merge/review` para agregar tentativas e registrar decisão com hash da matriz de entrada. Os testes locais não fizeram chamadas externas. A expansão da aplicação, incluindo buscas manuais/salvas/agendadas e atualização de acompanhamentos, depende de execuções reais autorizadas, revisão operacional da matriz e de uma SPEC de implementação posterior. Até lá, o runtime segue restrito ao TJGO.
 
 ### Esclarecimentos técnicos registrados na especificação
 

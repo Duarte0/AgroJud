@@ -115,13 +115,16 @@ Não emitir um booleano geral de “Brasil validado” se qualquer endpoint rele
 - **AC8 — isolamento e sanitização:** testes provam ausência de acesso ao banco de produto e ausência de credencial, CNJ, IDs, cursores, partes e payload bruto nos relatórios.
 - **AC9 — resultado parcial:** lote produz relatório por tribunal e resumo com estados distintos para sucesso, incompatibilidade, indisponibilidade e itens não executados, sem uma falha mascarar as demais.
 - **AC10 — habilitação:** nenhum relatório ou conclusão de ferramenta altera automaticamente matriz de produção, fonte ativa, agenda ou disponibilidade de preset.
-- **AC11 — revisão de cobertura:** a matriz final lista os 33 alvos e todos os pares aplicáveis; “cobertura nacional validada” só pode ser afirmada após todas as capacidades S1/S2 pertinentes e todos os pares S5 aplicáveis estarem `VALIDATED` e a matriz receber revisão humana explícita.
+- **AC11 — consolidação e revisão de cobertura:** `agrojud-datajud-multitribunal-matrix merge` combina os resumos e relatórios por lote em uma matriz 33 × 4, com estado S1/S2 por capability, estado S5 por par, tentativas e referências/hashes de origem. Evidência remota `VALIDATED` ou `INCOMPATIBLE` exige relatório de ambiente `real`, confirmação dos termos e contagem de requisições correspondente; relatório bloqueado no preflight não pode virar evidência. O mesmo `run_id` idêntico é idempotente; conteúdo divergente para o mesmo `run_id`, schema incompatível, alias/arquivo fora do contrato ou versão de allowlist diferente falha sem combinar os dados.
+- **AC12 — histórico, versão e revisão auditável:** tentativas repetidas são preservadas; `VALIDATED` resiste a tentativa posterior inconclusiva, enquanto `INCOMPATIBLE` continua bloqueando até resolução explícita que selecione uma tentativa `VALIDATED` do mesmo alvo e versão atual. S5 de catálogo, preset ou TPU desatualizados fica visível como histórico obsoleto e não valida o alvo atual. `review` grava cópia separada com pessoa revisora, decisão, justificativa, data UTC e SHA-256 dos bytes da matriz de entrada. Cobertura nacional só é afirmada quando todas as capabilities S1/S2 e pares S5 aplicáveis estão válidos e a revisão aprova a matriz.
 
 ## Testes necessários
 
 Usar HTTPX MockTransport. Cobrir lote de cinco aliases e rejeição de seis; alias/URL inválidos; chave ausente; ambiente demo; 401/429 interrompendo chamadas futuras do lote e marcando alvos restantes `NOT_RUN`; 403, 5xx, timeout e envelope inválido isolados; tribunal retornado diferente do alvo; campos essenciais ausentes; CNJ fabricado/revelado no relatório; sort recusado; página vazia; duas páginas com cursor avançando, repetido e sobreposição; limites de seis requisições e `size <= 100`.
 
 Para S5, cobrir cada estado de aplicabilidade, garantir zero chamada para não aplicável/inconclusivo, códigos ausentes/inesperados, zero hit, 1–2 amostras, três IDs distintos, IDs repetidos, janela de 31 dias e rejeição de 32 dias, exatamente duas chamadas, espaçamento, sem retry, e segunda tentativa apenas com nova janela manual. Inspecionar relatórios e confirmar nenhuma conexão ao banco.
+
+Para a consolidação, cobrir os sete lotes que compõem os 33 aliases, deduplicação idempotente de `run_id`, rejeição de divergência e allowlist incompatível, preservação das tentativas, conflito incompatível/validado, S5 obsoleto por versão, resolução com seleção de tentativa validada, cópia de revisão vinculada ao SHA-256 e exit code 1 para incompatibilidade S5. Merge e revisão devem operar offline.
 
 Probes remotas são limitadas, explícitas, separadas dos testes locais e executadas somente após conferência dos termos vigentes. Testes sintéticos provam o comportamento da ferramenta, não a aceitação externa de tribunal.
 
@@ -141,21 +144,49 @@ Probes remotas são limitadas, explícitas, separadas dos testes locais e execut
 
 - Implementado `backend/src/agrojud/sources/datajud_multitribunal_validation.py` como ferramenta isolada, com allowlist versionada `2026-10-11` para os 33 endpoints estaduais/federais, lotes explícitos de até cinco, budgets S1/S2 e S5, matriz de aplicabilidade TPU, relatórios sanitizados por tribunal e lote e gate `PENDING_HUMAN_REVIEW`. A versão de catálogo registrada vem do catálogo ativo local; a matriz TPU exige versão/data e referência oficial fornecidas pela pessoa operadora antes de classificar aplicabilidade como `APPLICABLE` ou `NOT_APPLICABLE`.
 - `agrojud-datajud-multitribunal-probe` aceita somente aliases allowlisted, datas e destino de relatório explícitos. Exige `AGROJUD_ENV=real`, chave no ambiente do backend e confirmação da revisão dos termos antes de enviar HTTP. Sem esses gates, registra execução sem chamadas. Não importa nem acessa banco de produto e não altera o adaptador, fonte ativa, agenda ou presets em produção.
-- Os relatórios geram a matriz dos 33 tribunais com os quatro presets, mantêm não executados como `NOT_RUN`, e nunca emitem aprovação geral do Brasil. Justificativas livres da matriz TPU são validadas como entrada, mas não são copiadas aos relatórios; eles usam texto padronizado para evitar que dados pessoais sejam incluídos. A amostragem real por lote, revisão humana da aplicabilidade e aprovação de qualquer expansão continuam sendo etapas operacionais futuras.
-- Testes com HTTPX MockTransport cobrem budgets, paginação, classificação S1/S2 e S5, sanitização, gates, isolamento, resultados parciais e a matriz 33 × 4. Nenhuma probe remota foi executada nesta entrega; portanto, não há evidência de compatibilidade para novo tribunal e o runtime permanece restrito ao TJGO.
+- `agrojud-datajud-multitribunal-matrix merge --batch <batch-1.json> ... --output <matriz.json>` é offline. Valida schema, allowlist, endpoints, os dez estados S1/S2, os quatro pares S5, referências confinadas ao diretório do lote e coerência entre ambiente, confirmação dos termos e contagens. Evidência remota `VALIDATED` ou `INCOMPATIBLE` sem chamada real não é aceita. A matriz contém os 33 alvos, tentativas históricas, versão atual dos presets/catálogo/TPU e hashes dos relatórios-fonte. `VALIDATED` sobrevive a `INCONCLUSIVE`; incompatibilidades e divergências permanecem explícitas. Uma mudança de catálogo, preset ou TPU mantém a evidência S5 antiga como obsoleta e exige nova execução.
+- `agrojud-datajud-multitribunal-matrix review --matrix <matriz.json> --output <revisada.json> --reviewer <identificação> --decision APPROVED --rationale <justificativa>` gera um arquivo novo, sem alterar a matriz recebida; `--decision` também aceita `REJECTED`. Uma resolução opcional em JSON (`schema_version: 1`, `resolutions: [...]`) identifica `alias`, `target` (`s1_s2` ou `s5`), `capability` ou `preset_id`, `selected_run_id` e `rationale`; só aceita tentativa validada e atual para o mesmo alvo. A revisão registra SHA-256 dos bytes da entrada, pessoa revisora e data UTC. Aprovar uma matriz parcial não declara cobertura nacional.
+- O comando de probe retorna exit code `1` quando S1/S2 ou qualquer par S5 contém incompatibilidade; preflight bloqueado continua retornando `2`. Nenhum comando de merge/revisão consulta a API, banco de produto ou altera configuração de produção.
+- Testes com HTTPX MockTransport cobrem budgets, paginação, classificação S1/S2 e S5, sanitização, gates, isolamento, resultados parciais, matriz 33 × 4, merge de sete lotes, deduplicação, versões obsoletas, revisão e resolução. Nenhuma probe remota foi executada nesta entrega; não há evidência de compatibilidade para novo tribunal e o runtime permanece restrito ao TJGO.
+
+Exemplo de uso a partir de `backend/`, após guardar os sete resumos batch e seus relatórios no diretório `reports/`:
+
+```bash
+uv run --no-sync agrojud-datajud-multitribunal-matrix merge \
+  --batch 'reports/batch-<run-1>.json' \
+  --batch 'reports/batch-<run-2>.json' \
+  --batch 'reports/batch-<run-3>.json' \
+  --batch 'reports/batch-<run-4>.json' \
+  --batch 'reports/batch-<run-5>.json' \
+  --batch 'reports/batch-<run-6>.json' \
+  --batch 'reports/batch-<run-7>.json' \
+  --output reports/matriz-multitribunal.json
+
+uv run --no-sync agrojud-datajud-multitribunal-matrix review \
+  --matrix reports/matriz-multitribunal.json \
+  --output reports/matriz-multitribunal-revisada.json \
+  --reviewer "Nome da pessoa revisora" \
+  --decision APPROVED \
+  --rationale "Revisão local registrada."
+```
+
+Os nomes `batch-<run-n>.json` são placeholders; use os nomes reais, que incluem o UUID gravado pelo probe.
+
+Para resolver um conflito, acrescente `--resolutions resolucoes.json`. O arquivo usa `schema_version: 1` e uma lista `resolutions` com `alias`, `target`, `capability` (S1/S2) ou `preset_id` (S5), `selected_run_id` e `rationale`.
 
 Validação executada em PostgreSQL de teste isolado, sem conexão ao banco operacional:
 
 ```text
-COMPOSE_PROJECT_NAME=agrojud-spec024-20261011 TEST_DB_HOST_PORT=57624 DATAJUD_API_KEY= docker compose --project-name agrojud-spec024-20261011 --env-file .env.test -f compose.test.yaml --profile test run --rm --build tests sh -lc 'uv run --no-sync ruff check src tests && uv run --no-sync ruff format --check src tests && uv run --no-sync mypy src && uv run --no-sync pytest -q tests/test_datajud_multitribunal_validation.py'
-Ruff: aprovado; formatação: 103 arquivos aprovados; mypy: 73 módulos sem erros; testes SPEC-024: 42 passaram.
+COMPOSE_PROJECT_NAME=agrojud-spec024-20261011 TEST_DB_HOST_PORT=57624 DATAJUD_API_KEY= docker compose --project-name agrojud-spec024-20261011 --env-file .env.test -f compose.test.yaml --profile test run --rm --build --no-deps tests sh -lc 'uv run --no-sync ruff check src tests && uv run --no-sync ruff format --check src tests && uv run --no-sync mypy src && uv run --no-sync pytest -q tests/test_datajud_multitribunal_validation.py'
+Ruff: aprovado; formatação: 104 arquivos aprovados; mypy: 74 módulos sem erros; testes SPEC-024: 50 passaram.
 
 COMPOSE_PROJECT_NAME=agrojud-spec024-20261011 TEST_DB_HOST_PORT=57624 DATAJUD_API_KEY= docker compose --project-name agrojud-spec024-20261011 --env-file .env.test -f compose.test.yaml --profile test run --rm --no-deps tests sh -lc 'uv run --no-sync pytest'
-Suíte backend completa: 342 passaram; um aviso de depreciação de `starlette.testclient` com `httpx`.
+Suíte backend completa: 350 passaram; um aviso de depreciação de `starlette.testclient` com `httpx`.
 
 docker build -f backend/Dockerfile --target production -t agrojud-spec024-prod:local backend
 docker run --rm --entrypoint uv agrojud-spec024-prod:local run --no-sync agrojud-datajud-multitribunal-probe --help
-Build de produção e publicação/ajuda do CLI: aprovados.
+docker run --rm --entrypoint uv agrojud-spec024-prod:local run --no-sync agrojud-datajud-multitribunal-matrix --help
+Build de produção e publicação/ajuda dos dois CLIs: aprovados.
 ```
 
-Os critérios AC1–AC10 passaram pelos testes locais e verificações acima. AC11 foi verificado no contrato de saída e nos testes: cada matriz contém os 33 alvos e os quatro pares por preset, estados sem evidência permanecem `NOT_RUN`/`INCONCLUSIVE`, e `matrix_review` começa como `PENDING_HUMAN_REVIEW`; nenhuma cobertura nacional é declarada. A revisão humana da matriz de evidências externas só poderá ocorrer após a execução explícita dos lotes e não foi simulada como concluída.
+Os critérios AC1–AC10 passaram pelos testes locais e verificações acima. AC11–AC12 foram verificados pelo merge de sete lotes, tentativas versionadas, revisão com SHA-256 e resolução explícita de conflito. A matriz de saída continua `PENDING_HUMAN_REVIEW`; nenhum teste simulou compatibilidade DataJud real nem habilitou cobertura nacional ou endpoint no runtime. A revisão operacional da matriz de evidências externas depende de execuções autorizadas por lote.

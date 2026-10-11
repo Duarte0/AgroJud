@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import uuid
 from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
@@ -12,9 +14,17 @@ import httpx
 import pytest
 from pydantic import SecretStr
 
+import agrojud.sources.datajud_multitribunal_validation as multitribunal_module
 from agrojud.config import Settings
 from agrojud.sources.catalog import load_catalog
 from agrojud.sources.contracts import SourceError, SourceErrorCode
+from agrojud.sources.datajud_multitribunal_matrix import (
+    main as matrix_main,
+)
+from agrojud.sources.datajud_multitribunal_matrix import (
+    merge_batch_reports,
+    review_coverage_matrix,
+)
 from agrojud.sources.datajud_multitribunal_validation import (
     ALLOWLIST_VERSION,
     DATAJUD_BASE_URL,
@@ -33,6 +43,7 @@ from agrojud.sources.datajud_multitribunal_validation import (
     EvidenceState,
     ProbeQuery,
     TPUApplicability,
+    _write_batch_reports,
     applicability_template,
     build_probe_payload,
     current_discovery_presets,
@@ -1156,4 +1167,414 @@ def test_cli_real_environment_without_key_writes_zero_request_report(
     assert (
         "DATAJUD_API_KEY ausente"
         in report["s1_s2"]["capabilities"]["http_access"]["evidence"]["reason"]
+    )
+
+
+def _write_local_batch(directory: Path, aliases: list[str]) -> Path:
+    directory.mkdir(parents=True, exist_ok=True)
+    result = DataJudMultiTribunalProbe(
+        aliases,
+        filed_from=FILED_FROM,
+        filed_to=FILED_TO,
+        preflight_reason="Teste local sem chamadas HTTP.",
+        environment="real",
+    ).run()
+    _write_batch_reports(result, directory)
+    summary = cast(dict[str, object], result["summary"])
+    return directory / f"batch-{summary['run_id']}.json"
+
+
+def _mutate_endpoint_report(
+    batch_path: Path,
+    alias: str,
+    *,
+    capability_states: dict[str, str] | None = None,
+    pair_states: dict[str, str] | None = None,
+    stale_preset: str | None = None,
+) -> None:
+    batch = json.loads(batch_path.read_text(encoding="utf-8"))
+    reference = next(item for item in batch["tribunal_reports"] if item["alias"] == alias)
+    report_path = batch_path.parent / reference["file_key"]
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    recorded_requests = 0
+    for capability, state in (capability_states or {}).items():
+        report["s1_s2"]["capabilities"][capability]["state"] = state
+    if any(state in {"VALIDATED", "INCOMPATIBLE"} for state in (capability_states or {}).values()):
+        report["environment"] = "real"
+        report["terms_review"]["operator_confirmed_before_probe"] = True
+        report["s1_s2"]["requests"] = [{"name": "synthetic_validation", "outcome": "SUCCESS"}]
+        report["s1_s2"]["requests_made"] = 1
+        recorded_requests += 1
+    states = {item["state"] for item in report["s1_s2"]["capabilities"].values()}
+    if "INCOMPATIBLE" in states:
+        report["s1_s2"]["aggregate_state"] = "INCOMPATIBLE"
+    elif states == {"VALIDATED"}:
+        report["s1_s2"]["aggregate_state"] = "VALIDATED"
+    elif states == {"NOT_RUN"}:
+        report["s1_s2"]["aggregate_state"] = "NOT_RUN"
+    else:
+        report["s1_s2"]["aggregate_state"] = "INCONCLUSIVE"
+    for pair in report["s5_pairs"]:
+        state = (pair_states or {}).get(pair["preset_id"])
+        if state is not None:
+            pair["applicability"] = {
+                "state": "APPLICABLE",
+                "tpu_version": load_catalog().tpu_version,
+                "reference_url": TPU_REFERENCE_URL,
+                "rationale": "Aplicabilidade sintética de teste.",
+            }
+            if state == "VALIDATED":
+                query_state = sample_state = "VALIDATED"
+            elif state == "INCOMPATIBLE":
+                query_state, sample_state = "INCOMPATIBLE", "VALIDATED"
+            else:
+                query_state = sample_state = "INCONCLUSIVE"
+            pair["query_status"] = {"state": query_state, "evidence": {}}
+            pair["sample_status"] = {"state": sample_state, "evidence": {}}
+            pair["pair_state"] = state
+            if state in {"VALIDATED", "INCOMPATIBLE"}:
+                report["environment"] = "real"
+                report["terms_review"]["operator_confirmed_before_probe"] = True
+                pair["requests"] = [{"name": "synthetic_validation", "outcome": "SUCCESS"}]
+                pair["requests_made"] = 1
+                recorded_requests += 1
+        if pair["preset_id"] == stale_preset:
+            pair["preset_version"] = "retired-preset-version"
+    report["requests_made"] = recorded_requests
+    report_path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    batch["requests_made"] += recorded_requests
+    batch_path.write_text(
+        json.dumps(batch, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def test_matrix_merge_seven_batches_lists_33_by_four_without_claiming_coverage(
+    tmp_path: Path,
+) -> None:
+    aliases = list(TRIBUNAL_ALLOWLIST)
+    batch_paths = [
+        _write_local_batch(tmp_path / f"batch-{index}", aliases[index : index + 5])
+        for index in range(0, len(aliases), MAX_TRIBUNALS_PER_BATCH)
+    ]
+
+    matrix = merge_batch_reports(batch_paths)
+
+    rows = cast(list[dict[str, object]], matrix["coverage_matrix"])
+    assert len(batch_paths) == 7
+    assert len(rows) == len(TRIBUNAL_ALLOWLIST) == 33
+    assert sum(len(cast(dict[str, object], row["s5_pairs"])) for row in rows) == 132
+    assert all(
+        set(cast(dict[str, object], row["s1_s2_capabilities"]))
+        == {
+            "http_access",
+            "envelope",
+            "essential_fields",
+            "tribunal_identity",
+            "date_filter",
+            "query_by_case_number",
+            "source_identity",
+            "sort_timestamp",
+            "compound_sort",
+            "pagination",
+        }
+        for row in rows
+    )
+    tjgo = next(row for row in rows if row["alias"] == "tjgo")
+    assert (
+        cast(dict[str, object], tjgo["s1_s2_capabilities"])["http_access"]["state"]
+        == "INCONCLUSIVE"
+    )
+    assert matrix["matrix_review"] == {"state": "PENDING_HUMAN_REVIEW"}
+    assert matrix["coverage_status"] == "PENDING_HUMAN_REVIEW"
+    assert "NATIONAL_COVERAGE_VALIDATED" not in json.dumps(matrix)
+
+
+def test_matrix_merge_deduplicates_identical_run_and_rejects_divergent_run(
+    tmp_path: Path,
+) -> None:
+    original_dir = tmp_path / "original"
+    batch_path = _write_local_batch(original_dir, ["tjgo"])
+    merged = merge_batch_reports([batch_path, batch_path])
+    assert merged["batch_count"] == 1
+    assert len(merged["attempts"]) == 1
+
+    duplicate_dir = tmp_path / "duplicate"
+    duplicate_dir.mkdir()
+    divergent = json.loads(batch_path.read_text(encoding="utf-8"))
+    divergent["duration_ms"] = divergent.get("duration_ms", 0) + 1
+    duplicate_path = duplicate_dir / batch_path.name
+    duplicate_path.write_text(json.dumps(divergent), encoding="utf-8")
+    endpoint_report = next(original_dir.glob("tribunal-tjgo-*.json"))
+    (duplicate_dir / endpoint_report.name).write_bytes(endpoint_report.read_bytes())
+    with pytest.raises(ValueError, match="resumos batch divergentes"):
+        merge_batch_reports([batch_path, duplicate_path])
+
+
+def test_matrix_merge_rejects_allowlist_mismatch(tmp_path: Path) -> None:
+    batch_path = _write_local_batch(tmp_path / "batch", ["tjgo"])
+    batch = json.loads(batch_path.read_text(encoding="utf-8"))
+    batch["allowlist_version"] = "older-allowlist"
+    batch_path.write_text(json.dumps(batch), encoding="utf-8")
+    with pytest.raises(ValueError, match="allowlist divergente"):
+        merge_batch_reports([batch_path])
+
+
+def test_matrix_merge_does_not_accept_validation_without_real_gates(tmp_path: Path) -> None:
+    batch_path = _write_local_batch(tmp_path / "batch", ["tjgo"])
+    batch = json.loads(batch_path.read_text(encoding="utf-8"))
+    reference = batch["tribunal_reports"][0]
+    report_path = batch_path.parent / reference["file_key"]
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report["s1_s2"]["capabilities"]["http_access"]["state"] = "VALIDATED"
+    report["s1_s2"]["aggregate_state"] = "INCONCLUSIVE"
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="não prova chamada real autorizada"):
+        merge_batch_reports([batch_path])
+
+
+def test_matrix_cli_merges_and_writes_an_audited_review_copy(tmp_path: Path) -> None:
+    batch_path = _write_local_batch(tmp_path / "batch", ["tjgo"])
+    matrix_path = tmp_path / "merged.json"
+    assert matrix_main(["merge", "--batch", str(batch_path), "--output", str(matrix_path)]) == 0
+
+    reviewed_path = tmp_path / "reviewed.json"
+    assert (
+        matrix_main(
+            [
+                "review",
+                "--matrix",
+                str(matrix_path),
+                "--output",
+                str(reviewed_path),
+                "--reviewer",
+                "Revisora CLI",
+                "--decision",
+                "APPROVED",
+                "--rationale",
+                "Lote local parcial revisado.",
+            ]
+        )
+        == 0
+    )
+    merged = json.loads(matrix_path.read_text(encoding="utf-8"))
+    reviewed = json.loads(reviewed_path.read_text(encoding="utf-8"))
+    assert merged["matrix_review"]["state"] == "PENDING_HUMAN_REVIEW"
+    assert reviewed["matrix_review"]["decision"] == "APPROVED"
+    assert (
+        reviewed["matrix_review"]["matrix_sha256"]
+        == hashlib.sha256(matrix_path.read_bytes()).hexdigest()
+    )
+    assert reviewed["coverage_status"] == "APPROVED_PARTIAL"
+
+
+def test_matrix_merge_preserves_attempts_and_review_resolves_only_with_validated_run(
+    tmp_path: Path,
+) -> None:
+    first = _write_local_batch(tmp_path / "first", ["tjgo"])
+    second = _write_local_batch(tmp_path / "second", ["tjgo"])
+    _mutate_endpoint_report(
+        first,
+        "tjgo",
+        capability_states={"http_access": "VALIDATED", "tribunal_identity": "INCOMPATIBLE"},
+        pair_states={PRESET_IDS[0]: "INCOMPATIBLE"},
+    )
+    _mutate_endpoint_report(
+        second,
+        "tjgo",
+        capability_states={"http_access": "INCONCLUSIVE", "tribunal_identity": "VALIDATED"},
+        pair_states={PRESET_IDS[0]: "VALIDATED"},
+    )
+    matrix = merge_batch_reports([first, second])
+    rows = cast(list[dict[str, object]], matrix["coverage_matrix"])
+    tjgo = next(row for row in rows if row["alias"] == "tjgo")
+    capabilities = cast(dict[str, dict[str, object]], tjgo["s1_s2_capabilities"])
+    pairs = cast(dict[str, dict[str, object]], tjgo["s5_pairs"])
+    first_run_id = json.loads(first.read_text(encoding="utf-8"))["run_id"]
+    second_run_id = json.loads(second.read_text(encoding="utf-8"))["run_id"]
+    assert capabilities["http_access"]["state"] == "VALIDATED"
+    assert capabilities["tribunal_identity"]["state"] == "INCOMPATIBLE"
+    assert pairs[PRESET_IDS[0]]["pair_state"] == "INCOMPATIBLE"
+    assert len(capabilities["http_access"]["attempts"]) == 2
+    assert pairs[PRESET_IDS[0]]["attempt_count"] == 2
+
+    matrix_path = tmp_path / "matrix.json"
+    matrix_path.write_text(json.dumps(matrix, ensure_ascii=False, indent=2), encoding="utf-8")
+    bad_resolutions_path = tmp_path / "bad-resolutions.json"
+    bad_resolutions_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "resolutions": [
+                    {
+                        "alias": "tjgo",
+                        "target": "s1_s2",
+                        "capability": "tribunal_identity",
+                        "selected_run_id": first_run_id,
+                        "rationale": "Essa tentativa não foi validada.",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="não tem evidência VALIDATED atual"):
+        review_coverage_matrix(
+            matrix_path,
+            tmp_path / "bad-review.json",
+            reviewer="Revisora local",
+            decision="APPROVED",
+            rationale="Revisão de teste.",
+            resolutions_path=bad_resolutions_path,
+        )
+
+    resolutions_path = tmp_path / "resolutions.json"
+    resolutions_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "resolutions": [
+                    {
+                        "alias": "tjgo",
+                        "target": "s1_s2",
+                        "capability": "tribunal_identity",
+                        "selected_run_id": second_run_id,
+                        "rationale": "A evidência validada posterior foi revisada.",
+                    },
+                    {
+                        "alias": "tjgo",
+                        "target": "s5",
+                        "preset_id": PRESET_IDS[0],
+                        "selected_run_id": second_run_id,
+                        "rationale": "A evidência S5 validada foi revisada.",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    source_bytes = matrix_path.read_bytes()
+    reviewed_path = tmp_path / "reviewed.json"
+    reviewed = review_coverage_matrix(
+        matrix_path,
+        reviewed_path,
+        reviewer="Revisora local",
+        decision="APPROVED",
+        rationale="Matriz parcial revisada.",
+        resolutions_path=resolutions_path,
+    )
+    reviewed_rows = cast(list[dict[str, object]], reviewed["coverage_matrix"])
+    reviewed_tjgo = next(row for row in reviewed_rows if row["alias"] == "tjgo")
+    assert (
+        cast(dict[str, dict[str, object]], reviewed_tjgo["s1_s2_capabilities"])[
+            "tribunal_identity"
+        ]["state"]
+        == "VALIDATED"
+    )
+    assert (
+        cast(dict[str, dict[str, object]], reviewed_tjgo["s5_pairs"])[PRESET_IDS[0]]["pair_state"]
+        == "VALIDATED"
+    )
+    assert (
+        len(
+            cast(dict[str, dict[str, object]], reviewed_tjgo["s1_s2_capabilities"])[
+                "tribunal_identity"
+            ]["attempts"]
+        )
+        == 2
+    )
+    assert reviewed["coverage_status"] == "APPROVED_PARTIAL"
+    assert reviewed["matrix_review"]["matrix_sha256"] == hashlib.sha256(source_bytes).hexdigest()
+    assert matrix_path.read_bytes() == source_bytes
+
+
+def test_matrix_merge_marks_previous_preset_version_stale(tmp_path: Path) -> None:
+    batch_path = _write_local_batch(tmp_path / "batch", ["tjgo"])
+    _mutate_endpoint_report(
+        batch_path,
+        "tjgo",
+        pair_states={PRESET_IDS[0]: "VALIDATED"},
+        stale_preset=PRESET_IDS[0],
+    )
+    matrix = merge_batch_reports([batch_path])
+    tjgo = next(
+        row
+        for row in cast(list[dict[str, object]], matrix["coverage_matrix"])
+        if row["alias"] == "tjgo"
+    )
+    pair = cast(dict[str, dict[str, object]], tjgo["s5_pairs"])[PRESET_IDS[0]]
+    assert pair["pair_state"] == "NOT_RUN"
+    assert pair["current_attempt_count"] == 0
+    assert pair["attempts"][0]["current_for_coverage"] is False
+    assert "PRESET_VERSION_CHANGED" in pair["attempts"][0]["stale_reasons"]
+
+
+def test_probe_cli_returns_one_for_s5_incompatibility(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_id = str(uuid.uuid4())
+
+    class IncompatibleS5Probe:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+        def run(self, *, started_at: object) -> dict[str, object]:
+            del started_at
+            report = {
+                "alias": "tjgo",
+                "run_id": None,
+                "s1_s2": {
+                    "requests": [],
+                    "capabilities": {
+                        name: {"state": "VALIDATED"}
+                        for name in (
+                            "http_access",
+                            "envelope",
+                            "essential_fields",
+                            "tribunal_identity",
+                            "date_filter",
+                            "query_by_case_number",
+                            "source_identity",
+                            "sort_timestamp",
+                            "compound_sort",
+                            "pagination",
+                        )
+                    },
+                },
+                "s5_pairs": [
+                    {
+                        "pair_state": "INCOMPATIBLE",
+                        "query_status": {"state": "INCOMPATIBLE"},
+                        "sample_status": {"state": "VALIDATED"},
+                        "requests": [],
+                    }
+                ],
+            }
+            return {
+                "summary": {"run_id": run_id, "requests_made": 1},
+                "tribunal_reports": [report],
+            }
+
+    monkeypatch.setenv("AGROJUD_ENV", "real")
+    monkeypatch.setenv("DATABASE_URL", DATABASE_URL)
+    monkeypatch.setenv("DATAJUD_API_KEY", API_KEY)
+    monkeypatch.setattr(multitribunal_module, "DataJudMultiTribunalProbe", IncompatibleS5Probe)
+    assert (
+        main(
+            [
+                "tjgo",
+                "--from-date",
+                FILED_FROM.isoformat(),
+                "--to-date",
+                FILED_TO.isoformat(),
+                "--output-dir",
+                str(tmp_path / "s5-incompatible"),
+                "--confirm-terms-reviewed",
+            ]
+        )
+        == 1
     )

@@ -20,6 +20,7 @@ agrojud-persistence-probe = "agrojud.testing.persistence_probe:main"
 agrojud-datajud-probe = "agrojud.sources.datajud_validation:main"
 agrojud-catalog-probe = "agrojud.sources.catalog_validation:main"
 agrojud-datajud-multitribunal-probe = "agrojud.sources.datajud_multitribunal_validation:main"
+agrojud-datajud-multitribunal-matrix = "agrojud.sources.datajud_multitribunal_matrix:main"
 agrojud-quarantine-reprocess = "agrojud.services.quarantine_reprocessing:main"
 
 [dependency-groups]
