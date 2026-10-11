@@ -51,10 +51,219 @@ function savedSearchScheduleLabel(search: SavedSearch): string {
   return dispatch.job_id ? `Job ${dispatch.job_id}` : "Disparo enfileirado.";
 }
 
-function SavedSearchRow({ search }: { search: SavedSearch }) {
+function SavedSearchEditForm({
+  search,
+  presets,
+  onCancel,
+}: {
+  search: SavedSearch;
+  presets: Preset[];
+  onCancel: () => void;
+}) {
+  const patch = usePatchSavedSearch();
+  const prefix = "saved-search-" + search.id;
+  const [name, setName] = useState(search.name);
+  const [presetId, setPresetId] = useState(search.preset_id);
+  const [useDefaultWindow, setUseDefaultWindow] = useState(
+    search.window_mode === "rolling_12_months",
+  );
+  const suggested = defaultWindow();
+  const [filedFrom, setFiledFrom] = useState(
+    search.filters.filed_from ?? suggested.from,
+  );
+  const [filedThrough, setFiledThrough] = useState(
+    search.filters.filed_through ?? suggested.through,
+  );
+  const [hitBudget, setHitBudget] = useState(String(search.filters.hit_budget));
+  const [validation, setValidation] = useState<string | null>(null);
+  const [invalidField, setInvalidField] = useState<string | null>(null);
+
+  function failValidation(message: string, field: string) {
+    setValidation(message);
+    setInvalidField(field);
+    document.getElementById(prefix + "-" + field)?.focus();
+  }
+
+  function submit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedName = name.trim();
+    const budget = Number(hitBudget);
+    if (!normalizedName) {
+      failValidation("Informe um nome para a busca salva.", "name");
+      return;
+    }
+    if (!Number.isInteger(budget) || budget < 1 || budget > MAX_HIT_BUDGET) {
+      failValidation(
+        "O limite deve ser um número inteiro entre 1 e " + MAX_HIT_BUDGET + ".",
+        "hit-budget",
+      );
+      return;
+    }
+    if (!useDefaultWindow && (!filedFrom || !filedThrough || filedFrom > filedThrough)) {
+      failValidation(
+        "Informe uma janela válida: a data inicial deve ser anterior ou igual à final.",
+        "filed-from",
+      );
+      return;
+    }
+
+    setValidation(null);
+    setInvalidField(null);
+    patch.mutate(
+      {
+        id: search.id,
+        body: {
+          name: normalizedName,
+          preset_id: presetId,
+          window_mode: useDefaultWindow ? "rolling_12_months" : "fixed",
+          filters: {
+            page_size: search.filters.page_size,
+            hit_budget: budget,
+            ...(useDefaultWindow ? {} : { filed_from: filedFrom, filed_through: filedThrough }),
+          },
+        },
+      },
+      { onSuccess: onCancel },
+    );
+  }
+
+  return (
+    <form
+      className="space-y-4 rounded-md border bg-muted/20 p-4"
+      aria-labelledby={prefix + "-title"}
+      onSubmit={submit}
+    >
+      <div>
+        <h4 id={prefix + "-title"} className="font-medium">Editar busca salva</h4>
+        <p className="text-sm text-muted-foreground">
+          Salvar cria uma nova revisão; não inicia uma coleta.
+        </p>
+      </div>
+
+      <div className="space-y-1.5 sm:max-w-md">
+        <Label htmlFor={prefix + "-name"}>Nome da busca</Label>
+        <Input
+          id={prefix + "-name"}
+          value={name}
+          maxLength={160}
+          onChange={(event) => setName(event.target.value)}
+          aria-invalid={invalidField === "name"}
+          aria-describedby={validation ? prefix + "-validation" : undefined}
+          required
+        />
+      </div>
+
+      <fieldset className="space-y-3">
+        <legend className="mb-2 text-sm font-semibold">Preset temático</legend>
+        {presets.map((preset) => (
+          <PresetOption
+            key={preset.id}
+            preset={preset}
+            checked={presetId === preset.id}
+            groupName={prefix + "-preset"}
+            onSelect={() => setPresetId(preset.id)}
+          />
+        ))}
+        {!presets.some((preset) => preset.id === search.preset_id) ? (
+          <p className="text-xs text-warning-foreground" role="status">
+            O preset atual ({search.preset_id}, versão {search.preset_version}) não está no catálogo carregado.
+          </p>
+        ) : null}
+      </fieldset>
+
+      <fieldset className="space-y-3">
+        <legend className="mb-2 text-sm font-semibold">Janela de ajuizamento</legend>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={useDefaultWindow}
+            onChange={(event) => setUseDefaultWindow(event.target.checked)}
+            className="mt-0.5 size-4 accent-primary"
+          />
+          <span>
+            Usar a janela padrão: últimos {DEFAULT_WINDOW_MONTHS} meses, calculada pelo servidor no
+            fuso America/Sao_Paulo ao criar a coleta.
+          </span>
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor={prefix + "-filed-from"}>Ajuizados a partir de</Label>
+            <Input
+              id={prefix + "-filed-from"}
+              type="date"
+              value={filedFrom}
+              onChange={(event) => setFiledFrom(event.target.value)}
+              disabled={useDefaultWindow}
+              required={!useDefaultWindow}
+              aria-invalid={invalidField === "filed-from"}
+              aria-describedby={validation ? prefix + "-validation" : undefined}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={prefix + "-filed-through"}>Ajuizados até (inclusive)</Label>
+            <Input
+              id={prefix + "-filed-through"}
+              type="date"
+              value={filedThrough}
+              onChange={(event) => setFiledThrough(event.target.value)}
+              disabled={useDefaultWindow}
+              required={!useDefaultWindow}
+              aria-invalid={invalidField === "filed-through"}
+              aria-describedby={validation ? prefix + "-validation" : undefined}
+            />
+          </div>
+        </div>
+      </fieldset>
+
+      <div className="space-y-1.5 sm:max-w-xs">
+        <Label htmlFor={prefix + "-hit-budget"}>Limite de registros</Label>
+        <Input
+          id={prefix + "-hit-budget"}
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={MAX_HIT_BUDGET}
+          step={1}
+          value={hitBudget}
+          onChange={(event) => setHitBudget(event.target.value)}
+          aria-invalid={invalidField === "hit-budget"}
+          aria-describedby={validation ? prefix + "-validation" : prefix + "-hit-budget-help"}
+          required
+        />
+        <p id={prefix + "-hit-budget-help"} className="text-xs text-muted-foreground">
+          Máximo {MAX_HIT_BUDGET}; páginas de {search.filters.page_size}.
+        </p>
+      </div>
+
+      {validation ? (
+        <p id={prefix + "-validation"} role="alert" className="text-sm font-medium text-destructive">
+          {validation}
+        </p>
+      ) : null}
+      {patch.error ? (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>A busca não foi atualizada</AlertTitle>
+          <AlertDescription>{describeError(patch.error)}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={patch.isPending}>
+          {patch.isPending ? "Salvando…" : "Salvar alterações"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={patch.isPending}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function SavedSearchRow({ search, presets }: { search: SavedSearch; presets: Preset[] }) {
   const navigate = useNavigate();
   const patch = usePatchSavedSearch();
   const run = useRunSavedSearch();
+  const [editing, setEditing] = useState(false);
   const actionError = patch.error ?? run.error;
 
   return (
@@ -87,39 +296,60 @@ function SavedSearchRow({ search }: { search: SavedSearch }) {
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => patch.mutate({ id: search.id, body: { enabled: !search.enabled } })}
-            disabled={patch.isPending}
-          >
-            {search.enabled ? "Desativar" : "Ativar"}
-          </Button>
-          <Button
-            onClick={() =>
-              run.mutate(search.id, {
-                onSuccess: (created) =>
-                  void navigate(`/jobs/${created.job_id}`, {
-                    state: { created: true, reused: created.reused },
-                  }),
-              })
-            }
-            disabled={!search.availability.enabled || run.isPending}
-          >
-            {run.isPending ? "Enfileirando…" : "Executar agora"}
-          </Button>
+          {editing ? null : (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => patch.mutate({ id: search.id, body: { enabled: !search.enabled } })}
+                disabled={patch.isPending || run.isPending}
+              >
+                {search.enabled ? "Desativar" : "Ativar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  patch.reset();
+                  setEditing(true);
+                }}
+                disabled={patch.isPending || run.isPending}
+              >
+                Editar
+              </Button>
+              <Button
+                onClick={() =>
+                  run.mutate(search.id, {
+                    onSuccess: (created) =>
+                      void navigate(`/jobs/${created.job_id}`, {
+                        state: { created: true, reused: created.reused },
+                      }),
+                  })
+                }
+                disabled={!search.availability.enabled || run.isPending || patch.isPending}
+              >
+                {run.isPending ? "Enfileirando…" : "Executar agora"}
+              </Button>
+            </>
+          )}
         </div>
       </div>
-      {actionError ? (
+      {actionError && !editing ? (
         <Alert variant="destructive" role="alert">
           <AlertTitle>A ação não foi concluída</AlertTitle>
           <AlertDescription>{describeError(actionError)}</AlertDescription>
         </Alert>
       ) : null}
+      {editing ? (
+        <SavedSearchEditForm
+          search={search}
+          presets={presets}
+          onCancel={() => setEditing(false)}
+        />
+      ) : null}
     </li>
   );
 }
 
-function SavedSearchesPanel() {
+function SavedSearchesPanel({ presets }: { presets: Preset[] }) {
   const searches = useSavedSearches();
   return (
     <section className="pt-2" aria-labelledby="saved-searches-title">
@@ -145,7 +375,9 @@ function SavedSearchesPanel() {
         </EmptyState>
       ) : (
         <ul className="divide-y">
-          {searches.data.map((search) => <SavedSearchRow key={search.id} search={search} />)}
+          {searches.data.map((search) => (
+            <SavedSearchRow key={search.id} search={search} presets={presets} />
+          ))}
         </ul>
       )}
     </section>
@@ -155,10 +387,12 @@ function SavedSearchesPanel() {
 function PresetOption({
   preset,
   checked,
+  groupName,
   onSelect,
 }: {
   preset: Preset;
   checked: boolean;
+  groupName: string;
   onSelect: () => void;
 }) {
   const id = useId();
@@ -177,7 +411,7 @@ function PresetOption({
         <input
           id={id}
           type="radio"
-          name="preset"
+          name={groupName}
           value={preset.id}
           checked={checked}
           disabled={!enabled}
@@ -345,6 +579,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
             key={preset.id}
             preset={preset}
             checked={selected?.id === preset.id}
+            groupName="radar-presets"
             onSelect={() => selectPreset(preset.id)}
           />
         ))}
@@ -543,7 +778,7 @@ export function RadarPage() {
       <TabsContent value="new" forceMount>
         {presets.isPending ? <LoadingState label="Carregando presets…" variant="detail" /> : presets.data ? <><StaleNotice query={presets} /><CollectionForm presets={presets.data.items} /></> : <ErrorState title="Não foi possível carregar os presets" error={presets.error} onRetry={() => void presets.refetch()} retrying={presets.isFetching} />}
       </TabsContent>
-      <TabsContent value="saved"><Card><CardContent><SavedSearchesPanel /></CardContent></Card></TabsContent>
+      <TabsContent value="saved"><Card><CardContent><SavedSearchesPanel presets={presets.data?.items ?? []} /></CardContent></Card></TabsContent>
     </Tabs>
   </>;
 }

@@ -17,7 +17,7 @@ Persistir buscas salvas e executar uma atualização diária por alvo, sem dispa
 M8 fecha automação sobre jobs, acompanhamento e baseline já demonstrados.
 
 ## Escopo
-Busca salva, agenda, disparos e seleção de trabalho; controles mínimos de ativação na UI.
+Busca salva, agenda, disparos e seleção de trabalho; controles de ativação e edição de critérios na UI.
 
 ## Requisitos técnicos e contratos
 - Saved search: nome, preset/versão, filtros, intervalo fixed ou rolling_12_months, enabled e timestamps. Criar a partir do radar; alterar cria nova versão.
@@ -45,6 +45,7 @@ Busca salva mantém versão do preset; atualização de catálogo não muda sile
 - [x] AC3: manual/agendado equivalentes convergem em um job (`test_manual_and_scheduled_saved_search_runs_reuse_one_active_job`, `test_watch_enable_waits_for_daily_time_and_schedule_reuses_manual_refresh`).
 - [x] AC4: janela rolling muda em nova coleta e não em retomada (`test_rolling_window_uses_calendar_months_and_new_runs_freeze_their_dates`).
 - [x] AC5: alternância não deixa descoberta indefinidamente atrás de refreshes (`test_worker_claims_refresh_and_discovery_in_alternating_persisted_turns`).
+- [x] AC6: o Radar edita nome e critérios inline, cria nova revisão sem disparar coleta e mantém ativação e execução manual independentes (`edita os critérios da busca salva e preserva o controle de execução`, `mantém a edição aberta e os valores quando o PATCH falha`).
 
 ## Testes necessários
 - [x] Relógio fixo: antes, exatamente às e depois das 06h; virada de ano e fevereiro bissexto (`test_next_daily_occurrence_respects_local_six_and_calendar_rollover`, `test_scheduled_instant_supports_february_leap_day`, `test_rolling_window_uses_calendar_months_and_new_runs_freeze_their_dates`).
@@ -53,6 +54,7 @@ Busca salva mantém versão do preset; atualização de catálogo não muda sile
 - [x] Fila mista e alternância persistida (`test_worker_claims_refresh_and_discovery_in_alternating_persisted_turns`).
 - [x] Edição/desativação com execução em andamento (`test_changed_criteria_wait_for_existing_target_job_then_dispatch_once`, `test_disabling_search_cancels_pending_dispatch_without_stopping_active_job`).
 - [x] Playwright para salvar e habilitar busca (`frontend/e2e/saved-searches.spec.ts`).
+- [x] Playwright para editar nome, preset, período e limite; cancelar sem persistir; validar datas; e manter a edição diante de falha do `PATCH` (`frontend/e2e/saved-searches.spec.ts`).
 
 ## Erros e edge cases
 Agendamento não roda enquanto máquina está desligada. Hora ambígua por mudança de timezone usa biblioteca zoneinfo e chave por data local, com uma execução por data. Banco indisponível não consome disparo.
@@ -63,8 +65,10 @@ Cron configurável pelo usuário, múltiplos horários, scheduler distribuído e
 ## Evidência e conclusão
 - Migration `20261009_0010` adiciona buscas com revisões imutáveis, dispatches idempotentes por alvo/data local, estado persistente da fila e próxima execução UTC para buscas e acompanhamentos ativos. A atualização agenda acompanhamentos já ativos para a próxima ocorrência, sem executar imediatamente.
 - API `POST/GET/PATCH /api/v1/saved-searches` e `POST /api/v1/saved-searches/{id}/run` preserva versões anteriores, permite desativação sem apagar coletas e oferece execução manual explícita. O radar permite salvar filtros, ativar/desativar e executar; a lista de acompanhamentos mostra próxima execução e intervalos agregados.
+- Extensão de edição no Radar: formulário inline preenchido com o estado atual permite alterar nome, preset, janela e limite pela API `PATCH`. O salvamento cria uma revisão imutável, preserva o estado da agenda e não inicia coleta; erros mantêm o formulário aberto e os valores digitados. Ativação e execução manual permanecem ações separadas.
 - O worker avalia agendas a cada 30 segundos, fora de chamadas HTTP. Reserva, registro de dispatch, enqueue e avanço do próximo horário usam a mesma transação. Recuperação agrega dias vencidos por alvo; alteração de critérios durante job ativo mantém um dispatch pendente, sem substituir a consulta em curso. Cancelar o alvo não interrompe job ativo.
 - As revisões registram versão e snapshot do catálogo. Janela rolling resolve 12 meses de calendário na criação da coleta e a retomada reutiliza o intervalo persistido. Em modo real, a disponibilidade informa o gate S1/S2 e não enfileira consulta DataJud.
 - Validação local: `docker compose --env-file .env.test -f compose.yaml -f compose.test.yaml --profile test run --rm tests` aprovou 261 testes backend. Ruff (`ruff check src tests`, `ruff format --check src tests`) e mypy (`mypy src`, 66 módulos) passaram no container de desenvolvimento. No frontend, `npm run lint`, `npm run typecheck`, `npm test` (49 testes) e `npm run build` passaram. `./scripts/e2e.sh` aprovou 13 cenários; a exportação OpenAPI atual e os tipos gerados foram comparados aos artefatos versionados. A migration foi aplicada em PostgreSQL isolado durante testes e E2E.
 - Os critérios AC1–AC5 estão cobertos pelos testes nomeados acima; o fluxo de salvar/ativar também foi verificado no navegador. A validação usa fonte sintética e não aprova filtros nem respostas reais do DataJud/TJGO. S1/S2/S5 permanecem gates externos; SPEC-018/019 continuam fora desta entrega.
+- A extensão AC6 foi validada com 23 cenários Playwright, 60 testes frontend, lint, typecheck, build e 10 testes backend de buscas salvas. Os novos cenários cobrem edição, cancelamento, validação de datas e falha simulada do `PATCH`. Não houve alteração do OpenAPI nem migration; a validação usa a stack E2E sintética e não altera os gates de fonte real.
 

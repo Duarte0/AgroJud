@@ -402,7 +402,7 @@ SPEC-005 e SPEC-006 completam M2. Os critérios de persistência local foram val
 
 1. [x] Lista de acompanhados e atualização manual por número — SPEC-015 concluída localmente em 09/10/2026; estado, histórico e resultados de consulta persistidos, com update por processo acompanhado e UI validada.
 2. [x] Referência histórica e caixa de novidades — SPEC-016 concluída localmente em 09/10/2026; baseline completa/pendente por representação, novidades com revisão persistida e replay/reprocessamento idempotentes.
-3. [x] Agendamento persistente — SPEC-017 concluída localmente em 09/10/2026; busca versionada, execução manual, recuperação diária por alvo, acompanhamentos agendados e alternância justa da fila validados.
+3. [x] Agendamento persistente — SPEC-017 concluída localmente em 09/10/2026; busca versionada e editável inline, execução manual, recuperação diária por alvo, acompanhamentos agendados e alternância justa da fila validados.
 
 M8 está concluído localmente. A automação usa dados sintéticos; os gates de fonte real S5/S1/S2 permanecem externos.
 
@@ -427,6 +427,8 @@ M8 está concluído localmente. A automação usa dados sintéticos; os gates de
 - Reinício não cria uma execução por dia perdido.
 
 **Demonstração:** SPEC-015 comprovou inclusão, atualização por número, resultado da consulta e remoção na stack demo isolada. SPEC-016 comprovou baseline pendente após resposta parcial, incorporação silenciosa da primeira versão completa, uma novidade por nova representação, distinção entre data do evento e primeira observação, revisão/reabertura, idempotência em replay/reprocessamento/reinclusão e rollback por falha/perda de posse. SPEC-017 comprovou revisões append-only, recuperação agregada com um dispatch por alvo, deduplicação de execução manual/agendada, adiamento após alteração durante job ativo, janela rolling congelada por coleta, gate para DataJud real e alternância persistida entre refresh e discovery. Migration 0010 e testes de aceitação passaram em PostgreSQL isolado; a validação desta entrega registrou 261 testes backend, 49 frontend, lint, typecheck, mypy, build e 13 cenários Playwright aprovados. A fonte permanece sintética e não valida filtros nem respostas reais do DataJud/TJGO.
+
+Extensão de edição de buscas salvas: o Radar permite ajustar nome, preset, janela e limite na própria linha. Cada alteração cria nova revisão imutável; ativação, agenda e execução manual permanecem independentes. A extensão passou em 23 cenários Playwright, 60 testes frontend, lint, typecheck, build e 10 testes backend de buscas salvas, sem mudar OpenAPI ou schema do banco. A validação continua sintética.
 
 ### M9 — Indicadores, CSV e aceite do MVP
 
