@@ -155,4 +155,36 @@ describe("OverviewPage", () => {
       "/processes?decision=pending&subject_code=4968&subject_name_exact=Cr%C3%A9dito+rural",
     );
   });
+
+  it("keeps all expanded themes in an accessible bounded scroll area", async () => {
+    const themes = Array.from({ length: 609 }, (_, index) => ({
+      subject_code: String(10_000 + index),
+      subject_name: `Tema ${index + 1}`,
+      processes: { value: index + 1, unit: "processes" },
+    }));
+    mockApi({
+      "GET /api/v1/overview": () => json(overview({ themes })),
+    });
+    renderRoute(<OverviewPage />, { path: "/", url: "/" });
+
+    await userEvent.click(await screen.findByRole("button", { name: "Ver todos os 609 temas" }));
+
+    const list = screen.getByRole("region", { name: "Lista de temas da base" });
+    expect(list).toHaveAttribute("tabindex", "0");
+    expect(list).toHaveClass("max-h-[min(70vh,48rem)]");
+    expect(list.querySelectorAll("tbody tr")).toHaveLength(609);
+
+    const collapse = screen.getByRole("button", { name: "Mostrar menos temas" });
+    expect(collapse).toHaveAttribute("aria-expanded", "true");
+    expect(list).not.toContainElement(collapse);
+    await userEvent.click(collapse);
+
+    expect(screen.queryByRole("region", { name: "Lista de temas da base" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ver todos os 609 temas" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    const themesCard = screen.getByRole("heading", { name: "Temas da base" }).closest("[data-slot=card]");
+    expect(themesCard?.querySelectorAll("[data-slot=table-body] tr")).toHaveLength(10);
+  });
 });

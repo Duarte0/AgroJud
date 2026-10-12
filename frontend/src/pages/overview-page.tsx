@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, LoadingState, StaleNotice } from "@/components/query-feedback";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -259,6 +260,40 @@ function CurrentSignals({ overview }: { overview: Overview }) {
 
 function Themes({ overview }: { overview: Overview }) {
   const [expanded, setExpanded] = useState(false);
+  const themesTable = (
+    <Table>
+      <TableCaption className="sr-only">Processos distintos por tema atual das representações</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Tema</TableHead>
+          <TableHead className="text-right">Processos</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {(expanded ? overview.themes : overview.themes.slice(0, 10)).map((theme) => {
+          const name = theme.subject_name ?? "Tema sem nome";
+          const href = processListHref(overview.filters, {
+            subject_code: theme.subject_code ?? undefined,
+            subject_name_exact: theme.subject_name ?? undefined,
+          });
+          return (
+            <TableRow key={`${theme.subject_code ?? ""}:${theme.subject_name ?? ""}`}>
+              <TableCell>
+                <Link to={href} className="font-medium text-primary underline-offset-4 hover:underline">
+                  {name}
+                </Link>
+                {theme.subject_code ? (
+                  <div className="text-xs text-muted-foreground">Código {theme.subject_code}</div>
+                ) : null}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">{metricLabel(theme.processes)}</TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -270,40 +305,21 @@ function Themes({ overview }: { overview: Overview }) {
       <CardContent>
         {overview.themes.length === 0 ? (
           <EmptyState title="Nenhum tema informado nas representações locais" />
+        ) : expanded ? (
+          <ScrollArea label="Lista de temas da base">{themesTable}</ScrollArea>
         ) : (
-          <Table>
-            <TableCaption className="sr-only">Processos distintos por tema atual das representações</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tema</TableHead>
-                <TableHead className="text-right">Processos</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(expanded ? overview.themes : overview.themes.slice(0, 10)).map((theme) => {
-                const name = theme.subject_name ?? "Tema sem nome";
-                const href = processListHref(overview.filters, {
-                  subject_code: theme.subject_code ?? undefined,
-                  subject_name_exact: theme.subject_name ?? undefined,
-                });
-                return (
-                  <TableRow key={`${theme.subject_code ?? ""}:${theme.subject_name ?? ""}`}>
-                    <TableCell>
-                      <Link to={href} className="font-medium text-primary underline-offset-4 hover:underline">
-                        {name}
-                      </Link>
-                      {theme.subject_code ? (
-                        <div className="text-xs text-muted-foreground">Código {theme.subject_code}</div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{metricLabel(theme.processes)}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          themesTable
         )}
-        {overview.themes.length > 10 ? <Button variant="ghost" className="mt-3" onClick={() => setExpanded(!expanded)} aria-expanded={expanded}>{expanded ? "Mostrar menos temas" : `Ver todos os ${overview.themes.length} temas`}</Button> : null}
+        {overview.themes.length > 10 ? (
+          <Button
+            variant="ghost"
+            className="mt-3"
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+          >
+            {expanded ? "Mostrar menos temas" : `Ver todos os ${overview.themes.length} temas`}
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );
