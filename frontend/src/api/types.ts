@@ -12,6 +12,12 @@ export type SavedSearchCreate = Schemas["SavedSearchCreateRequest"];
 export type SavedSearchPatch = Schemas["SavedSearchPatchRequest"];
 export type DiscoveryCriteria = Schemas["DiscoveryCriteria"];
 export type CreateJobRequest = Schemas["DiscoveryJobRequest"] | Schemas["RefreshNumberJobRequest"];
+export type CreateJobGroupRequest =
+  | Schemas["DiscoveryJobGroupRequest"]
+  | Schemas["RefreshNumberJobGroupRequest"];
+export type ExecutionGroup = Schemas["ExecutionGroupResponse"];
+export type ExecutionGroupMember = Schemas["ExecutionGroupMemberResponse"];
+export type TribunalAvailability = Schemas["TribunalAvailabilityResponse"];
 export type JobCreated = Schemas["JobCreatedResponse"];
 export type JobCommandResult = Schemas["JobCommandResponse"];
 export type JobSummary = Schemas["JobSummaryResponse"];

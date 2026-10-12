@@ -9,7 +9,9 @@ import {
 import { api, request, shouldRetryRead } from "@/api/client";
 import type {
   CreateJobRequest,
+  CreateJobGroupRequest,
   EnvironmentName,
+  ExecutionGroup,
   JobCommand,
   JobCommandResult,
   JobListQuery,
@@ -49,6 +51,9 @@ export const queryKeys = {
   jobs: (env: EnvironmentName) => [env, "jobs"] as const,
   jobList: (env: EnvironmentName, query: JobListQuery) => [env, "jobs", "list", query] as const,
   job: (env: EnvironmentName, id: string) => [env, "jobs", "detail", id] as const,
+  jobGroup: (env: EnvironmentName, id: string) => [env, "job-groups", id] as const,
+  tribunalAvailability: (env: EnvironmentName, presetId?: string) =>
+    [env, "tribunal-availability", presetId ?? null] as const,
   processes: (env: EnvironmentName) => [env, "processes"] as const,
   processList: (env: EnvironmentName, query: ProcessListQuery) =>
     [env, "processes", "list", query] as const,
@@ -89,6 +94,79 @@ export function usePresets() {
     queryKey: queryKeys.presets(environment),
     queryFn: ({ signal }) => request(() => api.GET("/api/v1/presets", { signal })),
     staleTime: 60_000,
+  });
+}
+
+export function useTribunalAvailability(presetId?: string, enabled = true) {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.tribunalAvailability(environment, presetId),
+    queryFn: ({ signal }) =>
+      request(() =>
+        api.GET("/api/v1/tribunal-availability", {
+          params: { query: presetId ? { preset_id: presetId } : {} },
+          signal,
+        }),
+      ),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
+export function useJobGroup(groupId: string) {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.jobGroup(environment, groupId),
+    queryFn: ({ signal }) =>
+      request(() =>
+        api.GET("/api/v1/job-groups/{group_id}", {
+          params: { path: { group_id: groupId } },
+          signal,
+        }),
+      ),
+    refetchInterval: (current) => {
+      const state = current.state.data?.state;
+      return state === "queued" || state === "running" ? 3_000 : false;
+    },
+  });
+}
+
+export function useCreateJobGroup() {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateJobGroupRequest) =>
+      request(() => api.POST("/api/v1/job-groups", { body })),
+    onSuccess: async (group) => {
+      client.setQueryData<ExecutionGroup>(queryKeys.jobGroup(environment, group.id), group);
+      await Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.jobs(environment) }),
+        client.invalidateQueries({ queryKey: queryKeys.processes(environment) }),
+        client.invalidateQueries({ queryKey: queryKeys.watchlist(environment) }),
+        client.invalidateQueries({ queryKey: queryKeys.savedSearches(environment) }),
+      ]);
+    },
+  });
+}
+
+export function useCancelJobGroup(groupId: string) {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      request(() =>
+        api.POST("/api/v1/job-groups/{group_id}/cancel", {
+          params: { path: { group_id: groupId } },
+        }),
+      ),
+    onSuccess: (group) => {
+      client.setQueryData<ExecutionGroup>(queryKeys.jobGroup(environment, groupId), group);
+      return Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.jobs(environment) }),
+        client.invalidateQueries({ queryKey: queryKeys.watchlist(environment) }),
+        client.invalidateQueries({ queryKey: queryKeys.savedSearches(environment) }),
+      ]);
+    },
   });
 }
 

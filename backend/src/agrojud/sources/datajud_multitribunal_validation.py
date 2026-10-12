@@ -37,10 +37,20 @@ from agrojud.sources.contracts import (
     parse_source_page,
 )
 from agrojud.sources.datajud_validation import sanitize_payload, write_report
+from agrojud.sources.tribunals import (
+    ALLOWLIST_VERSION as ALLOWLIST_VERSION,
+)
+from agrojud.sources.tribunals import (
+    DATAJUD_BASE_URL as DATAJUD_BASE_URL,
+)
+from agrojud.sources.tribunals import (
+    TRIBUNAL_ALLOWLIST as TRIBUNAL_ALLOWLIST,
+)
+from agrojud.sources.tribunals import (
+    TribunalEndpoint,
+)
 
-ALLOWLIST_VERSION = "2026-10-11"
 CODE_VERSION = "1.0.0"
-DATAJUD_BASE_URL = "https://api-publica.datajud.cnj.jus.br"
 ENDPOINT_CATALOG_URL = "https://datajud-wiki.cnj.jus.br/api-publica/endpoints/"
 TPU_REFERENCE_URL = "https://www.cnj.jus.br/tabela-processuais-unificadas/"
 TERMS_REVIEW_REFERENCE_URLS = (
@@ -76,69 +86,6 @@ _CAPABILITY_NAMES = (
     "compound_sort",
     "pagination",
 )
-
-
-@dataclass(frozen=True, slots=True)
-class TribunalEndpoint:
-    """One DataJud alias published by the official endpoint catalog."""
-
-    alias: str
-    canonical_tribunal: str
-    justice: str
-    endpoint_url: str
-
-
-def _make_allowlist() -> Mapping[str, TribunalEndpoint]:
-    """Build the dated 33-entry allowlist using the official catalog URL pattern."""
-
-    aliases = (
-        "tjac",
-        "tjal",
-        "tjam",
-        "tjap",
-        "tjba",
-        "tjce",
-        "tjdft",
-        "tjes",
-        "tjgo",
-        "tjma",
-        "tjmg",
-        "tjms",
-        "tjmt",
-        "tjpa",
-        "tjpb",
-        "tjpe",
-        "tjpi",
-        "tjpr",
-        "tjrj",
-        "tjrn",
-        "tjro",
-        "tjrr",
-        "tjrs",
-        "tjsc",
-        "tjse",
-        "tjsp",
-        "tjto",
-        "trf1",
-        "trf2",
-        "trf3",
-        "trf4",
-        "trf5",
-        "trf6",
-    )
-    endpoints: dict[str, TribunalEndpoint] = {}
-    for alias in aliases:
-        justice = "TRF" if alias.startswith("trf") else "TJDFT" if alias == "tjdft" else "TJ"
-        endpoints[alias] = TribunalEndpoint(
-            alias=alias,
-            canonical_tribunal=alias.upper(),
-            justice=justice,
-            endpoint_url=f"{DATAJUD_BASE_URL}/api_publica_{alias}/_search",
-        )
-    return endpoints
-
-
-TRIBUNAL_ALLOWLIST = _make_allowlist()
 
 
 class EvidenceState(str):

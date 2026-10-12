@@ -11,6 +11,8 @@ from math import isfinite
 from types import MappingProxyType
 from typing import Literal, Protocol
 
+from agrojud.sources.tribunals import canonicalize_tribunal
+
 type JSONScalar = str | int | float | bool | None
 type JSONValue = JSONScalar | list[JSONValue] | dict[str, JSONValue]
 type Cursor = tuple[JSONScalar, ...]
@@ -81,7 +83,7 @@ _CNJ_FORMATTED = re.compile(r"^\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}$")
 
 @dataclass(frozen=True, slots=True)
 class SourceQuery:
-    """Immutable, allowlisted query snapshot for the TJGO source."""
+    """Immutable, allowlisted query snapshot for one DataJud tribunal."""
 
     tribunal: str = "TJGO"
     filed_from: date | None = None
@@ -96,11 +98,16 @@ class SourceQuery:
     sort: tuple[SortTerm, ...] = DEFAULT_SORT
 
     def __post_init__(self) -> None:
-        if self.tribunal != "TJGO":
+        try:
+            tribunal = canonicalize_tribunal(self.tribunal)
+        except ValueError:
             raise SourceError(
                 SourceErrorCode.VALIDATION,
-                "Esta consulta aceita somente o tribunal TJGO.",
-            )
+                "A consulta informa um tribunal fora da allowlist do DataJud.",
+                field_path="tribunal",
+                validation_code="TRIBUNAL_NOT_ALLOWLISTED",
+            ) from None
+        object.__setattr__(self, "tribunal", tribunal)
 
         object.__setattr__(self, "class_codes", _normalize_codes(self.class_codes, "classe"))
         object.__setattr__(self, "subject_codes", _normalize_codes(self.subject_codes, "assunto"))
@@ -206,7 +213,7 @@ class NormalizedSourceCover:
 
     source_id: str
     process_number: str
-    tribunal: Literal["TJGO"]
+    tribunal: str
     raw_source: Mapping[str, JSONValue]
 
 
@@ -230,8 +237,8 @@ class SourceAdapter(Protocol):
         """Fetch one page for an exact, locally validated CNJ number."""
 
 
-def build_query_by_case_number(value: str) -> SourceQuery:
-    """Build an exact TJGO query from a formatted or unformatted CNJ number."""
+def build_query_by_case_number(value: str, *, tribunal: str = "TJGO") -> SourceQuery:
+    """Build an exact query from a formatted or unformatted CNJ number."""
 
     if not isinstance(value, str):
         raise SourceError(SourceErrorCode.VALIDATION, "O número CNJ deve ser texto.")
@@ -244,7 +251,7 @@ def build_query_by_case_number(value: str) -> SourceQuery:
             SourceErrorCode.VALIDATION,
             "O número CNJ deve ter 20 dígitos ou usar a formatação oficial.",
         )
-    return SourceQuery(process_number=digits)
+    return SourceQuery(process_number=digits, tribunal=tribunal)
 
 
 def validate_fetch_arguments(
@@ -298,7 +305,7 @@ def build_datajud_payload(
     """Compile the allowlisted query model into the DataJud request body."""
 
     normalized_cursor = validate_fetch_arguments(query, cursor, page_size)
-    filters: list[dict[str, object]] = [{"match": {"tribunal": "TJGO"}}]
+    filters: list[dict[str, object]] = [{"match": {"tribunal": query.tribunal}}]
 
     if query.process_number is not None:
         filters.append({"match": {"numeroProcesso": query.process_number}})
@@ -399,8 +406,22 @@ def parse_source_page(payload: object, responded_at: datetime) -> SourcePage:
     )
 
 
-def normalize_source_cover(hit: SourceHit) -> NormalizedSourceCover:
-    """Normalize only the fields required to identify a TJGO source cover."""
+def normalize_source_cover(
+    hit: SourceHit,
+    *,
+    expected_tribunal: str = "TJGO",
+) -> NormalizedSourceCover:
+    """Normalize source identity and require the response to match its job tribunal."""
+
+    try:
+        canonical_tribunal = canonicalize_tribunal(expected_tribunal)
+    except ValueError:
+        raise SourceError(
+            SourceErrorCode.CONTRACT,
+            "O job contém um tribunal fora da allowlist do DataJud.",
+            field_path="tribunal",
+            validation_code="TRIBUNAL_NOT_ALLOWLISTED",
+        ) from None
 
     source = hit.source
     if not isinstance(source, Mapping):
@@ -442,10 +463,10 @@ def normalize_source_cover(hit: SourceHit) -> NormalizedSourceCover:
             field_path="_source.numeroProcesso",
             validation_code="CNJ_INVALID",
         )
-    if source.get("tribunal") != "TJGO":
+    if source.get("tribunal") != canonical_tribunal:
         raise SourceError(
             SourceErrorCode.VALIDATION,
-            "A capa não pertence ao tribunal TJGO.",
+            "A capa não pertence ao tribunal solicitado.",
             field_path="_source.tribunal",
             validation_code="TRIBUNAL_INVALID",
         )
@@ -456,7 +477,7 @@ def normalize_source_cover(hit: SourceHit) -> NormalizedSourceCover:
     return NormalizedSourceCover(
         source_id=source_id,
         process_number=process_number,
-        tribunal="TJGO",
+        tribunal=canonical_tribunal,
         raw_source=MappingProxyType(raw_source),
     )
 

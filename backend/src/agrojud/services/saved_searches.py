@@ -16,6 +16,7 @@ from agrojud.services.jobs import EnqueueRequest, EnqueueResult, JobService
 from agrojud.services.schedule_time import next_daily_occurrence
 from agrojud.sources.catalog import compile_preset
 from agrojud.sources.contracts import SourceError, SourceErrorCode
+from agrojud.sources.tribunals import canonicalize_tribunal
 
 type WindowMode = Literal["fixed", "rolling_12_months"]
 type SearchMode = Literal["demo", "real"]
@@ -146,12 +147,20 @@ class SavedSearchService:
             raise SavedSearchNotFoundError("A busca salva não existe.")
         revision = _current_revision(session, search)
         now = _database_now(session)
+        selected = _normalized_filter_dict(revision.filters)["tribunals"]
+        if len(selected) != 1:
+            raise SourceError(
+                SourceErrorCode.CONTRACT,
+                "Esta revisão exige execução por grupo multitribunal.",
+                validation_code="EXECUTION_GROUP_REQUIRED",
+            )
         request = request_for_revision(
             revision,
             search_id=search.id,
             mode=mode,
             source=source,
             reference_time=now,
+            tribunal=selected[0],
         )
         return self.jobs.enqueue_in_session(session, request)
 
@@ -167,10 +176,12 @@ def request_for_revision(
     mode: SearchMode,
     source: str,
     reference_time: datetime,
+    tribunal: str | None = None,
 ) -> EnqueueRequest:
     """Resolve a pinned preset revision into one bounded collection request."""
 
     filters = _normalized_filter_dict(revision.filters)
+    selected_tribunal = tribunal or filters["tribunals"][0]
     filed_from = _optional_date(filters["filed_from"])
     filed_through = _optional_date(filters["filed_through"])
     if revision.window_mode == "fixed":
@@ -185,6 +196,7 @@ def request_for_revision(
     compiled = compile_preset(
         revision.preset_id,
         environment=mode,
+        tribunal=selected_tribunal,
         reference_time=reference_time,
         filed_from=filed_from,
         filed_through_inclusive=filed_through,
@@ -310,7 +322,40 @@ def _normalized_filter_dict(value: dict[str, Any]) -> dict[str, Any]:
         raise SourceError(SourceErrorCode.VALIDATION, "A data inicial salva é inválida.")
     if filed_through is not None and not isinstance(filed_through, str):
         raise SourceError(SourceErrorCode.VALIDATION, "A data final salva é inválida.")
+    raw_tribunals = value.get("tribunals", ["TJGO"])
+    if (
+        not isinstance(raw_tribunals, list)
+        or not raw_tribunals
+        or len(raw_tribunals) > 33
+        or any(not isinstance(item, str) for item in raw_tribunals)
+    ):
+        raise SourceError(
+            SourceErrorCode.VALIDATION,
+            "A lista de tribunais da busca salva é inválida.",
+            field_path="filters.tribunals",
+            validation_code="TRIBUNALS_INVALID",
+        )
+    tribunals: list[str] = []
+    for raw_tribunal in raw_tribunals:
+        try:
+            tribunal = canonicalize_tribunal(raw_tribunal)
+        except ValueError:
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "A busca salva contém tribunal fora da allowlist versionada.",
+                field_path="filters.tribunals",
+                validation_code="TRIBUNAL_NOT_ALLOWLISTED",
+            ) from None
+        if tribunal in tribunals:
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "A busca salva não pode repetir tribunais.",
+                field_path="filters.tribunals",
+                validation_code="TRIBUNAL_DUPLICATE",
+            )
+        tribunals.append(tribunal)
     return {
+        "tribunals": tribunals,
         "filed_from": filed_from,
         "filed_through": filed_through,
         "page_size": int(value.get("page_size", 100)),

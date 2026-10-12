@@ -68,7 +68,11 @@ export async function downloadProcessCsv(
 ): Promise<void> {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined) query.set(key, String(value));
+    if (Array.isArray(value)) {
+      for (const item of value) query.append(key, String(item));
+    } else if (value !== undefined) {
+      query.set(key, String(value));
+    }
   }
 
   let response: Response;

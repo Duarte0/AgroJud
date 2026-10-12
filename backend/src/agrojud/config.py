@@ -62,6 +62,15 @@ class Settings(BaseSettings):
     datajud_read_timeout_seconds: float = Field(
         default=60, gt=0, le=600, validation_alias="DATAJUD_READ_TIMEOUT_SECONDS"
     )
+    datajud_multitribunal_enabled: bool = Field(
+        default=False, validation_alias="DATAJUD_MULTITRIBUNAL_ENABLED"
+    )
+    datajud_multitribunal_matrix_path: str | None = Field(
+        default=None, repr=False, validation_alias="DATAJUD_MULTITRIBUNAL_MATRIX_PATH"
+    )
+    datajud_multitribunal_matrix_sha256: str | None = Field(
+        default=None, repr=False, validation_alias="DATAJUD_MULTITRIBUNAL_MATRIX_SHA256"
+    )
     export_process_limit: int = Field(default=50_000, ge=1, validation_alias="EXPORT_PROCESS_LIMIT")
     frontend_origin: str = Field(
         default="http://127.0.0.1:5173",

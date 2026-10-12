@@ -188,13 +188,16 @@ def build_demo_fixture(query: SourceQuery) -> SyntheticQueryFixture:
     source: dict[str, JSONValue] = {
         "id": source_id,
         "numeroProcesso": process_number,
-        "tribunal": "TJGO",
+        "tribunal": query.tribunal,
         "dataAjuizamento": filed_at.strftime("%Y%m%d%H%M%S"),
         "@timestamp": timestamp,
         "grau": "G1",
         "classe": {"codigo": class_code, "nome": f"Classe TPU {class_code}"},
         "assuntos": [{"codigo": code, "nome": f"Assunto TPU {code}"} for code in subject_codes],
-        "orgaoJulgador": {"codigo": query.court_unit_code or 1, "nome": "Unidade sintética TJGO"},
+        "orgaoJulgador": {
+            "codigo": query.court_unit_code or 1,
+            "nome": f"Unidade sintética {query.tribunal}",
+        },
         "movimentos": [
             {
                 "codigo": movement_code,

@@ -75,6 +75,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/job-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria grupo de coleta com um job independente por tribunal */
+        post: operations["create_job_group_api_v1_job_groups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/job-groups/{group_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consulta o estado e progresso por tribunal */
+        get: operations["get_job_group_api_v1_job_groups__group_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/job-groups/{group_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancela os jobs filhos ainda ativos */
+        post: operations["cancel_job_group_api_v1_job_groups__group_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jobs": {
         parameters: {
             query?: never;
@@ -541,6 +592,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tribunal-availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista tribunais e capacidades liberadas pela matriz revisada */
+        get: operations["get_tribunal_availability_api_v1_tribunal_availability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/watchlist": {
         parameters: {
             query?: never;
@@ -580,6 +648,17 @@ export interface components {
             page_size: number;
             /** Preset Id */
             preset_id: string;
+        };
+        /** DiscoveryJobGroupRequest */
+        DiscoveryJobGroupRequest: {
+            criteria: components["schemas"]["DiscoveryCriteria"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "discovery";
+            /** Tribunals */
+            tribunals: string[];
         };
         /** DiscoveryJobRequest */
         DiscoveryJobRequest: {
@@ -644,6 +723,97 @@ export interface components {
              * @enum {string}
              */
             state: "validated" | "incompatible" | "inconclusive";
+        };
+        /** ExecutionGroupMemberResponse */
+        ExecutionGroupMemberResponse: {
+            /** Availability State */
+            availability_state: string;
+            /** Checkpoint Revision */
+            checkpoint_revision?: number | null;
+            /** Checkpoint Updated At */
+            checkpoint_updated_at: string | null;
+            /** Collection Id */
+            collection_id: string | null;
+            /** Coverage */
+            coverage: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Job Id */
+            job_id: string | null;
+            /** Next Page */
+            next_page?: number | null;
+            /** Reason */
+            reason: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "QUEUED" | "RUNNING" | "RETRY_WAIT" | "COMPLETED" | "PARTIAL" | "FAILED" | "CANCELLED" | "BLOCKED_NOT_VALIDATED" | "NOT_RUN";
+            /** Tribunal */
+            tribunal: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ExecutionGroupResponse */
+        ExecutionGroupResponse: {
+            /** Allowlist Version */
+            allowlist_version: string | null;
+            /** Catalog Version */
+            catalog_version: string | null;
+            /** Completed Count */
+            completed_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "discovery" | "refresh_number";
+            /** Matrix Sha256 */
+            matrix_sha256: string | null;
+            /** Member Count */
+            member_count: number;
+            /** Members */
+            members: components["schemas"]["ExecutionGroupMemberResponse"][];
+            /** Request Snapshot */
+            request_snapshot: {
+                [key: string]: unknown;
+            };
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "queued" | "running" | "completed" | "partial" | "failed" | "blocked" | "cancelled";
+            /** Tpu Version */
+            tpu_version: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** JobAttemptResponse */
         JobAttemptResponse: {
@@ -992,6 +1162,8 @@ export interface components {
             subject_code?: string | null;
             /** Subject Name Exact */
             subject_name_exact?: string | null;
+            /** Tribunals */
+            tribunals?: string[] | null;
         };
         /** OverviewMetricResponse */
         OverviewMetricResponse: {
@@ -1210,7 +1382,7 @@ export interface components {
              * Field
              * @enum {string}
              */
-            field: "process_number" | "subject" | "subject_code" | "subject_name_exact" | "class" | "court_unit" | "preset_id" | "collection_id" | "signal_category";
+            field: "process_number" | "subject" | "subject_code" | "subject_name_exact" | "class" | "court_unit" | "preset_id" | "collection_id" | "signal_category" | "tribunal";
             /** Items */
             items: components["schemas"]["ProcessFilterOptionResponse"][];
         };
@@ -1361,6 +1533,11 @@ export interface components {
              * @enum {string}
              */
             state: "pending" | "found" | "absent_in_query" | "partial" | "failed" | "cancelled";
+            /**
+             * Tribunal
+             * @default TJGO
+             */
+            tribunal: string;
         };
         /** ProcessRepresentationResponse */
         ProcessRepresentationResponse: {
@@ -1606,6 +1783,8 @@ export interface components {
              * Format: uuid
              */
             process_id: string;
+            /** Refreshes */
+            refreshes?: components["schemas"]["ProcessRefreshResultResponse"][];
             /** Removed At */
             removed_at: string | null;
         };
@@ -1635,6 +1814,17 @@ export interface components {
             page_size: number;
             /** Process Number */
             process_number: string;
+        };
+        /** RefreshNumberJobGroupRequest */
+        RefreshNumberJobGroupRequest: {
+            criteria: components["schemas"]["RefreshNumberCriteria"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "refresh_number";
+            /** Tribunals */
+            tribunals: string[];
         };
         /** RefreshNumberJobRequest */
         RefreshNumberJobRequest: {
@@ -1707,6 +1897,8 @@ export interface components {
              * @default 100
              */
             page_size: number;
+            /** Tribunals */
+            tribunals?: string[];
         };
         /** SavedSearchPatchRequest */
         SavedSearchPatchRequest: {
@@ -1760,6 +1952,8 @@ export interface components {
         };
         /** ScheduleDispatchResponse */
         ScheduleDispatchResponse: {
+            /** Group Id */
+            group_id?: string | null;
             /**
              * Id
              * Format: uuid
@@ -1896,6 +2090,41 @@ export interface components {
              */
             status: "queued" | "running" | "retry_wait" | "completed" | "partial" | "failed" | "cancelled";
         };
+        /** TribunalAvailabilityItemResponse */
+        TribunalAvailabilityItemResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /** Preset State */
+            preset_state: ("VALIDATED" | "INCONCLUSIVE" | "INCOMPATIBLE" | "NOT_RUN" | "NOT_APPLICABLE" | "OBSOLETE") | null;
+            /** Reason */
+            reason: string | null;
+            /**
+             * S1 S2 State
+             * @enum {string}
+             */
+            s1_s2_state: "VALIDATED" | "INCONCLUSIVE" | "INCOMPATIBLE" | "NOT_RUN" | "NOT_APPLICABLE" | "OBSOLETE";
+            /** Tribunal */
+            tribunal: string;
+        };
+        /** TribunalAvailabilityResponse */
+        TribunalAvailabilityResponse: {
+            /** Allowlist Version */
+            allowlist_version: string | null;
+            /** Catalog Version */
+            catalog_version: string | null;
+            /** Global Reasons */
+            global_reasons: string[];
+            /** Matrix Sha256 */
+            matrix_sha256: string | null;
+            /** Preset Id */
+            preset_id: string | null;
+            /** Selection Enabled */
+            selection_enabled: boolean;
+            /** Tpu Version */
+            tpu_version: string | null;
+            /** Tribunals */
+            tribunals: components["schemas"]["TribunalAvailabilityItemResponse"][];
+        };
         /** WatchlistItemResponse */
         WatchlistItemResponse: {
             /**
@@ -1917,6 +2146,8 @@ export interface components {
              * Format: uuid
              */
             process_id: string;
+            /** Refreshes */
+            refreshes?: components["schemas"]["ProcessRefreshResultResponse"][];
         };
     };
     responses: never;
@@ -1999,6 +2230,7 @@ export interface operations {
                 followed?: boolean | null;
                 pending_news?: boolean | null;
                 signal_category?: string | null;
+                tribunal?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -2097,6 +2329,182 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    create_job_group_api_v1_job_groups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryJobGroupRequest"] | components["schemas"]["RefreshNumberJobGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionGroupResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_job_group_api_v1_job_groups__group_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionGroupResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cancel_job_group_api_v1_job_groups__group_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionGroupResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };
@@ -2532,6 +2940,7 @@ export interface operations {
                 followed?: boolean | null;
                 pending_news?: boolean | null;
                 signal_category?: string | null;
+                tribunal?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -2664,6 +3073,7 @@ export interface operations {
                 followed?: boolean | null;
                 pending_news?: boolean | null;
                 signal_category?: string | null;
+                tribunal?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -2777,7 +3187,7 @@ export interface operations {
     list_process_filter_options_api_v1_process_filter_options_get: {
         parameters: {
             query: {
-                field: "process_number" | "subject" | "subject_code" | "subject_name_exact" | "class" | "court_unit" | "preset_id" | "collection_id" | "signal_category";
+                field: "process_number" | "subject" | "subject_code" | "subject_name_exact" | "class" | "court_unit" | "preset_id" | "collection_id" | "signal_category" | "tribunal";
                 q?: string;
                 selected_value?: string | null;
             };
@@ -2852,6 +3262,7 @@ export interface operations {
                 followed?: boolean | null;
                 pending_news?: boolean | null;
                 signal_category?: string | null;
+                tribunal?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -3043,7 +3454,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JobCreatedResponse"];
+                    "application/json": components["schemas"]["JobCreatedResponse"] | components["schemas"]["ExecutionGroupResponse"];
                 };
             };
             /** @description Recurso não encontrado. */
@@ -3873,7 +4284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JobCreatedResponse"];
+                    "application/json": components["schemas"]["JobCreatedResponse"] | components["schemas"]["ExecutionGroupResponse"];
                 };
             };
             /** @description Recurso não encontrado. */
@@ -3930,6 +4341,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SignalRulesResponse"];
+                };
+            };
+            /** @description Recurso não encontrado. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflito de estado ou capacidade indisponível. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Entrada inválida. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Banco de dados indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_tribunal_availability_api_v1_tribunal_availability_get: {
+        parameters: {
+            query?: {
+                preset_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TribunalAvailabilityResponse"];
                 };
             };
             /** @description Recurso não encontrado. */

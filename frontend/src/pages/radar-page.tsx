@@ -5,15 +5,18 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { describeError } from "@/api/client";
 import {
   useCreateJob,
+  useCreateJobGroup,
   useCreateSavedSearch,
   useJobList,
   usePatchSavedSearch,
   usePresets,
   useRunSavedSearch,
   useSavedSearches,
+  useTribunalAvailability,
 } from "@/api/queries";
 import type { Preset, SavedSearch } from "@/api/types";
 import { useCurrentEnvironment } from "@/app/environment-context";
+import { TribunalSelector } from "@/components/tribunal-selector";
 import { JobStatusBadge } from "@/components/job-status-badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
@@ -48,6 +51,7 @@ function savedSearchScheduleLabel(search: SavedSearch): string {
   if (dispatch.status === "coalesced") return "Disparo agregado a uma avaliação pendente.";
   if (dispatch.status === "blocked") return `Não executado: ${dispatch.reason ?? "validação pendente."}`;
   if (dispatch.status === "cancelled") return "Disparo cancelado porque a busca foi desativada.";
+  if (dispatch.group_id) return `Grupo ${dispatch.group_id}`;
   return dispatch.job_id ? `Job ${dispatch.job_id}` : "Disparo enfileirado.";
 }
 
@@ -61,6 +65,7 @@ function SavedSearchEditForm({
   onCancel: () => void;
 }) {
   const patch = usePatchSavedSearch();
+  const environment = useCurrentEnvironment();
   const prefix = "saved-search-" + search.id;
   const [name, setName] = useState(search.name);
   const [presetId, setPresetId] = useState(search.preset_id);
@@ -77,6 +82,23 @@ function SavedSearchEditForm({
   const [hitBudget, setHitBudget] = useState(String(search.filters.hit_budget));
   const [validation, setValidation] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<string | null>(null);
+  const availability = useTribunalAvailability(
+    presetId,
+    environment.environment === "real" && environment.source === "datajud",
+  );
+  const [tribunalSelection, setTribunalSelection] = useState({
+    presetId: search.preset_id,
+    tribunals: search.filters.tribunals ?? ["TJGO"],
+  });
+  const availableTribunals = availability.data?.tribunals
+    .filter((item) => item.enabled)
+    .map((item) => item.tribunal) ?? [];
+  const selectedTribunals = availability.data?.selection_enabled
+    ? (tribunalSelection.presetId === presetId
+        ? tribunalSelection.tribunals
+        : availableTribunals
+      ).filter((tribunal) => availableTribunals.includes(tribunal))
+    : search.filters.tribunals ?? ["TJGO"];
 
   function failValidation(message: string, field: string) {
     setValidation(message);
@@ -117,6 +139,9 @@ function SavedSearchEditForm({
           preset_id: presetId,
           window_mode: useDefaultWindow ? "rolling_12_months" : "fixed",
           filters: {
+            tribunals: availability.data?.selection_enabled
+              ? selectedTribunals
+              : search.filters.tribunals ?? ["TJGO"],
             page_size: search.filters.page_size,
             hit_budget: budget,
             ...(useDefaultWindow ? {} : { filed_from: filedFrom, filed_through: filedThrough }),
@@ -170,6 +195,15 @@ function SavedSearchEditForm({
           </p>
         ) : null}
       </fieldset>
+
+      {availability.data?.selection_enabled ? (
+        <TribunalSelector
+          items={availability.data.tribunals}
+          selected={selectedTribunals}
+          onChange={(tribunals) => setTribunalSelection({ presetId, tribunals })}
+          label="Tribunais da próxima revisão"
+        />
+      ) : null}
 
       <fieldset className="space-y-3">
         <legend className="mb-2 text-sm font-semibold">Janela de ajuizamento</legend>
@@ -272,7 +306,7 @@ function SavedSearchRow({ search, presets }: { search: SavedSearch; presets: Pre
         <div className="min-w-0 space-y-1">
           <h3 className="font-medium">{search.name}</h3>
           <p className="text-xs text-muted-foreground">
-            {search.preset_id} · preset {search.preset_version} · busca v{search.version}
+            {search.preset_id} · tribunais {(search.filters.tribunals ?? ["TJGO"]).join(", ")} · preset {search.preset_version} · busca v{search.version}
           </p>
           <p className="text-sm text-muted-foreground">
             {search.window_mode === "rolling_12_months"
@@ -284,13 +318,22 @@ function SavedSearchRow({ search, presets }: { search: SavedSearch; presets: Pre
             {search.next_run_at ? ` · próxima atualização ${formatScheduleTime(search.next_run_at)}` : ""}
           </p>
           <p className="text-xs text-muted-foreground">{savedSearchScheduleLabel(search)}</p>
+          {search.last_dispatch?.group_id ? (
+            <Link
+              to={`/job-groups/${search.last_dispatch.group_id}`}
+              className="text-xs text-primary underline-offset-4 hover:underline"
+            >
+              Abrir último grupo agendado
+            </Link>
+          ) : null}
           {search.last_dispatch?.missed_from ? (
             <p className="text-xs text-warning-foreground">
               Intervalo perdido: {search.last_dispatch.missed_from} a {search.last_dispatch.missed_through}
             </p>
           ) : null}
-          {!search.availability.enabled ? (
+          {search.availability.reasons.length ? (
             <div className="space-y-1 text-sm text-warning-foreground" role="status">
+              {search.availability.enabled ? <p>Alguns tribunais desta busca estão bloqueados pela matriz revisada:</p> : null}
               {search.availability.reasons.map((reason) => <p key={reason}>{reason}</p>)}
             </div>
           ) : null}
@@ -319,9 +362,10 @@ function SavedSearchRow({ search, presets }: { search: SavedSearch; presets: Pre
                 onClick={() =>
                   run.mutate(search.id, {
                     onSuccess: (created) =>
-                      void navigate(`/jobs/${created.job_id}`, {
-                        state: { created: true, reused: created.reused },
-                      }),
+                      void navigate(
+                        "id" in created ? `/job-groups/${created.id}` : `/jobs/${created.job_id}`,
+                        { state: { created: true, reused: "reused" in created ? created.reused : false } },
+                      ),
                   })
                 }
                 disabled={!search.availability.enabled || run.isPending || patch.isPending}
@@ -456,6 +500,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const createJob = useCreateJob();
+  const createJobGroup = useCreateJobGroup();
   const createSavedSearch = useCreateSavedSearch();
   // Blocks a second submit before React re-renders the disabled button.
   const submitting = useRef(false);
@@ -478,6 +523,25 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const enabledPresets = presets.filter((preset) => preset.availability.enabled);
   const selected =
     enabledPresets.find((preset) => preset.id === requestedId) ?? enabledPresets[0] ?? null;
+  const availability = useTribunalAvailability(
+    selected?.id,
+    environment.environment === "real" && environment.source === "datajud",
+  );
+  const [tribunalSelection, setTribunalSelection] = useState<{ presetId: string; tribunals: string[] } | null>(null);
+  const availableTribunals = availability.data?.tribunals
+    .filter((item) => item.enabled)
+    .map((item) => item.tribunal) ?? [];
+  const groupSelectionEnabled = availability.data?.selection_enabled === true;
+  const selectedTribunals = groupSelectionEnabled && selected
+    ? (tribunalSelection?.presetId === selected.id
+        ? tribunalSelection.tribunals
+        : availableTribunals
+      ).filter((tribunal) => availableTribunals.includes(tribunal))
+    : ["TJGO"];
+  const availabilityFailed =
+    environment.environment === "real" &&
+    environment.source === "datajud" &&
+    availability.isError;
   const sourceBlocked = !environment.source_enabled;
 
   function selectPreset(id: string) {
@@ -488,7 +552,11 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
 
   async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting.current || !selected || sourceBlocked) return;
+    if (submitting.current || !selected || sourceBlocked || availabilityFailed) return;
+    if (groupSelectionEnabled && selectedTribunals.length === 0) {
+      failValidation("Selecione ao menos um tribunal validado para este preset.", "tribunal-selection");
+      return;
+    }
     const budget = Number(hitBudget);
     if (!Number.isInteger(budget) || budget < 1 || budget > MAX_HIT_BUDGET) {
       failValidation(`O limite deve ser um número inteiro entre 1 e ${MAX_HIT_BUDGET}.`, "hit-budget");
@@ -501,16 +569,23 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
     setValidation(null); setInvalidField(null);
     submitting.current = true;
     try {
-      const created = await createJob.mutateAsync({
-        kind: "discovery",
-        criteria: {
+      const criteria = {
           preset_id: selected.id,
           hit_budget: budget,
           page_size: PAGE_SIZE,
           ...(useDefaultWindow ? {} : { filed_from: filedFrom, filed_through: filedThrough }),
-        },
-      });
-      navigate(`/jobs/${created.job_id}`, { state: { created: true, reused: created.reused } });
+        };
+      if (groupSelectionEnabled) {
+        const group = await createJobGroup.mutateAsync({
+          kind: "discovery",
+          criteria,
+          tribunals: selectedTribunals,
+        });
+        navigate(`/job-groups/${group.id}`, { state: { created: true } });
+      } else {
+        const created = await createJob.mutateAsync({ kind: "discovery", criteria });
+        navigate(`/jobs/${created.job_id}`, { state: { created: true, reused: created.reused } });
+      }
     } catch {
       // The mutation error is rendered below; nothing was started on our side.
     } finally {
@@ -519,7 +594,11 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   }
 
   async function saveSearch() {
-    if (!selected || sourceBlocked) return;
+    if (!selected || sourceBlocked || availabilityFailed) return;
+    if (groupSelectionEnabled && selectedTribunals.length === 0) {
+      failValidation("Selecione ao menos um tribunal validado para esta busca.", "tribunal-selection");
+      return;
+    }
     const budget = Number(hitBudget);
     if (!savedSearchName.trim()) {
       failValidation("Informe um nome para a busca salva.", "saved-search-name");
@@ -540,6 +619,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         preset_id: selected.id,
         window_mode: useDefaultWindow ? "rolling_12_months" : "fixed",
         filters: {
+          tribunals: groupSelectionEnabled ? selectedTribunals : ["TJGO"],
           page_size: PAGE_SIZE,
           hit_budget: budget,
           ...(useDefaultWindow ? {} : { filed_from: filedFrom, filed_through: filedThrough }),
@@ -552,7 +632,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
     }
   }
 
-  const pending = createJob.isPending;
+  const pending = createJob.isPending || createJobGroup.isPending;
 
   return (
     <form onSubmit={submit} className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]" aria-describedby="collection-form-help">
@@ -571,6 +651,12 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
           </AlertDescription>
         </Alert>
       ) : null}
+      {availabilityFailed ? (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Não foi possível verificar a matriz de tribunais</AlertTitle>
+          <AlertDescription>{describeError(availability.error)}</AlertDescription>
+        </Alert>
+      ) : null}
 
       <fieldset className="space-y-3">
         <legend className="mb-2 text-sm font-semibold">Preset temático</legend>
@@ -584,6 +670,16 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
           />
         ))}
       </fieldset>
+
+      {groupSelectionEnabled && availability.data ? (
+        <div id="tribunal-selection">
+          <TribunalSelector
+            items={availability.data.tribunals}
+            selected={selectedTribunals}
+            onChange={(tribunals) => selected && setTribunalSelection({ presetId: selected.id, tribunals })}
+          />
+        </div>
+      ) : null}
 
       <fieldset className="space-y-3">
         <legend className="mb-2 text-sm font-semibold">Janela de ajuizamento</legend>
@@ -652,10 +748,10 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
           {validation}
         </p>
       ) : null}
-      {createJob.isError ? (
+      {createJob.isError || createJobGroup.isError ? (
         <Alert variant="destructive" role="alert">
           <AlertTitle>A coleta não foi iniciada</AlertTitle>
-          <AlertDescription>{describeError(createJob.error)}</AlertDescription>
+          <AlertDescription>{describeError(createJob.error ?? createJobGroup.error)}</AlertDescription>
         </Alert>
       ) : null}
 
@@ -675,7 +771,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
             value={savedSearchName}
             maxLength={160}
             onChange={(event) => setSavedSearchName(event.target.value)}
-            placeholder="Ex.: Crédito rural no TJGO"
+            placeholder="Ex.: Crédito rural em mais de um tribunal"
           />
         </div>
         <label className="flex items-start gap-2 text-sm">
@@ -696,7 +792,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         {createSavedSearch.isSuccess ? (
           <p role="status" className="text-sm text-success-foreground">Busca salva.</p>
         ) : null}
-        <Button type="button" variant="outline" onClick={() => void saveSearch()} disabled={createSavedSearch.isPending || !selected || sourceBlocked}>
+        <Button type="button" variant="outline" onClick={() => void saveSearch()} disabled={createSavedSearch.isPending || !selected || sourceBlocked || availabilityFailed}>
           {createSavedSearch.isPending ? "Salvando…" : "Salvar busca"}
         </Button>
       </details>
@@ -707,11 +803,12 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
           <CardContent className="flex flex-col gap-4">
             <dl className="flex flex-col gap-3 text-sm">
               <div><dt className="text-xs text-muted-foreground">Tema</dt><dd className="font-medium">{selected?.name ?? "Nenhum tema disponível"}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">Tribunais</dt><dd>{selectedTribunals.join(", ") || "Nenhum tribunal disponível"}</dd></div>
               <div><dt className="text-xs text-muted-foreground">Período de ajuizamento</dt><dd>{useDefaultWindow ? "Últimos 12 meses, calculados ao iniciar" : `${filedFrom} a ${filedThrough}`}</dd></div>
               <div><dt className="text-xs text-muted-foreground">Limite desta execução</dt><dd>{hitBudget} registros</dd></div>
             </dl>
 
-      <Button type="submit" size="lg" disabled={pending || !selected || sourceBlocked}>
+      <Button type="submit" size="lg" disabled={pending || !selected || sourceBlocked || availabilityFailed || (groupSelectionEnabled && selectedTribunals.length === 0)}>
         {pending ? (
           <Loader2 className="animate-spin" aria-hidden="true" />
         ) : (
@@ -772,7 +869,7 @@ export function RadarPage() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") === "saved" ? "saved" : "new";
   return <>
-    <PageHeader title="Radar" description="Descoberta de processos no TJGO por tema e período de ajuizamento." />
+    <PageHeader title="Radar" description="Descubra processos nos tribunais habilitados para cada tema e período de ajuizamento." />
     <Tabs value={tab} onValueChange={value => { const next = new URLSearchParams(params); next.set("tab", value); setParams(next, { preventScrollReset: true }); }}>
       <TabsList aria-label="Radar"><TabsTrigger value="new">Nova coleta</TabsTrigger><TabsTrigger value="saved">Buscas salvas</TabsTrigger></TabsList>
       <TabsContent value="new" forceMount>

@@ -249,6 +249,36 @@ def test_csv_matches_filtered_process_set_and_preserves_multirepresentation_valu
     assert _domain_counts(app) == before_counts
 
 
+def test_tribunal_filter_keeps_processes_unique_and_limits_csv_origins(
+    export_runtime: tuple[FastAPI, TestClient],
+    export_seed: dict[str, UUID],
+) -> None:
+    _app, client = export_runtime
+    selected = [("tribunal", "TJGO"), ("tribunal", "TJMG")]
+    process_page = client.get("/api/v1/processes", params=selected)
+    overview = client.get("/api/v1/overview", params=selected)
+    exported = client.get("/api/v1/exports/processes.csv", params=selected)
+
+    assert process_page.status_code == overview.status_code == exported.status_code == 200
+    assert process_page.json()["total"] == 1
+    assert [item["id"] for item in process_page.json()["items"]] == [str(export_seed["process"])]
+    assert overview.json()["processes"]["value"] == 1
+    assert overview.json()["representations"]["value"] == 2
+    rows = list(
+        csv.reader(io.StringIO(exported.content.decode("utf-8-sig"), newline=""), delimiter=";")
+    )
+    assert len(rows) == 2
+    multi_origin = dict(zip(rows[0], rows[1], strict=True))
+    assert multi_origin["tribunal"] == "TJGO; TJMG"
+
+    one_origin = client.get("/api/v1/exports/processes.csv", params={"tribunal": "TJGO"})
+    one_origin_rows = list(
+        csv.reader(io.StringIO(one_origin.content.decode("utf-8-sig"), newline=""), delimiter=";")
+    )
+    assert len(one_origin_rows) == 2
+    assert dict(zip(one_origin_rows[0], one_origin_rows[1], strict=True))["tribunal"] == "TJGO"
+
+
 def test_empty_result_contains_only_headers_and_openapi_excludes_pagination(
     export_runtime: tuple[FastAPI, TestClient],
 ) -> None:
@@ -307,9 +337,14 @@ def test_export_keeps_the_initial_snapshot_when_a_process_is_inserted_mid_genera
     original_loader = exports._load_process_values
     inserted = False
 
-    def insert_after_first_batch(session: Session, processes: list[Process]):
+    def insert_after_first_batch(
+        session: Session,
+        processes: list[Process],
+        *,
+        filters: exports.ProcessFilters,
+    ):
         nonlocal inserted
-        values = original_loader(session, processes)
+        values = original_loader(session, processes, filters=filters)
         if not inserted:
             with Session(app.state.database_engine) as writer, writer.begin():
                 writer.add(Process(numero_cnj="00000030020268090001"))

@@ -25,6 +25,10 @@ export const router = createBrowserRouter([
         lazy: async () => ({ Component: (await import("@/pages/job-detail-page")).JobDetailPage }),
       },
       {
+        path: "job-groups/:groupId",
+        lazy: async () => ({ Component: (await import("@/pages/job-group-page")).JobGroupPage }),
+      },
+      {
         path: "processes",
         lazy: async () => ({ Component: (await import("@/pages/processes-page")).ProcessesPage }),
       },

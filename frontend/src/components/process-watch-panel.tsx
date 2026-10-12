@@ -27,7 +27,8 @@ export function ProcessWatchPanel({ processId, section = "controls" }: { process
 
   function refreshProcess() {
     refresh.mutate(undefined, {
-      onSuccess: (accepted) => void navigate(`/jobs/${accepted.job_id}`),
+      onSuccess: (accepted) =>
+        void navigate("id" in accepted ? `/job-groups/${accepted.id}` : `/jobs/${accepted.job_id}`),
     });
   }
 
@@ -84,7 +85,17 @@ export function ProcessWatchPanel({ processId, section = "controls" }: { process
 
             <div className="space-y-1">
               <h3 className="text-sm font-semibold">Resultado da última consulta por número</h3>
-              <ProcessRefreshStatus result={watch.data.last_refresh} />
+              {(watch.data.refreshes ?? []).length ? (
+                <ul className="space-y-3">
+                  {(watch.data.refreshes ?? []).map((result) => (
+                    <li key={result.tribunal}>
+                      <ProcessRefreshStatus result={result} />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ProcessRefreshStatus result={watch.data.last_refresh} />
+              )}
             </div>
 
             {!environment.source_enabled ? <p role="status" className="text-sm text-warning-foreground">{environment.source_disabled_reason ?? "Fonte desabilitada neste ambiente."}</p> : null}

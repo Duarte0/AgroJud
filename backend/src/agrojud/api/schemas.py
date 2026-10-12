@@ -27,6 +27,7 @@ ProcessFilterField = Literal[
     "preset_id",
     "collection_id",
     "signal_category",
+    "tribunal",
 ]
 
 
@@ -74,6 +75,7 @@ class DiscoveryCriteria(APIModel):
 
 
 class SavedSearchFilters(APIModel):
+    tribunals: list[str] = Field(default_factory=lambda: ["TJGO"], min_length=1, max_length=33)
     filed_from: date | None = None
     filed_through: date | None = None
     page_size: int = Field(default=100, ge=1, le=100)
@@ -127,6 +129,7 @@ class ScheduleDispatchResponse(APIModel):
     scheduled_for_date: date
     status: Literal["pending", "enqueued", "blocked", "cancelled", "coalesced"]
     job_id: UUID | None
+    group_id: UUID | None = None
     missed_from: date | None
     missed_through: date | None
     reason: str | None
@@ -174,6 +177,96 @@ CreateJobRequest = Annotated[
     DiscoveryJobRequest | RefreshNumberJobRequest,
     Field(discriminator="kind"),
 ]
+
+
+class DiscoveryJobGroupRequest(APIModel):
+    kind: Literal["discovery"]
+    criteria: DiscoveryCriteria
+    tribunals: list[str] = Field(min_length=1, max_length=33)
+
+
+class RefreshNumberJobGroupRequest(APIModel):
+    kind: Literal["refresh_number"]
+    criteria: RefreshNumberCriteria
+    tribunals: list[str] = Field(min_length=1, max_length=33)
+
+
+CreateJobGroupRequest = Annotated[
+    DiscoveryJobGroupRequest | RefreshNumberJobGroupRequest,
+    Field(discriminator="kind"),
+]
+
+
+class TribunalAvailabilityItemResponse(APIModel):
+    tribunal: str
+    s1_s2_state: Literal[
+        "VALIDATED", "INCONCLUSIVE", "INCOMPATIBLE", "NOT_RUN", "NOT_APPLICABLE", "OBSOLETE"
+    ]
+    preset_state: (
+        Literal[
+            "VALIDATED", "INCONCLUSIVE", "INCOMPATIBLE", "NOT_RUN", "NOT_APPLICABLE", "OBSOLETE"
+        ]
+        | None
+    )
+    enabled: bool
+    reason: str | None
+
+
+class TribunalAvailabilityResponse(APIModel):
+    selection_enabled: bool
+    preset_id: str | None
+    matrix_sha256: str | None
+    allowlist_version: str | None
+    catalog_version: str | None
+    tpu_version: str | None
+    global_reasons: list[str]
+    tribunals: list[TribunalAvailabilityItemResponse]
+
+
+ExecutionGroupMemberState = Literal[
+    "QUEUED",
+    "RUNNING",
+    "RETRY_WAIT",
+    "COMPLETED",
+    "PARTIAL",
+    "FAILED",
+    "CANCELLED",
+    "BLOCKED_NOT_VALIDATED",
+    "NOT_RUN",
+]
+
+
+class ExecutionGroupMemberResponse(APIModel):
+    id: UUID
+    tribunal: str
+    state: ExecutionGroupMemberState
+    availability_state: str
+    reason: str | None
+    job_id: UUID | None
+    collection_id: UUID | None
+    coverage: dict[str, Any] | None
+    next_page: int | None = Field(default=None, ge=1)
+    checkpoint_revision: int | None = Field(default=None, ge=0)
+    checkpoint_updated_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ExecutionGroupResponse(APIModel):
+    id: UUID
+    kind: Literal["discovery", "refresh_number"]
+    state: Literal["queued", "running", "completed", "partial", "failed", "blocked", "cancelled"]
+    matrix_sha256: str | None
+    allowlist_version: str | None
+    catalog_version: str | None
+    tpu_version: str | None
+    request_snapshot: dict[str, Any]
+    member_count: int = Field(ge=0)
+    completed_count: int = Field(ge=0)
+    created_at: datetime
+    updated_at: datetime
+    finished_at: datetime | None
+    members: list[ExecutionGroupMemberResponse]
 
 
 class JobCreatedResponse(APIModel):
@@ -325,6 +418,7 @@ class RepresentationBaselineResponse(APIModel):
 
 class ProcessRefreshResultResponse(APIModel):
     job_id: UUID
+    tribunal: str = "TJGO"
     state: Literal["pending", "found", "absent_in_query", "partial", "failed", "cancelled"]
     job_status: JobStatus
     checked_at: datetime
@@ -341,6 +435,7 @@ class ProcessWatchResponse(APIModel):
     history: list[ProcessWatchHistoryResponse]
     baselines: list[RepresentationBaselineResponse]
     last_refresh: ProcessRefreshResultResponse | None
+    refreshes: list[ProcessRefreshResultResponse] = Field(default_factory=list)
 
 
 class ProcessNewsResponse(APIModel):
@@ -372,6 +467,7 @@ class WatchlistItemResponse(APIModel):
     included_at: datetime
     next_run_at: datetime
     last_refresh: ProcessRefreshResultResponse | None
+    refreshes: list[ProcessRefreshResultResponse] = Field(default_factory=list)
     last_schedule: ScheduleDispatchResponse | None
 
 
@@ -481,6 +577,7 @@ class OverviewMetricResponse(APIModel):
 
 
 class OverviewFiltersResponse(APIModel):
+    tribunals: list[str] | None = None
     process_number: str | None = None
     subject: str | None = None
     subject_code: str | None = None

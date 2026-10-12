@@ -64,6 +64,7 @@ const FILTER_FIELDS = [
 
 type FilterKey = (typeof FILTER_FIELDS)[number]["key"];
 type FilterValues = Record<FilterKey, string> & {
+  tribunal: string[];
   decision: TriageDecision | "";
   rural_link: RuralLink | "";
   followed: "" | "true" | "false";
@@ -81,6 +82,7 @@ function readFilters(params: URLSearchParams): FilterValues {
   ) as Record<FilterKey, string>;
   return {
     ...textFilters,
+    tribunal: [...new Set(params.getAll("tribunal").map((value) => value.trim()).filter(Boolean))],
     decision: readEnum(params, "decision", DECISIONS) ?? "",
     rural_link: readEnum(params, "rural_link", RURAL_LINKS) ?? "",
     followed: readBooleanFilter(params, "followed"),
@@ -100,7 +102,11 @@ function FilterForm({ initial, collectionLabel, onApply, onClear }: {
   );
   const [collectionError, setCollectionError] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const advancedCount = Object.entries(initial).filter(([key, value]) => !["process_number", "subject", "decision"].includes(key) && value).length;
+  const advancedCount = Object.entries(initial).filter(([key, value]) =>
+    !["process_number", "subject", "decision"].includes(key) &&
+    (Array.isArray(value) ? value.length > 0 : Boolean(value)),
+  ).length;
+  const tribunalOptions = useProcessFilterOptions("tribunal", "", undefined, expanded);
   function textField(field: (typeof FILTER_FIELDS)[number]) {
     const value = field.key === "collection_id"
       ? drafts.collection_id || (values.collection_id ? collectionLabel ?? "Carregando coleta…" : "")
@@ -159,6 +165,33 @@ function FilterForm({ initial, collectionLabel, onApply, onClear }: {
     </div>
     <div id="advanced-filters" hidden={!expanded} className="grid gap-3 rounded-md bg-muted/50 p-4 sm:grid-cols-2 lg:grid-cols-3">
       {FILTER_FIELDS.filter(field => !["process_number", "subject"].includes(field.key)).map(textField)}
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">Tribunal (origem)</legend>
+        {tribunalOptions.data?.items.length ? (
+          <div className="max-h-48 space-y-2 overflow-y-auto">
+            {tribunalOptions.data.items.map((option) => (
+              <label key={option.value} className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="tribunal"
+                  value={option.value}
+                  checked={values.tribunal.includes(option.value)}
+                  onChange={(event) => setValues((current) => ({
+                    ...current,
+                    tribunal: event.currentTarget.checked
+                      ? [...current.tribunal, option.value]
+                      : current.tribunal.filter((value) => value !== option.value),
+                  }))}
+                  className="mt-0.5 size-4 accent-primary"
+                />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Nenhum tribunal foi observado na base local.</p>
+        )}
+      </fieldset>
       {selectField("followed", "Acompanhamento ativo", [["", "Todos"], ["true", "Acompanhados"], ["false", "Sem acompanhamento ativo"]])}
       {selectField("pending_news", "Novidades pendentes", [["", "Todos"], ["true", "Com novidades pendentes"], ["false", "Sem novidades pendentes"]])}
       {selectField("rural_link", "Vínculo rural", [["", "Todos os vínculos"], ["unconfirmed", "Não confirmado"], ["confirmed", "Confirmado manualmente"]])}
@@ -260,11 +293,14 @@ export function ProcessesPage() {
   if (filters.rural_link) query.rural_link = filters.rural_link;
   if (filters.followed) query.followed = filters.followed === "true";
   if (filters.pending_news) query.pending_news = filters.pending_news === "true";
+  if (filters.tribunal.length) query.tribunal = filters.tribunal;
   const processes = useProcessList(query);
   const exportFilters = { ...query };
   delete exportFilters.page;
   delete exportFilters.page_size;
-  const filtered = Object.values(filters).some(Boolean);
+  const filtered = Object.values(filters).some((value) =>
+    Array.isArray(value) ? value.length > 0 : Boolean(value),
+  );
   const overviewParams = new URLSearchParams(searchParams);
   overviewParams.delete("page");
   const overviewHref = overviewParams.size ? `/?${overviewParams.toString()}` : "/";

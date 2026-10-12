@@ -15,7 +15,9 @@ export function ProcessRefreshStatus({
 
   return (
     <div className="flex flex-col gap-1 text-sm" data-testid="refresh-result">
-      <span className="font-medium">{refreshResultLabel(result)}</span>
+      <span className="font-medium">
+        {result.tribunal ? `${result.tribunal} · ` : ""}{refreshResultLabel(result)}
+      </span>
       {result.hit_count !== null ? ` · ${result.hit_count} capa(s) retornada(s)` : ""}
       <span className="text-xs text-muted-foreground">{formatDateTime(result.checked_at)}</span>
       <Link

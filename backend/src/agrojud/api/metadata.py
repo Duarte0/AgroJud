@@ -17,6 +17,7 @@ from agrojud.api.schemas import (
 from agrojud.config import Settings
 from agrojud.sources.catalog import get_item_availability, list_presets
 from agrojud.sources.factory import real_source_unavailable_reason
+from agrojud.sources.tribunal_availability import tribunal_availability
 
 router = APIRouter(prefix="/api/v1", tags=["metadata"])
 
@@ -33,6 +34,20 @@ def get_presets(request: Request) -> PresetsResponse:
     items: list[PresetResponse] = []
     for item in list_presets():
         availability = get_item_availability(item.id, cast(Any, mode))
+        reasons = list(availability.reasons)
+        enabled = availability.enabled
+        label = availability.label
+        if mode == "real" and settings.datajud_multitribunal_enabled:
+            gate = tribunal_availability(settings, preset_id=item.id)
+            eligible = [target for target in gate.tribunals if target.enabled]
+            enabled = availability.enabled and bool(eligible)
+            reasons = (
+                []
+                if enabled
+                else list(gate.global_reasons)
+                or [target.reason for target in gate.tribunals if target.reason is not None]
+            )
+            label = "disponível nos tribunais validados" if enabled else "sem tribunal validado"
         items.append(
             PresetResponse(
                 id=item.id,
@@ -56,9 +71,9 @@ def get_presets(request: Request) -> PresetsResponse:
                 required_for_real=list(item.required_for_real),
                 availability=PresetAvailabilityResponse(
                     environment=cast(Any, mode),
-                    enabled=availability.enabled,
-                    reasons=list(availability.reasons),
-                    label=availability.label,
+                    enabled=enabled,
+                    reasons=reasons,
+                    label=label,
                 ),
             )
         )

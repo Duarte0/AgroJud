@@ -71,7 +71,7 @@ def list_processes(
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).all()
-        items = _load_process_summaries(session, processes)
+        items = _load_process_summaries(session, processes, tribunals=filters.tribunals)
     return PaginationResponse(items=items, page=page, page_size=page_size, total=total)
 
 
@@ -223,14 +223,21 @@ def list_movements(
 def _load_process_summaries(
     session: Session,
     processes: Sequence[Process],
+    *,
+    tribunals: tuple[str, ...] | None = None,
 ) -> list[ProcessSummaryResponse]:
     if not processes:
         return []
     process_ids = [process.id for process in processes]
+    representation_statement = select(Representation).where(
+        Representation.process_id.in_(process_ids)
+    )
+    if tribunals is not None:
+        representation_statement = representation_statement.where(
+            Representation.tribunal.in_(tribunals)
+        )
     representations = session.scalars(
-        select(Representation)
-        .where(Representation.process_id.in_(process_ids))
-        .order_by(Representation.process_id.asc(), Representation.id.asc())
+        representation_statement.order_by(Representation.process_id.asc(), Representation.id.asc())
     ).all()
     triage_records = session.scalars(
         select(ProcessTriage).where(ProcessTriage.process_id.in_(process_ids))

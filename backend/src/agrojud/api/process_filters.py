@@ -22,15 +22,18 @@ from agrojud.db.models import (
     RepresentationSubject,
 )
 from agrojud.domain.signals import SIGNAL_RULES
-from agrojud.sources.contracts import build_query_by_case_number
+from agrojud.sources.contracts import SourceError, SourceErrorCode, build_query_by_case_number
+from agrojud.sources.tribunals import canonicalize_tribunal
 
 SignalEnvironment = Literal["demo", "real"]
 TriageDecision = Literal["pending", "relevant", "discarded"]
 RuralLink = Literal["unconfirmed", "confirmed"]
+_TRIBUNAL_QUERY = Query(default=None, max_length=33)
 
 
 @dataclass(frozen=True, slots=True)
 class ProcessFilters:
+    tribunals: tuple[str, ...] | None = None
     process_number: str | None = None
     subject: str | None = None
     subject_code: str | None = None
@@ -67,7 +70,43 @@ def resolve_process_filters(filters: ProcessFilters) -> ProcessFilters:
         if filters.process_number is not None
         else None
     )
-    return replace(filters, process_number=process_number, **resolved)
+    tribunals = filters.tribunals
+    if tribunals is not None:
+        if not tribunals:
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "O filtro de tribunal precisa selecionar ao menos uma origem.",
+                field_path="tribunal",
+                validation_code="TRIBUNALS_EMPTY",
+            )
+        if len(tribunals) > 33:
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "O filtro aceita no máximo 33 tribunais.",
+                field_path="tribunal",
+                validation_code="TRIBUNALS_LIMIT_EXCEEDED",
+            )
+        normalized_tribunals: list[str] = []
+        for value in tribunals:
+            try:
+                tribunal = canonicalize_tribunal(value)
+            except ValueError:
+                raise SourceError(
+                    SourceErrorCode.VALIDATION,
+                    "O filtro contém tribunal fora da allowlist versionada.",
+                    field_path="tribunal",
+                    validation_code="TRIBUNAL_NOT_ALLOWLISTED",
+                ) from None
+            if tribunal in normalized_tribunals:
+                raise SourceError(
+                    SourceErrorCode.VALIDATION,
+                    "O filtro de tribunal não pode conter duplicatas.",
+                    field_path="tribunal",
+                    validation_code="TRIBUNAL_DUPLICATE",
+                )
+            normalized_tribunals.append(tribunal)
+        tribunals = tuple(normalized_tribunals)
+    return replace(filters, process_number=process_number, tribunals=tribunals, **resolved)
 
 
 def process_filters_dependency(
@@ -84,11 +123,13 @@ def process_filters_dependency(
     followed: bool | None = None,
     pending_news: bool | None = None,
     signal_category: str | None = Query(default=None, min_length=1, max_length=80),
+    tribunal: list[str] | None = _TRIBUNAL_QUERY,
 ) -> ProcessFilters:
     """Expose the same query contract to every read that slices by process."""
 
     return resolve_process_filters(
         ProcessFilters(
+            tribunals=tuple(tribunal) if tribunal is not None else None,
             process_number=process_number,
             subject=subject,
             subject_code=subject_code,
@@ -160,6 +201,8 @@ def process_predicates(
             predicates.append(matching)
 
     representation_filters: list[ColumnElement[bool]] = []
+    if filters.tribunals is not None:
+        representation_filters.append(Representation.tribunal.in_(filters.tribunals))
     if filters.subject is not None:
         subject_pattern = _contains_pattern(filters.subject)
         representation_filters.append(

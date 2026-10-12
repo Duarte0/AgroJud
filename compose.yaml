@@ -29,11 +29,16 @@ services:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the selected environment file}
       DATAJUD_API_KEY: ${DATAJUD_API_KEY:-}
       DATAJUD_READ_TIMEOUT_SECONDS: ${DATAJUD_READ_TIMEOUT_SECONDS:-60}
+      DATAJUD_MULTITRIBUNAL_ENABLED: ${DATAJUD_MULTITRIBUNAL_ENABLED:-false}
+      DATAJUD_MULTITRIBUNAL_MATRIX_PATH: ${DATAJUD_MULTITRIBUNAL_MATRIX_PATH:-}
+      DATAJUD_MULTITRIBUNAL_MATRIX_SHA256: ${DATAJUD_MULTITRIBUNAL_MATRIX_SHA256:-}
       JOB_LEASE_SECONDS: ${JOB_LEASE_SECONDS:-120}
       JOB_HEARTBEAT_SECONDS: ${JOB_HEARTBEAT_SECONDS:-20}
       JOB_POLL_SECONDS: ${JOB_POLL_SECONDS:-2}
       EXPORT_PROCESS_LIMIT: ${EXPORT_PROCESS_LIMIT:-50000}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://127.0.0.1:5173}
+    volumes:
+      - ${DATAJUD_MULTITRIBUNAL_MATRIX_HOST_PATH:-./docs/evidence/datajud-multitribunal-2026-10-11-lote-01/matrix-merged-after-tjms-rerun-reviewed.json}:/run/agrojud/matrix-reviewed.json:ro
     depends_on:
       db:
         condition: service_healthy
@@ -78,9 +83,14 @@ services:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the selected environment file}
       DATAJUD_API_KEY: ${DATAJUD_API_KEY:-}
       DATAJUD_READ_TIMEOUT_SECONDS: ${DATAJUD_READ_TIMEOUT_SECONDS:-60}
+      DATAJUD_MULTITRIBUNAL_ENABLED: ${DATAJUD_MULTITRIBUNAL_ENABLED:-false}
+      DATAJUD_MULTITRIBUNAL_MATRIX_PATH: ${DATAJUD_MULTITRIBUNAL_MATRIX_PATH:-}
+      DATAJUD_MULTITRIBUNAL_MATRIX_SHA256: ${DATAJUD_MULTITRIBUNAL_MATRIX_SHA256:-}
       JOB_LEASE_SECONDS: ${JOB_LEASE_SECONDS:-120}
       JOB_HEARTBEAT_SECONDS: ${JOB_HEARTBEAT_SECONDS:-20}
       JOB_POLL_SECONDS: ${JOB_POLL_SECONDS:-2}
+    volumes:
+      - ${DATAJUD_MULTITRIBUNAL_MATRIX_HOST_PATH:-./docs/evidence/datajud-multitribunal-2026-10-11-lote-01/matrix-merged-after-tjms-rerun-reviewed.json}:/run/agrojud/matrix-reviewed.json:ro
     depends_on:
       db:
         condition: service_healthy

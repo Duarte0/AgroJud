@@ -23,6 +23,14 @@ describe("search params", () => {
     expect(next.toString()).toBe("subject=cr%C3%A9dito");
   });
 
+  it("stores tribunal selections as repeatable query parameters", () => {
+    const next = withFilters(new URLSearchParams("page=2&tribunal=TJGO"), {
+      tribunal: ["TJMT", "TJMS"],
+    });
+    expect(next.getAll("tribunal")).toEqual(["TJMT", "TJMS"]);
+    expect(next.has("page")).toBe(false);
+  });
+
   it("stores pages beyond the first only", () => {
     expect(withPage(new URLSearchParams("a=1"), 2).toString()).toBe("a=1&page=2");
     expect(withPage(new URLSearchParams("a=1&page=2"), 1).toString()).toBe("a=1");

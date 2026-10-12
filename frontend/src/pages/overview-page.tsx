@@ -66,6 +66,7 @@ function queryFromSearchParams(params: URLSearchParams): OverviewQuery {
   const collectionId = text("collection_id");
   const presetId = text("preset_id");
   const signalCategory = text("signal_category");
+  const tribunals = [...new Set(params.getAll("tribunal").map((value) => value.trim()).filter(Boolean))];
   const decision = params.get("decision");
   const ruralLink = params.get("rural_link");
 
@@ -78,6 +79,7 @@ function queryFromSearchParams(params: URLSearchParams): OverviewQuery {
   if (collectionId) query.collection_id = collectionId;
   if (presetId) query.preset_id = presetId;
   if (signalCategory) query.signal_category = signalCategory;
+  if (tribunals.length) query.tribunal = tribunals;
   if (decision === "pending" || decision === "relevant" || decision === "discarded") {
     query.decision = decision;
   }
@@ -109,6 +111,7 @@ function filterParams(filters: OverviewFilters): URLSearchParams {
   for (const [key, value] of Object.entries(values)) {
     if (value !== undefined && value !== null && value !== "") params.set(key, String(value));
   }
+  for (const tribunal of filters.tribunals ?? []) params.append("tribunal", tribunal);
   return params;
 }
 
@@ -148,6 +151,7 @@ function ruralLinkLabel(value: NonNullable<OverviewFilters["rural_link"]>): stri
 function resolvedFilterLabels(filters: OverviewFilters, collectionLabel?: string): Array<[string, string]> {
   const labels: Array<[string, string | null | undefined]> = [
     ["Número CNJ", filters.process_number],
+    ["Tribunal", filters.tribunals?.join(", ") ?? null],
     ["Assunto", filters.subject],
     ["Código exato do tema", filters.subject_code],
     ["Nome exato do tema", filters.subject_name_exact],
@@ -374,7 +378,7 @@ export function OverviewPage() {
     <div className="space-y-6">
       <PageHeader
         title="Visão geral"
-        description="Indicadores descritivos da amostra persistida localmente; não representam o universo de processos do TJGO."
+        description="Indicadores descritivos dos dados persistidos localmente; a cobertura depende dos tribunais consultados."
       />
       {overview.isPending ? (
         <LoadingState variant="dashboard" label="Carregando indicadores locais…" />

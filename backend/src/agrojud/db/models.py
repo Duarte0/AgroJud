@@ -1016,6 +1016,87 @@ class SavedSearchVersion(Base):
     )
 
 
+class ExecutionGroup(Base):
+    """One requested multi-tribunal operation; every external call remains a child job."""
+
+    __tablename__ = "execution_groups"
+    __table_args__ = (
+        CheckConstraint("kind in ('discovery', 'refresh_number')", name="ck_execution_groups_kind"),
+        CheckConstraint("mode in ('demo', 'real')", name="ck_execution_groups_mode"),
+        CheckConstraint(
+            "state in ('queued', 'running', 'completed', 'partial', 'failed', "
+            "'blocked', 'cancelled')",
+            name="ck_execution_groups_state",
+        ),
+        Index("ix_execution_groups_created", "created_at", "id"),
+        Index(
+            "uq_execution_groups_active_idempotency",
+            "idempotency_key",
+            unique=True,
+            postgresql_where=text("idempotency_key is not null and state in ('queued', 'running')"),
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    mode: Mapped[str] = mapped_column(String(8), nullable=False)
+    source: Mapped[str] = mapped_column(String(80), nullable=False)
+    state: Mapped[str] = mapped_column(String(12), nullable=False, server_default="queued")
+    request_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(64))
+    matrix_sha256: Mapped[str | None] = mapped_column(String(64))
+    allowlist_version: Mapped[str | None] = mapped_column(String(40))
+    catalog_version: Mapped[str | None] = mapped_column(String(40))
+    tpu_version: Mapped[str | None] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ExecutionGroupMember(Base):
+    """One independent tribunal capability and optional existing collection job."""
+
+    __tablename__ = "execution_group_members"
+    __table_args__ = (
+        UniqueConstraint("group_id", "tribunal", name="uq_execution_group_members_group_tribunal"),
+        CheckConstraint(
+            "state in ('QUEUED', 'RUNNING', 'RETRY_WAIT', 'COMPLETED', 'PARTIAL', 'FAILED', "
+            "'CANCELLED', 'BLOCKED_NOT_VALIDATED', 'NOT_RUN')",
+            name="ck_execution_group_members_state",
+        ),
+        CheckConstraint("length(btrim(tribunal)) > 0", name="ck_execution_group_members_tribunal"),
+        ForeignKeyConstraint(
+            ["group_id"],
+            ["execution_groups.id"],
+            name="fk_execution_group_members_group",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["job_id"], ["jobs.id"], name="fk_execution_group_members_job", ondelete="RESTRICT"
+        ),
+        Index("ix_execution_group_members_job", "job_id"),
+        Index("ix_execution_group_members_group_state", "group_id", "state"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    group_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    tribunal: Mapped[str] = mapped_column(String(40), nullable=False)
+    state: Mapped[str] = mapped_column(String(32), nullable=False)
+    job_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    reason: Mapped[str | None] = mapped_column(Text)
+    availability_state: Mapped[str] = mapped_column(String(24), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class ScheduleDispatch(Base):
     """Idempotent local-date dispatch and its pending recovery/queue state."""
 
@@ -1039,9 +1120,12 @@ class ScheduleDispatch(Base):
             name="ck_schedule_dispatches_missed_interval",
         ),
         CheckConstraint(
-            "(status = 'pending' and job_id is null and request_snapshot is not null) or "
-            "(status = 'enqueued' and job_id is not null and request_snapshot is not null) or "
-            "(status in ('blocked', 'cancelled', 'coalesced') and job_id is null)",
+            "(status = 'pending' and job_id is null and group_id is null "
+            "and request_snapshot is not null) or "
+            "(status = 'enqueued' and ((job_id is not null and group_id is null) or "
+            "(job_id is null and group_id is not null)) and request_snapshot is not null) or "
+            "(status in ('blocked', 'cancelled', 'coalesced') "
+            "and job_id is null and group_id is null)",
             name="ck_schedule_dispatches_status_fields",
         ),
         ForeignKeyConstraint(
@@ -1058,6 +1142,12 @@ class ScheduleDispatch(Base):
         ),
         ForeignKeyConstraint(
             ["job_id"], ["jobs.id"], name="fk_schedule_dispatches_job", ondelete="RESTRICT"
+        ),
+        ForeignKeyConstraint(
+            ["group_id"],
+            ["execution_groups.id"],
+            name="fk_schedule_dispatches_group",
+            ondelete="RESTRICT",
         ),
         ForeignKeyConstraint(
             ["coalesced_into_id"],
@@ -1103,6 +1193,7 @@ class ScheduleDispatch(Base):
     scheduled_for_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(String(12), nullable=False)
     job_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
+    group_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True))
     request_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     missed_from: Mapped[date | None] = mapped_column(Date)
     missed_through: Mapped[date | None] = mapped_column(Date)

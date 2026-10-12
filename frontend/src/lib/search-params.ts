@@ -24,10 +24,18 @@ export function readEnum<T extends string>(
 /** Applies filter values, dropping empty ones, and returns to the first page. */
 export function withFilters(
   current: URLSearchParams,
-  values: Record<string, string | undefined>,
+  values: Record<string, string | string[] | undefined>,
 ): URLSearchParams {
   const next = new URLSearchParams(current);
   for (const [key, value] of Object.entries(values)) {
+    if (Array.isArray(value)) {
+      next.delete(key);
+      for (const item of value) {
+        const trimmed = item.trim();
+        if (trimmed) next.append(key, trimmed);
+      }
+      continue;
+    }
     const trimmed = value?.trim();
     if (trimmed) next.set(key, trimmed);
     else next.delete(key);

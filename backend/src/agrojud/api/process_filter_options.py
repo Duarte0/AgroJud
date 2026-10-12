@@ -151,6 +151,8 @@ def _candidate_rows(
         return _representation_value_rows(Representation.court_unit_name).union_all(
             _representation_value_rows(Representation.court_unit_code)
         )
+    if field == "tribunal":
+        return _representation_value_rows(Representation.tribunal)
     if field == "preset_id":
         preset_id = Job.parameters_snapshot["query"]["preset_id"].astext
         return (

@@ -1,4 +1,4 @@
-"""Single-attempt HTTPX adapter for the public TJGO DataJud endpoint."""
+"""Single-attempt HTTPX adapter for allowlisted public DataJud endpoints."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from agrojud.sources.contracts import (
     parse_source_page,
     validate_fetch_arguments,
 )
+from agrojud.sources.tribunals import tribunal_endpoint
 
 LOGGER = logging.getLogger(__name__)
 DATAJUD_TJGO_ENDPOINT = "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search"
@@ -35,7 +36,7 @@ class DataJudProbeResponse:
 
 
 class DataJudSourceAdapter:
-    """Calls only the public TJGO endpoint and performs no retries."""
+    """Calls only an allowlisted public tribunal endpoint and performs no retries."""
 
     def __init__(
         self,
@@ -85,7 +86,10 @@ class DataJudSourceAdapter:
     ) -> SourcePage:
         normalized_cursor = validate_fetch_arguments(query, cursor, page_size)
         payload = build_datajud_payload(query, normalized_cursor, page_size)
-        return self._fetch_payload(payload, len(query.sort), cursor_present=cursor is not None).page
+        endpoint = tribunal_endpoint(query.tribunal).endpoint_url
+        return self._fetch_payload(
+            endpoint, payload, len(query.sort), cursor_present=cursor is not None
+        ).page
 
     def fetch_probe_page(
         self,
@@ -101,10 +105,14 @@ class DataJudSourceAdapter:
             query = replace(query, sort=SOURCE_ID_TIEBREAKER_SORT)
         normalized_cursor = validate_fetch_arguments(query, cursor, page_size)
         payload = build_datajud_payload(query, normalized_cursor, page_size)
-        return self._fetch_payload(payload, len(query.sort), cursor_present=cursor is not None)
+        endpoint = tribunal_endpoint(query.tribunal).endpoint_url
+        return self._fetch_payload(
+            endpoint, payload, len(query.sort), cursor_present=cursor is not None
+        )
 
     def _fetch_payload(
         self,
+        endpoint: str,
         payload: dict[str, object],
         expected_sort_count: int,
         *,
@@ -112,7 +120,7 @@ class DataJudSourceAdapter:
     ) -> DataJudProbeResponse:
         try:
             response = self._client.post(
-                DATAJUD_TJGO_ENDPOINT,
+                endpoint,
                 headers={"Authorization": self._authorization},
                 json=payload,
             )
@@ -172,10 +180,14 @@ class DataJudSourceAdapter:
         process_number: str,
         cursor: Cursor | None = None,
         page_size: int = 100,
+        *,
+        tribunal: str = "TJGO",
     ) -> SourcePage:
         """Fetch one exact-CNJ page after local query validation."""
 
-        return self.fetch_page(build_query_by_case_number(process_number), cursor, page_size)
+        return self.fetch_page(
+            build_query_by_case_number(process_number, tribunal=tribunal), cursor, page_size
+        )
 
     def close(self) -> None:
         """Close the HTTPX client owned by this adapter."""

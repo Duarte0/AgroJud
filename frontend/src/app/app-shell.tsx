@@ -40,7 +40,7 @@ export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   return <div className="min-h-svh">
     <a href="#conteudo" className="sr-only z-50 rounded-md bg-card px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Pular para o conteúdo</a>
-    <aside className="app-sidebar"><Brand /><Navigation /><p className="sidebar-footer mt-auto px-3 pt-8 text-xs text-muted-foreground">Pesquisa e acompanhamento<br />Base local · TJGO</p></aside>
+    <aside className="app-sidebar"><Brand /><Navigation /><p className="sidebar-footer mt-auto px-3 pt-8 text-xs text-muted-foreground">Pesquisa e acompanhamento<br />Base local · tribunais habilitados</p></aside>
     <div className="app-workspace">
       <header className={cn("sticky top-0 z-40 flex min-h-14 items-center gap-3 border-b px-4 py-3 lg:px-8", environment.data?.environment === "demo" || environment.data?.source_enabled === false ? "bg-warning" : "bg-card")}>
         <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>

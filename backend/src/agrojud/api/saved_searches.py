@@ -11,9 +11,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from agrojud.api.errors import ERROR_RESPONSES
-from agrojud.api.jobs import _source_for_environment
+from agrojud.api.job_groups import _group_response
+from agrojud.api.jobs import SourceCapabilityUnavailable, _source_for_environment
 from agrojud.api.schedule_status import schedule_dispatch_response
 from agrojud.api.schemas import (
+    ExecutionGroupResponse,
     JobCreatedResponse,
     JobStatus,
     SavedSearchAvailabilityResponse,
@@ -23,11 +25,15 @@ from agrojud.api.schemas import (
     SavedSearchResponse,
 )
 from agrojud.db.models import SavedSearch, SavedSearchVersion, ScheduleDispatch
+from agrojud.services.execution_groups import execution_group_idempotency_key
 from agrojud.services.saved_searches import (
     SavedSearchNotFoundError,
     availability_reasons,
+    request_for_revision,
 )
-from agrojud.sources.contracts import SourceError
+from agrojud.sources.contracts import SourceError, SourceErrorCode
+from agrojud.sources.factory import real_source_unavailable_reason
+from agrojud.sources.tribunal_availability import tribunal_availability
 
 router = APIRouter(prefix="/api/v1/saved-searches", tags=["saved-searches"])
 
@@ -56,6 +62,7 @@ def create_saved_search(body: SavedSearchCreateRequest, request: Request) -> Sav
                 session,
                 search,
                 revision,
+                request=request,
                 mode=mode,
                 source=source,
                 reference_time=datetime.now(UTC),
@@ -82,6 +89,7 @@ def list_saved_searches(request: Request) -> list[SavedSearchResponse]:
                 session,
                 search,
                 request.app.state.saved_searches.current_revision(session, search),
+                request=request,
                 mode=mode,
                 source=source,
                 reference_time=datetime.now(UTC),
@@ -119,6 +127,7 @@ def patch_saved_search(
                 session,
                 search,
                 revision,
+                request=request,
                 mode=mode,
                 source=source,
                 reference_time=datetime.now(UTC),
@@ -130,7 +139,7 @@ def patch_saved_search(
 
 @router.post(
     "/{search_id}/run",
-    response_model=JobCreatedResponse,
+    response_model=JobCreatedResponse | ExecutionGroupResponse,
     status_code=202,
     responses=ERROR_RESPONSES,
     summary="Inicia explicitamente uma execução manual da busca salva",
@@ -139,8 +148,76 @@ def run_saved_search(
     search_id: UUID,
     request: Request,
     response: Response,
-) -> JobCreatedResponse:
+) -> JobCreatedResponse | ExecutionGroupResponse:
     mode, source = _source_for_environment(request.app.state.settings)
+    if request.app.state.settings.datajud_multitribunal_enabled:
+        unavailable = real_source_unavailable_reason(request.app.state.settings)
+        if unavailable is not None:
+            raise SourceCapabilityUnavailable(unavailable)
+        try:
+            with request.app.state.session_factory() as session, session.begin():
+                search = session.get(SavedSearch, search_id)
+                if search is None:
+                    raise SavedSearchNotFoundError("A busca salva não existe.")
+                revision = request.app.state.saved_searches.current_revision(session, search)
+                filters = dict(revision.filters)
+                tribunals = filters.get("tribunals", ["TJGO"])
+                if not isinstance(tribunals, list):
+                    raise SourceError(
+                        SourceErrorCode.CONTRACT,
+                        "A lista de tribunais da revisão salva é inválida.",
+                    )
+                now = datetime.now(UTC)
+                member_requests = {
+                    tribunal: request_for_revision(
+                        revision,
+                        search_id=search.id,
+                        mode=mode,
+                        source=source,
+                        reference_time=now,
+                        tribunal=tribunal,
+                    )
+                    for tribunal in tribunals
+                    if isinstance(tribunal, str)
+                }
+                if len(member_requests) != len(tribunals):
+                    raise SourceError(
+                        SourceErrorCode.CONTRACT,
+                        "A lista de tribunais da revisão salva é inválida.",
+                    )
+                created = request.app.state.execution_groups.create_in_session(
+                    session,
+                    kind="discovery",
+                    mode=mode,
+                    source=source,
+                    tribunals=tribunals,
+                    preset_id=revision.preset_id,
+                    request_snapshot={
+                        "saved_search_id": str(search.id),
+                        "saved_search_version": revision.version,
+                        "criteria": filters,
+                    },
+                    request_for_tribunal=lambda tribunal: member_requests[tribunal],
+                    idempotency_key=execution_group_idempotency_key(
+                        target_id=search.id,
+                        kind="discovery",
+                        requests=tuple(member_requests.values()),
+                    ),
+                    allow_blocked=True,
+                )
+                view = request.app.state.execution_groups.inspect_in_session(
+                    session, created.group_id
+                )
+                if view is None:  # pragma: no cover - inserted in this transaction
+                    raise RuntimeError("O grupo criado não pôde ser lido.")
+                group_response = _group_response(view)
+        except SavedSearchNotFoundError:
+            raise HTTPException(status_code=404, detail="A busca salva não existe.") from None
+        response.headers["Location"] = str(
+            request.url_for("get_job_group", group_id=str(group_response.id))
+        )
+        return group_response
+
     try:
         with request.app.state.session_factory() as session, session.begin():
             result = request.app.state.saved_searches.manual_run(
@@ -163,6 +240,7 @@ def _search_response(
     search: SavedSearch,
     revision: SavedSearchVersion,
     *,
+    request: Request,
     mode: str,
     source: str,
     reference_time: datetime,
@@ -194,11 +272,66 @@ def _search_response(
         filters=SavedSearchFilters.model_validate(revision.filters),
         enabled=search.enabled,
         next_run_at=search.next_run_at,
-        availability=SavedSearchAvailabilityResponse(
-            enabled=not reasons,
+        availability=_saved_search_availability(
+            request=request,
+            revision=revision,
+            search_id=search.id,
+            mode=mode,
+            source=source,
+            reference_time=reference_time,
             reasons=reasons,
         ),
         last_dispatch=schedule_dispatch_response(dispatch),
         created_at=search.created_at,
         updated_at=search.updated_at,
+    )
+
+
+def _saved_search_availability(
+    *,
+    request: Request,
+    revision: SavedSearchVersion,
+    search_id: UUID,
+    mode: str,
+    source: str,
+    reference_time: datetime,
+    reasons: list[str],
+) -> SavedSearchAvailabilityResponse:
+    saved_tribunals = revision.filters.get("tribunals", ["TJGO"])
+    if not isinstance(saved_tribunals, list):
+        return SavedSearchAvailabilityResponse(
+            enabled=False,
+            reasons=["A lista de tribunais da revisão salva é inválida."],
+        )
+    multitribunal_active = (
+        request.app.state.settings.datajud_multitribunal_enabled and source == "datajud"
+    )
+    if not multitribunal_active:
+        if len(saved_tribunals) != 1:
+            return SavedSearchAvailabilityResponse(
+                enabled=False,
+                reasons=["A seleção multitribunal não está ativa neste ambiente."],
+            )
+        return SavedSearchAvailabilityResponse(enabled=not reasons, reasons=reasons)
+    gate = tribunal_availability(request.app.state.settings, preset_id=revision.preset_id)
+    by_tribunal = {item.tribunal: item for item in gate.tribunals}
+    gate_reasons = []
+    for tribunal in saved_tribunals:
+        capability = by_tribunal.get(str(tribunal).upper())
+        if capability is None:
+            gate_reasons.append(f"{tribunal}: tribunal fora da allowlist versionada.")
+        elif not capability.enabled:
+            gate_reasons.append(f"{tribunal}: {capability.reason or 'capacidade indisponível'}")
+    combined = list(dict.fromkeys([*reasons, *gate.global_reasons, *gate_reasons]))
+    return SavedSearchAvailabilityResponse(
+        enabled=(
+            not reasons
+            and gate.selection_enabled
+            and any(
+                by_tribunal.get(str(tribunal).upper()) is not None
+                and by_tribunal[str(tribunal).upper()].enabled
+                for tribunal in saved_tribunals
+            )
+        ),
+        reasons=combined,
     )

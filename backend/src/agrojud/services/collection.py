@@ -51,6 +51,7 @@ from agrojud.sources.contracts import (
 )
 from agrojud.sources.factory import SourceKind, build_source_adapter
 from agrojud.sources.synthetic import build_demo_fixture
+from agrojud.sources.tribunal_availability import require_tribunal_available
 
 INITIAL_HIT_BUDGET = 2_000
 DEFAULT_PAGE_SIZE = 100
@@ -624,7 +625,7 @@ class CollectionJobHandler:
                 raise SourceError(
                     SourceErrorCode.CONTRACT, "O número CNJ da consulta está ausente."
                 )
-            return adapter.fetch_by_case_number(query.process_number, cursor, page_size)
+            return adapter.fetch_page(query, cursor, page_size)
         return adapter.fetch_page(query, cursor, page_size)
 
     @staticmethod
@@ -652,6 +653,17 @@ class CollectionJobHandler:
         expected_length = len(query.sort)
         previous = previous_cursor
         for hit in page.hits:
+            if (
+                isinstance(hit.source, Mapping)
+                and hit.source.get("tribunal") is not None
+                and hit.source.get("tribunal") != query.tribunal
+            ):
+                raise SourceError(
+                    SourceErrorCode.CONTRACT,
+                    "A resposta da fonte não corresponde ao tribunal solicitado.",
+                    field_path="_source.tribunal",
+                    validation_code="TRIBUNAL_IDENTITY_MISMATCH",
+                )
             if len(hit.sort_values) != expected_length:
                 raise SourceError(
                     SourceErrorCode.CONTRACT,
@@ -773,6 +785,17 @@ def build_collection_job_handler(settings: Settings) -> CollectionJobHandler:
                 settings,
                 kind,
                 fixtures={query: build_demo_fixture(query)},
+            )
+        if settings.datajud_multitribunal_enabled:
+            query = source_query_from_snapshot(
+                lease.parameters_snapshot.get("query"),
+                lease.parameters_snapshot.get("sort"),
+                environment="real",
+            )
+            require_tribunal_available(
+                settings,
+                query.tribunal,
+                preset_id=query.preset_id,
             )
         return build_source_adapter(settings, kind)
 
@@ -932,5 +955,5 @@ def _cursor_advances(previous: Cursor, current: Cursor, sort: Sequence[SortTerm]
 def _is_exact_case_number_query(query: SourceQuery) -> bool:
     """Accept the exact CNJ query under the current or a persisted legacy sort."""
 
-    expected = build_query_by_case_number(query.process_number or "")
+    expected = build_query_by_case_number(query.process_number or "", tribunal=query.tribunal)
     return replace(query, sort=expected.sort) == expected
