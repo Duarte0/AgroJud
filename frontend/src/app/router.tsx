@@ -5,6 +5,7 @@ import { AppShell } from "@/app/app-shell";
 export const router = createBrowserRouter([
   {
     element: <AppShell />,
+    hydrateFallbackElement: <AppShell />,
     children: [
       {
         index: true,

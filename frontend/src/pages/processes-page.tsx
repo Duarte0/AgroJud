@@ -247,7 +247,7 @@ function ProcessesTable({ processes }: { processes: ProcessSummary[] }) {
                         {" · "}
                         <Link
                           to={`/jobs/${latest.job_id}`}
-                          className="text-primary underline-offset-4 hover:underline"
+                          className="text-primary underline underline-offset-4 hover:underline"
                         >
                           ver coleta
                           {latest.job_status ? ` (${jobStatusLabel(latest.job_status).toLowerCase()})` : ""}

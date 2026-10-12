@@ -24,6 +24,7 @@ function filterOptions(request: Request): Response {
   const field = url.searchParams.get("field") ?? "";
   const query = url.searchParams.get("q")?.toLowerCase() ?? "";
   const values: Record<string, { value: string; label: string; detail?: string; process_count: number }[]> = {
+    process_number: [{ value: "0112556-70.2014.8.09.0181", label: "0112556-70.2014.8.09.0181", process_count: 1 }],
     class: [{ value: "execucao_canonica", label: "Execução rural", process_count: 3 }],
     tribunal: [{ value: "TJGO", label: "TJGO", process_count: 1 }],
     collection_id: [{
@@ -111,6 +112,25 @@ describe("ProcessesPage", () => {
       expect(screen.getByTestId("location")).toHaveTextContent("decision=relevant");
       expect(screen.getByTestId("location")).toHaveTextContent("rural_link=confirmed");
       expect(screen.getByTestId("location")).not.toHaveTextContent("page=3");
+    });
+  });
+
+  it("submits the process search while a CNJ suggestion is open", async () => {
+    mockApi({
+      "GET /api/v1/processes": () => json(page([])),
+      "GET /api/v1/process-filter-options": filterOptions,
+    });
+    renderRoute(<ProcessesPage />, { path: "/processes", url: "/processes" });
+
+    await userEvent.type(screen.getByLabelText("Número CNJ"), "0112556-70.2014.8.09.0181");
+    const suggestion = await screen.findByRole("option", { name: /0112556-70\.2014\.8\.09\.0181/ });
+    expect(suggestion).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Pesquisar" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("location")).toHaveTextContent(
+        "process_number=0112556-70.2014.8.09.0181",
+      );
     });
   });
 

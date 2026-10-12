@@ -626,7 +626,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const pending = createJobGroup.isPending;
 
   return (
-    <form onSubmit={submit} className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]" aria-describedby="collection-form-help">
+    <form onSubmit={submit} className="grid items-start gap-6 pb-24 xl:pb-0 xl:grid-cols-[minmax(0,1fr)_320px]" aria-describedby="collection-form-help">
       <div className="flex min-w-0 flex-col gap-5">
       <p id="collection-form-help" className="text-sm text-muted-foreground">
         Selecione o tema, o período e o escopo de tribunais. Cada tribunal terá progresso e
@@ -790,7 +790,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         </Button>
       </details>
       </div>
-      <aside className="flex flex-col gap-5 xl:sticky xl:top-20">
+      <aside className="flex flex-col gap-5 xl:sticky xl:top-20" aria-label="Resumo da coleta e coletas recentes">
         <Card>
           <CardHeader><CardTitle>Resumo da coleta</CardTitle></CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -801,14 +801,16 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
               <div><dt className="text-xs text-muted-foreground">Limite desta execução</dt><dd>{hitBudget} registros</dd></div>
             </dl>
 
-      <Button type="submit" size="lg" disabled={pending || !selected || sourceBlocked || availabilityFailed || !groupSelectionEnabled || selectedTribunals.length === 0}>
-        {pending ? (
-          <Loader2 className="animate-spin" aria-hidden="true" />
-        ) : (
-          <Play aria-hidden="true" />
-        )}
-        {pending ? "Enviando…" : "Iniciar coleta"}
-      </Button>
+            <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card p-3 shadow-sm xl:static xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none">
+              <Button type="submit" size="lg" className="w-full xl:w-auto" disabled={pending || !selected || sourceBlocked || availabilityFailed || !groupSelectionEnabled || selectedTribunals.length === 0}>
+                {pending ? (
+                  <Loader2 className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Play aria-hidden="true" />
+                )}
+                {pending ? "Enviando…" : "Iniciar coleta"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
         <Card><CardHeader><CardTitle>Coletas recentes</CardTitle></CardHeader><CardContent><RecentJobs /></CardContent></Card>

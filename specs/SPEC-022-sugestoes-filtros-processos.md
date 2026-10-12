@@ -34,6 +34,7 @@ Permitir que a pessoa encontre valores já presentes na base local enquanto pree
 
 - Transformar os nove campos textuais de Processos em comboboxes acessíveis por teclado, com correspondências atualizadas enquanto a pessoa digita e opção de texto livre.
 - Selecionar uma sugestão aplica seu valor canônico; continuar digitando mantém o uso livre dos filtros existentes.
+- Manter a lista de sugestões no fluxo do formulário para que ela não cubra a ação “Pesquisar”; a busca pode ser enviada por clique sem selecionar uma sugestão.
 - Para coleta, é necessário selecionar um resultado para aplicar o filtro, pois o identificador interno não é digitado nem exibido.
 - Resolver o rótulo de coleta em Processos e no resumo da Visão geral, inclusive quando a página é aberta por um link antigo com UUID.
 - Manter os quatro filtros finitos como seletores.
@@ -66,3 +67,5 @@ Permitir que a pessoa encontre valores já presentes na base local enquanto pree
 - Playwright, `./scripts/e2e.sh` com projeto `agrojud-spec022-e2e`, API `18777`, frontend `18778` e banco descartável — **22 passed**. Inclui digitação/teclado, seleção canônica, compatibilidade de `collection_id`, rótulos na Visão geral, exportação e fluxos relacionados. O ajuste do teste espera a navegação de detalhe antes de extrair o ID; o teste de exportação expande os filtros avançados antes de verificar o combobox.
 - Inspeção visual das capturas: [autocomplete de assunto](/tmp/agrojud-spec022-evidence/spec022-autocomplete-assunto.png), [filtros aplicados sem UUID visível](/tmp/agrojud-spec022-evidence/spec022-processos-filtros-aplicados.png) e [coleta rotulada na Visão geral](/tmp/agrojud-spec022-evidence/spec022-sugestoes-filtros-processos.png). Capturas fora do repositório.
 - Nenhuma migration; nenhum teste utilizou credencial, fonte ou volume operacional.
+
+Correção pós auditoria de 12/10/2026: a lista agora ocupa espaço no formulário e permanece estável durante o clique em “Pesquisar”. Um teste frontend cobre envio de CNJ enquanto a sugestão correspondente está aberta; o clique foi validado também no navegador local conectado à API do ambiente Real, em desktop e mobile, sem gravações na aplicação. `e2e/filter-options.spec.ts` passou no Compose sintético isolado junto com quatro cenários de redesign (5/5); o helper acompanha a navegação atual por grupo de coleta.
