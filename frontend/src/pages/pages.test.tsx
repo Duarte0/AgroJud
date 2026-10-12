@@ -25,6 +25,7 @@ function filterOptions(request: Request): Response {
   const query = url.searchParams.get("q")?.toLowerCase() ?? "";
   const values: Record<string, { value: string; label: string; detail?: string; process_count: number }[]> = {
     class: [{ value: "execucao_canonica", label: "Execução rural", process_count: 3 }],
+    tribunal: [{ value: "TJGO", label: "TJGO", process_count: 1 }],
     collection_id: [{
       value: "22222222-2222-4222-8222-222222222222",
       label: "10/10/2026 09:00 · rural.credito_contratos · Concluída",
@@ -111,6 +112,31 @@ describe("ProcessesPage", () => {
       expect(screen.getByTestId("location")).toHaveTextContent("rural_link=confirmed");
       expect(screen.getByTestId("location")).not.toHaveTextContent("page=3");
     });
+  });
+
+  it("applies the tribunal checkbox without crashing the page", async () => {
+    const api = mockApi({
+      "GET /api/v1/processes": () => json(page([buildProcess()])),
+      "GET /api/v1/process-filter-options": filterOptions,
+    });
+    renderRoute(<ProcessesPage />, { path: "/processes", url: "/processes" });
+    await screen.findByText("0000001-00.2026.8.09.0001");
+
+    await userEvent.click(screen.getByRole("button", { name: /Mais filtros/ }));
+    const tribunal = await screen.findByRole("checkbox", { name: "TJGO" });
+    await userEvent.click(tribunal);
+
+    expect(tribunal).toBeChecked();
+    expect(screen.getByRole("heading", { name: "Processos" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Pesquisar" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("location")).toHaveTextContent("tribunal=TJGO");
+    });
+    const processRequest = api.calls
+      .filter((request) => new URL(request.url).pathname === "/api/v1/processes")
+      .at(-1);
+    expect(new URL(processRequest!.url).searchParams.getAll("tribunal")).toEqual(["TJGO"]);
   });
 
   it("selects a canonical suggestion with the keyboard", async () => {

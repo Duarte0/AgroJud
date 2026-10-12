@@ -176,12 +176,15 @@ function FilterForm({ initial, collectionLabel, onApply, onClear }: {
                   name="tribunal"
                   value={option.value}
                   checked={values.tribunal.includes(option.value)}
-                  onChange={(event) => setValues((current) => ({
-                    ...current,
-                    tribunal: event.currentTarget.checked
-                      ? [...current.tribunal, option.value]
-                      : current.tribunal.filter((value) => value !== option.value),
-                  }))}
+                  onChange={(event) => {
+                    const checked = event.currentTarget.checked;
+                    setValues((current) => ({
+                      ...current,
+                      tribunal: checked
+                        ? [...current.tribunal, option.value]
+                        : current.tribunal.filter((value) => value !== option.value),
+                    }));
+                  }}
                   className="mt-0.5 size-4 accent-primary"
                 />
                 <span>{option.label}</span>
