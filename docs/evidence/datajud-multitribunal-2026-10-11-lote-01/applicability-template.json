@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "tribunals": {
+    "tjgo": {
+      "rural.credito_contratos": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "execucoes.amplas": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      }
+    },
+    "tjmt": {
+      "rural.credito_contratos": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "execucoes.amplas": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      }
+    },
+    "tjms": {
+      "rural.credito_contratos": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "execucoes.amplas": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      }
+    },
+    "tjpr": {
+      "rural.credito_contratos": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "execucoes.amplas": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      }
+    },
+    "trf1": {
+      "rural.credito_contratos": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "execucoes.amplas": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": null,
+        "reference_url": null,
+        "rationale": "Classificação TPU/competência pendente de revisão oficial."
+      }
+    }
+  }
+}

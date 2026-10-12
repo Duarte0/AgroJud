@@ -1365,11 +1365,53 @@ def test_matrix_cli_merges_and_writes_an_audited_review_copy(tmp_path: Path) -> 
     reviewed = json.loads(reviewed_path.read_text(encoding="utf-8"))
     assert merged["matrix_review"]["state"] == "PENDING_HUMAN_REVIEW"
     assert reviewed["matrix_review"]["decision"] == "APPROVED"
+    assert reviewed["matrix_review"]["reviewer"] == "Revisora CLI"
     assert (
         reviewed["matrix_review"]["matrix_sha256"]
         == hashlib.sha256(matrix_path.read_bytes()).hexdigest()
     )
     assert reviewed["coverage_status"] == "APPROVED_PARTIAL"
+
+
+def test_matrix_cli_reviews_without_reviewer_and_preserves_audit_evidence(
+    tmp_path: Path,
+) -> None:
+    batch_path = _write_local_batch(tmp_path / "batch", ["tjgo"])
+    matrix_path = tmp_path / "merged.json"
+    assert matrix_main(["merge", "--batch", str(batch_path), "--output", str(matrix_path)]) == 0
+
+    source_bytes = matrix_path.read_bytes()
+    source = json.loads(source_bytes)
+    reviewed_path = tmp_path / "reviewed.json"
+    assert (
+        matrix_main(
+            [
+                "review",
+                "--matrix",
+                str(matrix_path),
+                "--output",
+                str(reviewed_path),
+                "--decision",
+                "APPROVED",
+                "--rationale",
+                "Aprovação limitada às evidências VALIDATED.",
+            ]
+        )
+        == 0
+    )
+
+    reviewed = json.loads(reviewed_path.read_text(encoding="utf-8"))
+    review = reviewed["matrix_review"]
+    assert "reviewer" not in review
+    assert review["decision"] == "APPROVED"
+    assert review["rationale"] == "Aprovação limitada às evidências VALIDATED."
+    assert review["reviewed_at"].endswith("+00:00")
+    assert review["matrix_sha256"] == hashlib.sha256(source_bytes).hexdigest()
+    assert reviewed["coverage_status"] == "APPROVED_PARTIAL"
+    assert reviewed["coverage_assessment"] == "EVIDENCE_INCOMPLETE"
+    assert reviewed["coverage_matrix"] == source["coverage_matrix"]
+    assert reviewed["attempts"] == source["attempts"]
+    assert matrix_path.read_bytes() == source_bytes
 
 
 def test_matrix_merge_preserves_attempts_and_review_resolves_only_with_validated_run(

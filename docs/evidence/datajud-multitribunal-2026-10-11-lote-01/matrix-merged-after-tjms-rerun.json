@@ -1,0 +1,5199 @@
+{
+  "allowlist_version": "2026-10-11",
+  "attempts": [
+    {
+      "alias": "tjgo",
+      "allowlist_version": "2026-10-11",
+      "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+      "catalog_version": "1.1.0",
+      "code_version": "1.0.0",
+      "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+      "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+      "s1_s2": {
+        "aggregate_state": "VALIDATED",
+        "capabilities": {
+          "compound_sort": "VALIDATED",
+          "date_filter": "VALIDATED",
+          "envelope": "VALIDATED",
+          "essential_fields": "VALIDATED",
+          "http_access": "VALIDATED",
+          "pagination": "VALIDATED",
+          "query_by_case_number": "VALIDATED",
+          "sort_timestamp": "VALIDATED",
+          "source_identity": "VALIDATED",
+          "tribunal_identity": "VALIDATED"
+        }
+      },
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "INCONCLUSIVE",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "INCONCLUSIVE",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        }
+      },
+      "started_at": "2026-10-12T00:11:24.840476+00:00"
+    },
+    {
+      "alias": "tjmt",
+      "allowlist_version": "2026-10-11",
+      "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+      "catalog_version": "1.1.0",
+      "code_version": "1.0.0",
+      "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+      "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+      "s1_s2": {
+        "aggregate_state": "VALIDATED",
+        "capabilities": {
+          "compound_sort": "VALIDATED",
+          "date_filter": "VALIDATED",
+          "envelope": "VALIDATED",
+          "essential_fields": "VALIDATED",
+          "http_access": "VALIDATED",
+          "pagination": "VALIDATED",
+          "query_by_case_number": "VALIDATED",
+          "sort_timestamp": "VALIDATED",
+          "source_identity": "VALIDATED",
+          "tribunal_identity": "VALIDATED"
+        }
+      },
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        }
+      },
+      "started_at": "2026-10-12T00:11:24.840476+00:00"
+    },
+    {
+      "alias": "tjms",
+      "allowlist_version": "2026-10-11",
+      "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+      "catalog_version": "1.1.0",
+      "code_version": "1.0.0",
+      "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+      "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+      "s1_s2": {
+        "aggregate_state": "INCONCLUSIVE",
+        "capabilities": {
+          "compound_sort": "VALIDATED",
+          "date_filter": "VALIDATED",
+          "envelope": "VALIDATED",
+          "essential_fields": "VALIDATED",
+          "http_access": "VALIDATED",
+          "pagination": "INCONCLUSIVE",
+          "query_by_case_number": "VALIDATED",
+          "sort_timestamp": "VALIDATED",
+          "source_identity": "VALIDATED",
+          "tribunal_identity": "VALIDATED"
+        }
+      },
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        }
+      },
+      "started_at": "2026-10-12T00:11:24.840476+00:00"
+    },
+    {
+      "alias": "tjpr",
+      "allowlist_version": "2026-10-11",
+      "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+      "catalog_version": "1.1.0",
+      "code_version": "1.0.0",
+      "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+      "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+      "s1_s2": {
+        "aggregate_state": "VALIDATED",
+        "capabilities": {
+          "compound_sort": "VALIDATED",
+          "date_filter": "VALIDATED",
+          "envelope": "VALIDATED",
+          "essential_fields": "VALIDATED",
+          "http_access": "VALIDATED",
+          "pagination": "VALIDATED",
+          "query_by_case_number": "VALIDATED",
+          "sort_timestamp": "VALIDATED",
+          "source_identity": "VALIDATED",
+          "tribunal_identity": "VALIDATED"
+        }
+      },
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        }
+      },
+      "started_at": "2026-10-12T00:11:24.840476+00:00"
+    },
+    {
+      "alias": "trf1",
+      "allowlist_version": "2026-10-11",
+      "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+      "catalog_version": "1.1.0",
+      "code_version": "1.0.0",
+      "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+      "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+      "s1_s2": {
+        "aggregate_state": "VALIDATED",
+        "capabilities": {
+          "compound_sort": "VALIDATED",
+          "date_filter": "VALIDATED",
+          "envelope": "VALIDATED",
+          "essential_fields": "VALIDATED",
+          "http_access": "VALIDATED",
+          "pagination": "VALIDATED",
+          "query_by_case_number": "VALIDATED",
+          "sort_timestamp": "VALIDATED",
+          "source_identity": "VALIDATED",
+          "tribunal_identity": "VALIDATED"
+        }
+      },
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "INCONCLUSIVE",
+          "catalog_version": "1.1.0",
+          "pair_state": "INCONCLUSIVE",
+          "preset_version": "1.0.0",
+          "query_state": "NOT_RUN",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "NOT_RUN",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "INCONCLUSIVE",
+          "catalog_version": "1.1.0",
+          "pair_state": "INCONCLUSIVE",
+          "preset_version": "1.0.0",
+          "query_state": "NOT_RUN",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "NOT_RUN",
+          "tpu_version": "06/10/2026"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "INCONCLUSIVE",
+          "catalog_version": "1.1.0",
+          "pair_state": "INCONCLUSIVE",
+          "preset_version": "1.0.0",
+          "query_state": "NOT_RUN",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "NOT_RUN",
+          "tpu_version": "06/10/2026"
+        }
+      },
+      "started_at": "2026-10-12T00:11:24.840476+00:00"
+    },
+    {
+      "alias": "tjms",
+      "allowlist_version": "2026-10-11",
+      "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+      "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+      "catalog_version": "1.1.0",
+      "code_version": "1.0.0",
+      "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+      "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+      "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+      "s1_s2": {
+        "aggregate_state": "VALIDATED",
+        "capabilities": {
+          "compound_sort": "VALIDATED",
+          "date_filter": "VALIDATED",
+          "envelope": "VALIDATED",
+          "essential_fields": "VALIDATED",
+          "http_access": "VALIDATED",
+          "pagination": "VALIDATED",
+          "query_by_case_number": "VALIDATED",
+          "sort_timestamp": "VALIDATED",
+          "source_identity": "VALIDATED",
+          "tribunal_identity": "VALIDATED"
+        }
+      },
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "INCONCLUSIVE",
+          "preset_version": "1.0.0",
+          "query_state": "INCONCLUSIVE",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "INCONCLUSIVE",
+          "tpu_version": "06/10/2026"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "INCONCLUSIVE",
+          "preset_version": "1.0.0",
+          "query_state": "INCONCLUSIVE",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "INCONCLUSIVE",
+          "tpu_version": "06/10/2026"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "catalog_version": "1.1.0",
+          "pair_state": "VALIDATED",
+          "preset_version": "1.0.0",
+          "query_state": "VALIDATED",
+          "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+          "sample_state": "VALIDATED",
+          "tpu_version": "06/10/2026"
+        }
+      },
+      "started_at": "2026-10-12T00:44:49.677400+00:00"
+    }
+  ],
+  "batch_count": 2,
+  "batches": [
+    {
+      "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+      "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+      "catalog_version": "1.1.0",
+      "code_version": "1.0.0",
+      "requested_aliases": [
+        "tjgo",
+        "tjmt",
+        "tjms",
+        "tjpr",
+        "trf1"
+      ],
+      "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+      "started_at": "2026-10-12T00:11:24.840476+00:00"
+    },
+    {
+      "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+      "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+      "catalog_version": "1.1.0",
+      "code_version": "1.0.0",
+      "requested_aliases": [
+        "tjms"
+      ],
+      "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+      "started_at": "2026-10-12T00:44:49.677400+00:00"
+    }
+  ],
+  "catalog_version": "1.1.0",
+  "code_version": "1.0.0",
+  "coverage_assessment": "EVIDENCE_INCOMPLETE",
+  "coverage_matrix": [
+    {
+      "alias": "tjac",
+      "canonical_tribunal": "TJAC",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjal",
+      "canonical_tribunal": "TJAL",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjam",
+      "canonical_tribunal": "TJAM",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjap",
+      "canonical_tribunal": "TJAP",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjba",
+      "canonical_tribunal": "TJBA",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjce",
+      "canonical_tribunal": "TJCE",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjdft",
+      "canonical_tribunal": "TJDFT",
+      "justice": "TJDFT",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjes",
+      "canonical_tribunal": "TJES",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjgo",
+      "canonical_tribunal": "TJGO",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "date_filter": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "envelope": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "essential_fields": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "http_access": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "pagination": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "query_by_case_number": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "sort_timestamp": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "source_identity": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "tribunal_identity": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        }
+      },
+      "s1_s2_state": "VALIDATED",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "INCONCLUSIVE",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "INCONCLUSIVE",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "d6fbc4f0df64617eb56712e08e949ce6848fe9420ceac49b5ac320b83681de1f",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjma",
+      "canonical_tribunal": "TJMA",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjmg",
+      "canonical_tribunal": "TJMG",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjms",
+      "canonical_tribunal": "TJMS",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "date_filter": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "envelope": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "essential_fields": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "http_access": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "pagination": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "INCONCLUSIVE"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "query_by_case_number": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "sort_timestamp": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "source_identity": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "tribunal_identity": {
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            },
+            {
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        }
+      },
+      "s1_s2_state": "VALIDATED",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            },
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 2,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            },
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "INCONCLUSIVE",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 2,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            },
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "INCONCLUSIVE",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 2,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 2,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "1e206f0b888a5863bee409a265b856fa4219955bb042fa9728eb67b424e2bd1e",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            },
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "batch_sha256": "4d88a4ed21e3c3f401bac8073bd2ea676aebaad1794e3fcfbec7806c48049b38",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjms-5a2c7233-0742-486f-8ef3-e8c1f80a498f.json",
+              "report_sha256": "88a59aaa09e0aea514e6fbd49dff9f456f72dfe4cc92f17e50696a90d1d0449c",
+              "run_id": "5a2c7233-0742-486f-8ef3-e8c1f80a498f",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:44:49.677400+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 2,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjmt",
+      "canonical_tribunal": "TJMT",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "date_filter": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "envelope": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "essential_fields": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "http_access": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "pagination": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "query_by_case_number": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "sort_timestamp": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "source_identity": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "tribunal_identity": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        }
+      },
+      "s1_s2_state": "VALIDATED",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "a31a355a69c80bc76d6f695e6404fd4cf0a5741261b745ae8508ce92d8eb5158",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjpa",
+      "canonical_tribunal": "TJPA",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjpb",
+      "canonical_tribunal": "TJPB",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjpe",
+      "canonical_tribunal": "TJPE",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjpi",
+      "canonical_tribunal": "TJPI",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjpr",
+      "canonical_tribunal": "TJPR",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "date_filter": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "envelope": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "essential_fields": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "http_access": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "pagination": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "query_by_case_number": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "sort_timestamp": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "source_identity": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "tribunal_identity": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        }
+      },
+      "s1_s2_state": "VALIDATED",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "66c6352a01299a4d3638faea04d56546726ffd2463c1dd7f6faea5bab56cd792",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjrj",
+      "canonical_tribunal": "TJRJ",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjrn",
+      "canonical_tribunal": "TJRN",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjro",
+      "canonical_tribunal": "TJRO",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjrr",
+      "canonical_tribunal": "TJRR",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjrs",
+      "canonical_tribunal": "TJRS",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjsc",
+      "canonical_tribunal": "TJSC",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjse",
+      "canonical_tribunal": "TJSE",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjsp",
+      "canonical_tribunal": "TJSP",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "tjto",
+      "canonical_tribunal": "TJTO",
+      "justice": "TJ",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "trf1",
+      "canonical_tribunal": "TRF1",
+      "justice": "TRF",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "date_filter": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "envelope": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "essential_fields": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "http_access": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "pagination": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "query_by_case_number": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "sort_timestamp": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "source_identity": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        },
+        "tribunal_identity": {
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED"
+            }
+          ],
+          "resolution": null,
+          "state": "VALIDATED"
+        }
+      },
+      "s1_s2_state": "VALIDATED",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "APPLICABLE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "VALIDATED",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "VALIDATED",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "INCONCLUSIVE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "INCONCLUSIVE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "INCONCLUSIVE",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "INCONCLUSIVE",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "INCONCLUSIVE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "INCONCLUSIVE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "INCONCLUSIVE",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "INCONCLUSIVE",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "INCONCLUSIVE",
+          "attempt_count": 1,
+          "attempts": [
+            {
+              "applicability_state": "INCONCLUSIVE",
+              "batch_file": "batch-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "batch_sha256": "1d44925d659a0edac3750ebf02139944bc77a690010c2df2d33681e48ff31fa1",
+              "catalog_version": "1.1.0",
+              "current_for_coverage": true,
+              "preset_version": "1.0.0",
+              "report_file": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json",
+              "report_sha256": "873f0afb7990fcf22d464c36ae911a526344f9ae3a4f218675fd9a8edb0a88e8",
+              "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+              "stale_reasons": [],
+              "started_at": "2026-10-12T00:11:24.840476+00:00",
+              "state": "INCONCLUSIVE",
+              "tpu_version": "06/10/2026"
+            }
+          ],
+          "current_attempt_count": 1,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "INCONCLUSIVE",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "trf2",
+      "canonical_tribunal": "TRF2",
+      "justice": "TRF",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "trf3",
+      "canonical_tribunal": "TRF3",
+      "justice": "TRF",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "trf4",
+      "canonical_tribunal": "TRF4",
+      "justice": "TRF",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "trf5",
+      "canonical_tribunal": "TRF5",
+      "justice": "TRF",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    },
+    {
+      "alias": "trf6",
+      "canonical_tribunal": "TRF6",
+      "justice": "TRF",
+      "s1_s2_capabilities": {
+        "compound_sort": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "date_filter": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "envelope": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "essential_fields": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "http_access": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "pagination": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "query_by_case_number": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "sort_timestamp": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "source_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        },
+        "tribunal_identity": {
+          "attempt_count": 0,
+          "attempts": [],
+          "resolution": null,
+          "state": "NOT_RUN"
+        }
+      },
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "attempt_count": 0,
+          "attempts": [],
+          "current_attempt_count": 0,
+          "current_catalog_version": "1.1.0",
+          "current_preset_version": "1.0.0",
+          "current_tpu_version": "06/10/2026",
+          "pair_state": "NOT_RUN",
+          "resolution": null
+        }
+      }
+    }
+  ],
+  "coverage_status": "PENDING_HUMAN_REVIEW",
+  "created_at": "2026-10-12T00:53:37.973993+00:00",
+  "kind": "datajud_multitribunal_coverage_matrix",
+  "matrix_review": {
+    "state": "PENDING_HUMAN_REVIEW"
+  },
+  "preset_versions": {
+    "execucoes.amplas": "1.0.0",
+    "recuperacao_judicial.por_assunto": "1.0.0",
+    "recuperacao_judicial.por_classe": "1.0.0",
+    "rural.credito_contratos": "1.0.0"
+  },
+  "report_version": 1,
+  "tpu_version": "06/10/2026"
+}

@@ -156,7 +156,7 @@ def review_coverage_matrix(
     matrix_path: Path,
     output_path: Path,
     *,
-    reviewer: str,
+    reviewer: str | None = None,
     decision: str,
     rationale: str,
     resolutions_path: Path | None = None,
@@ -174,12 +174,18 @@ def review_coverage_matrix(
         )
     if decision not in {"APPROVED", "REJECTED"}:
         raise ValueError("A decisão de revisão deve ser APPROVED ou REJECTED.")
-    reviewer_value = _sanitize_rationale(_bounded_required_text(reviewer, "reviewer", maximum=120))
+    reviewer_value = None
+    if reviewer is not None:
+        reviewer_value = _sanitize_rationale(
+            _bounded_required_text(reviewer, "reviewer", maximum=120)
+        )
+        if not reviewer_value:
+            raise ValueError("A identificação informada para a pessoa revisora é inválida.")
     rationale_value = _sanitize_rationale(
         _bounded_required_text(rationale, "rationale", maximum=500)
     )
-    if not reviewer_value or not rationale_value:
-        raise ValueError("Identificação da pessoa revisora e justificativa são obrigatórias.")
+    if not rationale_value:
+        raise ValueError("A justificativa da revisão é obrigatória.")
 
     matrix, matrix_bytes = _read_json_object(matrix_path, "matriz consolidada")
     _validate_matrix_for_review(matrix)
@@ -205,15 +211,17 @@ def review_coverage_matrix(
     timestamp = reviewed_at or datetime.now(UTC)
     if timestamp.tzinfo is None:
         raise ValueError("A data da revisão precisa incluir fuso horário.")
-    reviewed_matrix["matrix_review"] = {
+    review_record: JsonObject = {
         "state": "REVIEWED",
         "decision": decision,
-        "reviewer": reviewer_value,
         "reviewed_at": timestamp.astimezone(UTC).isoformat(),
         "rationale": rationale_value,
         "matrix_sha256": hashlib.sha256(matrix_bytes).hexdigest(),
         "resolutions": resolutions,
     }
+    if reviewer_value is not None:
+        review_record["reviewer"] = reviewer_value
+    reviewed_matrix["matrix_review"] = review_record
     reviewed_matrix["coverage_assessment"] = (
         "EVIDENCE_COMPLETE" if complete else "EVIDENCE_INCOMPLETE"
     )
@@ -249,7 +257,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--output", required=True, type=Path, help="Novo arquivo revisado JSON."
     )
     review_parser.add_argument(
-        "--reviewer", required=True, help="Identificação da pessoa revisora."
+        "--reviewer", help="Identificação opcional da pessoa revisora; registrada se informada."
     )
     review_parser.add_argument(
         "--decision", required=True, choices=("APPROVED", "REJECTED"), help="Decisão explícita."
@@ -273,7 +281,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             review_coverage_matrix(
                 cast(Path, args.matrix),
                 cast(Path, args.output),
-                reviewer=cast(str, args.reviewer),
+                reviewer=cast(str | None, args.reviewer),
                 decision=cast(str, args.decision),
                 rationale=cast(str, args.rationale),
                 resolutions_path=cast(Path | None, args.resolutions),

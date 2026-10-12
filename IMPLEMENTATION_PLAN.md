@@ -530,7 +530,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] SPEC-021 — Redesign visual, responsivo e acessível do frontend concluído com testes e evidências.
 - [x] SPEC-022 — Sugestões locais e pesquisáveis nos filtros textuais de Processos; filtros finitos, URLs e semântica da consulta preservados e validados localmente.
 - [x] SPEC-023 — Rolagem vertical acessível nas listas de eventos, com paginação e evidência preservadas e validação local concluída.
-- [x] SPEC-024 — Probe isolado, merge dos sete lotes, histórico de tentativas, revisão auditável e testes locais concluídos; execução externa e revisão operacional das evidências permanecem pendentes.
+- [x] SPEC-024 — Probe isolado, merge, histórico de tentativas e revisão auditável concluídos; evidência externa revisada parcialmente para cinco tribunais, com 28 `NOT_RUN` e cobertura nacional pendente. Nenhum novo endpoint foi habilitado.
 - [x] Aceite sintético completo, conforme matriz da SPEC-020.
 - [x] Aceite real TJGO registrado separadamente na matriz da SPEC-020.
 - [x] Instalação em Compose descartável e restauração verificadas.
