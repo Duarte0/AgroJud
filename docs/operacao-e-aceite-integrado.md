@@ -33,6 +33,25 @@ Abra `http://127.0.0.1:5173`. A API também publica `http://127.0.0.1:8000/api/v
 
 O real usa `.env.real`, `agrojud-real`, frontend em `127.0.0.1:5174` e API em `127.0.0.1:8001`. O arquivo de exemplo não contém chave DataJud; a credencial local deve ser configurada somente no backend. Desde 10/10/2026 a coleta real fica habilitada quando `DATAJUD_API_KEY` está configurada; sem chave, a API informa o motivo e não enfileira jobs. Presets e regras de sinais seguem a evidência por item do catálogo. Não execute migração ou probe real como parte da demonstração sintética.
 
+### Rollout multitribunal real local
+
+Em 12/10/2026, o ambiente `agrojud-real` recebeu promoção explícita da matriz revisada `docs/evidence/datajud-multitribunal-2026-10-11-lote-01/matrix-merged-after-tjms-rerun-reviewed.json`, com SHA-256 `c9d43ac5879acf4fde6d2a99d3485b96dba73af54e06ebe4db746a8d3fb42b8d` e `DATAJUD_MULTITRIBUNAL_ENABLED=true` em `.env.real` (arquivo local ignorado pelo Git). API e worker leem a matriz montada somente para leitura em `/run/agrojud/matrix-reviewed.json`. Para rollback de novas admissões multitribunal, use `DATAJUD_MULTITRIBUNAL_ENABLED=false`; os dados já confirmados não são removidos. Após qualquer alteração em `.env.real`, recrie somente API/worker:
+
+```sh
+docker compose --project-name agrojud-real --env-file .env.real -f compose.yaml --profile worker up --detach --wait --force-recreate --no-deps api worker
+```
+
+A API local confirmou disponibilidade por preset. No Radar, os tribunais elegíveis vêm pré-selecionados; desmarque os que não quer consultar e clique **Iniciar coleta**. Cada tribunal vira um job independente e a página do grupo mostra progresso e cobertura separadamente:
+
+| Preset | Tribunais elegíveis nesta matriz |
+| --- | --- |
+| `execucoes.amplas` | TJGO, TJMS, TJMT, TJPR, TRF1 |
+| `recuperacao_judicial.por_assunto` | TJMS, TJMT, TJPR |
+| `recuperacao_judicial.por_classe` | TJGO, TJMS, TJMT, TJPR |
+| `rural.credito_contratos` | TJGO, TJMS, TJMT, TJPR |
+
+Os demais 28 tribunais (`NOT_RUN`) e pares S5 `INCONCLUSIVE` continuam bloqueados. O padrão de novas instalações e `.env.real.example` continua desligado. A promoção local verificou disponibilidade e prontidão, sem executar nova probe ou coleta DataJud.
+
 ## Migrations, jobs e desligamento
 
 Subir PostgreSQL não aplica migrations. Rode `alembic upgrade head` explicitamente antes de esperar readiness ou iniciar worker. Uma readiness 503 com motivo de revisão pendente exige aplicar a migration compatível; não apague schema ou volume para contornar o erro.

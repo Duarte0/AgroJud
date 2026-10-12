@@ -2,7 +2,7 @@
 
 Data: 12/10/2026.
 
-Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redesign do frontend jurídico e de dados em 10/10/2026, preservando as funcionalidades existentes. SPEC-022 implementou sugestões pesquisáveis para todos os filtros textuais de Processos e concluiu validação local em 10/10/2026. SPEC-023 aplicou rolagem vertical acessível às listas de eventos compartilhadas e concluiu validação local em 11/10/2026. SPEC-020 foi aprovada local e realmente em 10/10/2026 após S1/S2/S5; `sinal.penhora` permanece desabilitado porque o movimento 11382 não aparece no TJGO. SPEC-024 concluiu localmente o probe, merge auditável e revisão versionada; a matriz externa foi aprovada parcialmente para cinco tribunais, com 28 `NOT_RUN`, quatro pares S5 `INCONCLUSIVE` e nenhum novo endpoint habilitado. SPEC-025 concluiu os critérios locais AC1–AC13 em 12/10/2026; sua flag permanece desligada por padrão e não houve ativação operacional nem nova probe DataJud.
+Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redesign do frontend jurídico e de dados em 10/10/2026, preservando as funcionalidades existentes. SPEC-022 implementou sugestões pesquisáveis para todos os filtros textuais de Processos e concluiu validação local em 10/10/2026. SPEC-023 aplicou rolagem vertical acessível às listas de eventos compartilhadas e concluiu validação local em 11/10/2026. SPEC-020 foi aprovada local e realmente em 10/10/2026 após S1/S2/S5; `sinal.penhora` permanece desabilitado porque o movimento 11382 não aparece no TJGO. SPEC-024 concluiu localmente o probe, merge auditável e revisão versionada; a matriz externa foi aprovada parcialmente para cinco tribunais, com 28 `NOT_RUN`, quatro pares S5 `INCONCLUSIVE` e nenhum novo endpoint habilitado. SPEC-025 concluiu os critérios locais AC1–AC13 em 12/10/2026; a flag permanece desligada por padrão. No runtime local `agrojud-real`, caminho e hash da matriz revisada foram promovidos explicitamente em 12/10, liberando apenas pares S5 validados; não houve nova probe ou coleta DataJud nessa ativação.
 
 ## 1. Estado atual e orientação
 
@@ -539,7 +539,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-001 a SPEC-025 estão DONE nos alcances registrados em cada documento. A matriz da SPEC-024 segue aprovada parcialmente para cinco tribunais, com execução externa parcial; SPEC-025 passou seus critérios de software localmente, mas a flag permanece desligada por padrão e não houve probe nova ou ativação operacional. A matriz não habilita a fonte automaticamente.
+A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-001 a SPEC-025 estão DONE nos alcances registrados em cada documento. A matriz da SPEC-024 segue aprovada parcialmente para cinco tribunais, com execução externa parcial; SPEC-025 passou seus critérios de software localmente e a flag permanece desligada por padrão em instalações novas. No `agrojud-real` local, a matriz revisada foi promovida explicitamente em 12/10 e a disponibilidade por preset foi confirmada sem nova requisição DataJud. A matriz não habilita a fonte automaticamente em outras instalações.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |
@@ -571,7 +571,7 @@ A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-
 
 Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → 024 → 025. SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017.
 
-SPEC-024 valida localmente os 33 endpoints TJ/TJDFT/TRF em lotes explícitos de até cinco e oferece `agrojud-datajud-multitribunal-matrix merge/review` para agregar tentativas e registrar decisão com hash da matriz de entrada. A revisão atual aprovou parcialmente TJGO, TJMT, TJMS, TJPR e TRF1 em S1/S2 e 16 pares S5; mantém 4 pares inconclusivos e 28 tribunais não executados. SPEC-025 implementa fluxos limitados a esses pares validados e passou os aceites locais. A feature flag permanece desligada por padrão; ativação real depende da promoção explícita do caminho/hash da matriz, sem a qual o runtime mantém o comportamento TJGO existente.
+SPEC-024 valida localmente os 33 endpoints TJ/TJDFT/TRF em lotes explícitos de até cinco e oferece `agrojud-datajud-multitribunal-matrix merge/review` para agregar tentativas e registrar decisão com hash da matriz de entrada. A revisão atual aprovou parcialmente TJGO, TJMT, TJMS, TJPR e TRF1 em S1/S2 e 16 pares S5; mantém 4 pares inconclusivos e 28 tribunais não executados. SPEC-025 implementa fluxos limitados a esses pares validados e passou os aceites locais. A feature flag permanece desligada por padrão; ativação real depende da promoção explícita do caminho/hash da matriz, sem a qual o runtime mantém o comportamento TJGO existente. No `agrojud-real` local, essa promoção foi feita em 12/10 e a API confirmou disponibilidade parcial por preset, sem nova chamada DataJud.
 
 ### Esclarecimentos técnicos registrados na especificação
 
