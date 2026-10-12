@@ -18,6 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from agrojud.config import get_settings
 from agrojud.db.engine import make_engine
 from agrojud.services.collection import build_collection_job_handler
+from agrojud.services.execution_groups import ExecutionGroupService
 from agrojud.services.job_worker import LeasedWorker
 from agrojud.services.jobs import JobService
 from agrojud.services.scheduling import SCHEDULER_INTERVAL_SECONDS, DailyScheduler
@@ -59,7 +60,15 @@ def main(argv: list[str] | None = None) -> None:
     signal_handler = build_signal_run_handler(jobs)
     mode: Literal["demo", "real"] = "real" if settings.environment == "real" else "demo"
     source = "datajud" if mode == "real" else "synthetic"
-    scheduler = DailyScheduler(sessions, jobs, mode=mode, source=source)
+    execution_groups = ExecutionGroupService(jobs, settings)
+    scheduler = DailyScheduler(
+        sessions,
+        jobs,
+        mode=mode,
+        source=source,
+        settings=settings,
+        execution_groups=execution_groups,
+    )
     worker_id = os.getenv("JOB_WORKER_ID") or f"{socket.gethostname()}:{os.getpid()}"
     worker = LeasedWorker(
         jobs,

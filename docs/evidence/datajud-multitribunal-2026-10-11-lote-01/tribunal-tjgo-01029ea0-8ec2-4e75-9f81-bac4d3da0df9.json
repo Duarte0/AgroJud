@@ -1,0 +1,1285 @@
+{
+  "alias": "tjgo",
+  "allowlist_version": "2026-10-11",
+  "canonical_tribunal": "TJGO",
+  "catalog_version": "1.1.0",
+  "code_version": "1.0.0",
+  "duration_ms": 379242,
+  "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+  "endpoint_catalog_reference": "https://datajud-wiki.cnj.jus.br/api-publica/endpoints/",
+  "environment": "real",
+  "filed_from": "2026-05-01",
+  "filed_to_exclusive": "2026-06-01",
+  "justice": "TJ",
+  "kind": "datajud_multitribunal_endpoint_report",
+  "report_version": 1,
+  "request_budget": {
+    "automatic_retries": false,
+    "max_s1_s2_requests": 6,
+    "max_s5_requests_per_pair": 2,
+    "page_size": 100,
+    "s5_spacing_seconds": 1.0,
+    "s5_window_days": 31,
+    "writes_to_product_database": false
+  },
+  "requests_made": 10,
+  "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+  "runtime_activation_changed": false,
+  "s1_s2": {
+    "aggregate_state": "VALIDATED",
+    "capabilities": {
+      "compound_sort": {
+        "evidence": {
+          "duplicate_primary_values": 0,
+          "reason": "Sort composto foi aceito e observado em ordem ascendente na amostra.",
+          "sample_count": 100
+        },
+        "state": "VALIDATED"
+      },
+      "date_filter": {
+        "evidence": {
+          "matching_hits": 100,
+          "max_observed_date": "2026-05-13",
+          "min_observed_date": "2026-05-01",
+          "reason": "A data de ajuizamento de cada hit foi comparada com [início, fim exclusivo).",
+          "sample_count": 100
+        },
+        "state": "VALIDATED"
+      },
+      "envelope": {
+        "evidence": {
+          "hit_count": 100,
+          "reason": "Envelope hits/hits e sort aceitos pelo parser de SPEC-002."
+        },
+        "state": "VALIDATED"
+      },
+      "essential_fields": {
+        "evidence": {
+          "reason": "Campos essenciais verificados em todos os hits observados.",
+          "sample_count": 100,
+          "valid_hits": 100
+        },
+        "state": "VALIDATED"
+      },
+      "http_access": {
+        "evidence": {
+          "reason": "O endpoint respondeu HTTP 2xx à consulta limitada."
+        },
+        "state": "VALIDATED"
+      },
+      "pagination": {
+        "evidence": {
+          "cursor_advanced": true,
+          "duplicate_ids_within_or_across_pages": 0,
+          "first_page_hits": 100,
+          "ordered_across_boundary": true,
+          "ordered_within_pages": true,
+          "overlap_by_source_document_id": 0,
+          "reason": "Duas páginas não vazias avançaram, ordenadas e sem sobreposição observada.",
+          "second_page_hits": 100,
+          "timestamp_second_page_observed": true,
+          "timestamp_ties_observed": 0,
+          "two_non_empty_pages": true
+        },
+        "state": "VALIDATED"
+      },
+      "query_by_case_number": {
+        "evidence": {
+          "matching_hits": 1,
+          "reason": "Consulta construída apenas com CNJ de hit público observado nesta execução.",
+          "sample_count": 1
+        },
+        "state": "VALIDATED"
+      },
+      "sort_timestamp": {
+        "evidence": {
+          "duplicate_primary_values": 0,
+          "reason": "Sort @timestamp foi observado em ordem ascendente na amostra.",
+          "sample_count": 100
+        },
+        "state": "VALIDATED"
+      },
+      "source_identity": {
+        "evidence": {
+          "matching_hits": 100,
+          "reason": "_id e _source.id foram comparados sem registrar os valores.",
+          "sample_count": 100
+        },
+        "state": "VALIDATED"
+      },
+      "tribunal_identity": {
+        "evidence": {
+          "matching_hits": 100,
+          "reason": "A sigla retornada foi comparada com a sigla canônica do alias consultado.",
+          "sample_count": 100
+        },
+        "state": "VALIDATED"
+      }
+    },
+    "repeat_comparison": {
+      "first_page_hits": 100,
+      "interpretation": "Duas leituras não representam snapshot consistente da fonte.",
+      "overlap_by_source_document_id": 100,
+      "repeated_page_hits": 100,
+      "same_cursor": true,
+      "same_hit_count": true
+    },
+    "requests": [
+      {
+        "duration_ms": 43065,
+        "http_status": 200,
+        "name": "recorte_timestamp_pagina_1",
+        "outcome": "SUCCESS",
+        "query": {
+          "query": {
+            "bool": {
+              "filter": [
+                {
+                  "match": {
+                    "tribunal": "TJGO"
+                  }
+                },
+                {
+                  "range": {
+                    "dataAjuizamento": {
+                      "gte": "20260501000000",
+                      "lt": "20260601000000"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "size": 100,
+          "sort": [
+            {
+              "@timestamp": {
+                "order": "asc"
+              }
+            }
+          ]
+        },
+        "response": {
+          "field_shapes": {
+            "dataAjuizamento": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "id": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "numeroProcesso": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "tribunal": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            }
+          },
+          "hit_count": 100,
+          "sort_received": {
+            "duplicate_primary_values": 0,
+            "fields": [
+              "@timestamp"
+            ],
+            "ordered_ascending_in_sample": true,
+            "value_types_by_position": [
+              [
+                "integer"
+              ]
+            ],
+            "values_per_hit": [
+              1
+            ]
+          },
+          "total_relation": "gte",
+          "total_value": 10000
+        }
+      },
+      {
+        "duration_ms": 28161,
+        "http_status": 200,
+        "name": "consulta_cnj_observado",
+        "outcome": "SUCCESS",
+        "query": {
+          "query": {
+            "bool": {
+              "filter": [
+                {
+                  "match": {
+                    "tribunal": "TJGO"
+                  }
+                },
+                {
+                  "match": {
+                    "numeroProcesso": "<numeroProcesso-observado-redigido>"
+                  }
+                }
+              ]
+            }
+          },
+          "size": 100,
+          "sort": [
+            {
+              "@timestamp": {
+                "order": "asc"
+              }
+            }
+          ]
+        },
+        "response": {
+          "field_shapes": {
+            "dataAjuizamento": {
+              "present_count": 1,
+              "sample_count": 1,
+              "types": [
+                "string"
+              ]
+            },
+            "id": {
+              "present_count": 1,
+              "sample_count": 1,
+              "types": [
+                "string"
+              ]
+            },
+            "numeroProcesso": {
+              "present_count": 1,
+              "sample_count": 1,
+              "types": [
+                "string"
+              ]
+            },
+            "tribunal": {
+              "present_count": 1,
+              "sample_count": 1,
+              "types": [
+                "string"
+              ]
+            }
+          },
+          "hit_count": 1,
+          "sort_received": {
+            "duplicate_primary_values": 0,
+            "fields": [
+              "@timestamp"
+            ],
+            "ordered_ascending_in_sample": true,
+            "value_types_by_position": [
+              [
+                "integer"
+              ]
+            ],
+            "values_per_hit": [
+              1
+            ]
+          },
+          "total_relation": "eq",
+          "total_value": 1
+        }
+      },
+      {
+        "duration_ms": 28506,
+        "http_status": 200,
+        "name": "repeticao_recorte_timestamp_pagina_1",
+        "outcome": "SUCCESS",
+        "query": {
+          "query": {
+            "bool": {
+              "filter": [
+                {
+                  "match": {
+                    "tribunal": "TJGO"
+                  }
+                },
+                {
+                  "range": {
+                    "dataAjuizamento": {
+                      "gte": "20260501000000",
+                      "lt": "20260601000000"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "size": 100,
+          "sort": [
+            {
+              "@timestamp": {
+                "order": "asc"
+              }
+            }
+          ]
+        },
+        "response": {
+          "field_shapes": {
+            "dataAjuizamento": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "id": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "numeroProcesso": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "tribunal": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            }
+          },
+          "hit_count": 100,
+          "sort_received": {
+            "duplicate_primary_values": 0,
+            "fields": [
+              "@timestamp"
+            ],
+            "ordered_ascending_in_sample": true,
+            "value_types_by_position": [
+              [
+                "integer"
+              ]
+            ],
+            "values_per_hit": [
+              1
+            ]
+          },
+          "total_relation": "gte",
+          "total_value": 10000
+        }
+      },
+      {
+        "duration_ms": 46162,
+        "http_status": 200,
+        "name": "recorte_timestamp_pagina_2",
+        "outcome": "SUCCESS",
+        "query": {
+          "query": {
+            "bool": {
+              "filter": [
+                {
+                  "match": {
+                    "tribunal": "TJGO"
+                  }
+                },
+                {
+                  "range": {
+                    "dataAjuizamento": {
+                      "gte": "20260501000000",
+                      "lt": "20260601000000"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "search_after": [
+            "<cursor-redigido>"
+          ],
+          "size": 100,
+          "sort": [
+            {
+              "@timestamp": {
+                "order": "asc"
+              }
+            }
+          ]
+        },
+        "response": {
+          "field_shapes": {
+            "dataAjuizamento": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "id": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "numeroProcesso": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "tribunal": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            }
+          },
+          "hit_count": 100,
+          "sort_received": {
+            "duplicate_primary_values": 0,
+            "fields": [
+              "@timestamp"
+            ],
+            "ordered_ascending_in_sample": true,
+            "value_types_by_position": [
+              [
+                "integer"
+              ]
+            ],
+            "values_per_hit": [
+              1
+            ]
+          },
+          "total_relation": "gte",
+          "total_value": 10000
+        }
+      },
+      {
+        "duration_ms": 35602,
+        "http_status": 200,
+        "name": "recorte_sort_composto_pagina_1",
+        "outcome": "SUCCESS",
+        "query": {
+          "query": {
+            "bool": {
+              "filter": [
+                {
+                  "match": {
+                    "tribunal": "TJGO"
+                  }
+                },
+                {
+                  "range": {
+                    "dataAjuizamento": {
+                      "gte": "20260501000000",
+                      "lt": "20260601000000"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "size": 100,
+          "sort": [
+            {
+              "@timestamp": {
+                "order": "asc"
+              }
+            },
+            {
+              "id.keyword": {
+                "order": "asc"
+              }
+            }
+          ]
+        },
+        "response": {
+          "field_shapes": {
+            "dataAjuizamento": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "id": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "numeroProcesso": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "tribunal": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            }
+          },
+          "hit_count": 100,
+          "sort_received": {
+            "duplicate_primary_values": 0,
+            "fields": [
+              "@timestamp",
+              "id.keyword"
+            ],
+            "ordered_ascending_in_sample": true,
+            "value_types_by_position": [
+              [
+                "integer"
+              ],
+              [
+                "string"
+              ]
+            ],
+            "values_per_hit": [
+              2
+            ]
+          },
+          "total_relation": "gte",
+          "total_value": 10000
+        }
+      },
+      {
+        "duration_ms": 38982,
+        "http_status": 200,
+        "name": "recorte_sort_composto_pagina_2",
+        "outcome": "SUCCESS",
+        "query": {
+          "query": {
+            "bool": {
+              "filter": [
+                {
+                  "match": {
+                    "tribunal": "TJGO"
+                  }
+                },
+                {
+                  "range": {
+                    "dataAjuizamento": {
+                      "gte": "20260501000000",
+                      "lt": "20260601000000"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "search_after": [
+            "<cursor-redigido>",
+            "<cursor-redigido>"
+          ],
+          "size": 100,
+          "sort": [
+            {
+              "@timestamp": {
+                "order": "asc"
+              }
+            },
+            {
+              "id.keyword": {
+                "order": "asc"
+              }
+            }
+          ]
+        },
+        "response": {
+          "field_shapes": {
+            "dataAjuizamento": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "id": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "numeroProcesso": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            },
+            "tribunal": {
+              "present_count": 100,
+              "sample_count": 100,
+              "types": [
+                "string"
+              ]
+            }
+          },
+          "hit_count": 100,
+          "sort_received": {
+            "duplicate_primary_values": 0,
+            "fields": [
+              "@timestamp",
+              "id.keyword"
+            ],
+            "ordered_ascending_in_sample": true,
+            "value_types_by_position": [
+              [
+                "integer"
+              ],
+              [
+                "string"
+              ]
+            ],
+            "values_per_hit": [
+              2
+            ]
+          },
+          "total_relation": "gte",
+          "total_value": 10000
+        }
+      }
+    ],
+    "requests_made": 6
+  },
+  "s5_pairs": [
+    {
+      "applicability": {
+        "rationale": "Aplicabilidade confirmada na revisão TPU/competência registrada.",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026"
+      },
+      "catalog_version": "1.1.0",
+      "filed_from": "2026-05-01",
+      "filed_to_exclusive": "2026-06-01",
+      "pair_state": "VALIDATED",
+      "preset_id": "rural.credito_contratos",
+      "preset_version": "1.0.0",
+      "query_status": {
+        "evidence": {
+          "matched_codes": {
+            "subject": {
+              "10501": 25,
+              "4964": 74,
+              "4976": 2
+            }
+          },
+          "matching_hits": 100,
+          "mismatched_hits": 0,
+          "reason": "Todos os hits observados contêm código pedido por dimensão filtrada.",
+          "sample_count": 100
+        },
+        "state": "VALIDATED"
+      },
+      "request_budget": {
+        "automatic_retries": false,
+        "max_requests": 2,
+        "page_size": 100,
+        "spacing_seconds": 1.0
+      },
+      "requests": [
+        {
+          "duration_ms": 40403,
+          "http_status": 200,
+          "name": "s5_rural_credito_contratos_pagina_1",
+          "outcome": "SUCCESS",
+          "query": {
+            "query": {
+              "bool": {
+                "filter": [
+                  {
+                    "match": {
+                      "tribunal": "TJGO"
+                    }
+                  },
+                  {
+                    "range": {
+                      "dataAjuizamento": {
+                        "gte": "20260501000000",
+                        "lt": "20260601000000"
+                      }
+                    }
+                  },
+                  {
+                    "terms": {
+                      "assuntos.codigo": [
+                        4964,
+                        4976,
+                        10501
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "size": 100,
+            "sort": [
+              {
+                "@timestamp": {
+                  "order": "asc"
+                }
+              }
+            ]
+          },
+          "response": {
+            "field_shapes": {
+              "dataAjuizamento": {
+                "present_count": 100,
+                "sample_count": 100,
+                "types": [
+                  "string"
+                ]
+              },
+              "id": {
+                "present_count": 100,
+                "sample_count": 100,
+                "types": [
+                  "string"
+                ]
+              },
+              "numeroProcesso": {
+                "present_count": 100,
+                "sample_count": 100,
+                "types": [
+                  "string"
+                ]
+              },
+              "tribunal": {
+                "present_count": 100,
+                "sample_count": 100,
+                "types": [
+                  "string"
+                ]
+              }
+            },
+            "hit_count": 100,
+            "sort_received": {
+              "duplicate_primary_values": 0,
+              "fields": [
+                "@timestamp"
+              ],
+              "ordered_ascending_in_sample": true,
+              "value_types_by_position": [
+                [
+                  "integer"
+                ]
+              ],
+              "values_per_hit": [
+                1
+              ]
+            },
+            "total_relation": "eq",
+            "total_value": 183
+          }
+        }
+      ],
+      "requests_made": 1,
+      "runtime_activation_changed": false,
+      "sample_status": {
+        "evidence": {
+          "distinct_matching_documents": 100,
+          "matched_codes": {
+            "subject": {
+              "10501": 25,
+              "4964": 74,
+              "4976": 2
+            }
+          },
+          "minimum_required": 3,
+          "reason": "Amostra estruturada suficiente observada."
+        },
+        "state": "VALIDATED"
+      },
+      "total_observed": {
+        "relation": "eq",
+        "value": 183
+      }
+    },
+    {
+      "applicability": {
+        "rationale": "Aplicabilidade confirmada na revisão TPU/competência registrada.",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026"
+      },
+      "catalog_version": "1.1.0",
+      "filed_from": "2026-05-01",
+      "filed_to_exclusive": "2026-06-01",
+      "pair_state": "VALIDATED",
+      "preset_id": "execucoes.amplas",
+      "preset_version": "1.0.0",
+      "query_status": {
+        "evidence": {
+          "matched_codes": {
+            "class": {
+              "1116": 2,
+              "12078": 4,
+              "12154": 68,
+              "156": 26
+            }
+          },
+          "matching_hits": 100,
+          "mismatched_hits": 0,
+          "reason": "Todos os hits observados contêm código pedido por dimensão filtrada.",
+          "sample_count": 100
+        },
+        "state": "VALIDATED"
+      },
+      "request_budget": {
+        "automatic_retries": false,
+        "max_requests": 2,
+        "page_size": 100,
+        "spacing_seconds": 1.0
+      },
+      "requests": [
+        {
+          "duration_ms": 46762,
+          "http_status": 200,
+          "name": "s5_execucoes_amplas_pagina_1",
+          "outcome": "SUCCESS",
+          "query": {
+            "query": {
+              "bool": {
+                "filter": [
+                  {
+                    "match": {
+                      "tribunal": "TJGO"
+                    }
+                  },
+                  {
+                    "range": {
+                      "dataAjuizamento": {
+                        "gte": "20260501000000",
+                        "lt": "20260601000000"
+                      }
+                    }
+                  },
+                  {
+                    "terms": {
+                      "classe.codigo": [
+                        155,
+                        156,
+                        159,
+                        1116,
+                        12078,
+                        12079,
+                        12154
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "size": 100,
+            "sort": [
+              {
+                "@timestamp": {
+                  "order": "asc"
+                }
+              }
+            ]
+          },
+          "response": {
+            "field_shapes": {
+              "dataAjuizamento": {
+                "present_count": 100,
+                "sample_count": 100,
+                "types": [
+                  "string"
+                ]
+              },
+              "id": {
+                "present_count": 100,
+                "sample_count": 100,
+                "types": [
+                  "string"
+                ]
+              },
+              "numeroProcesso": {
+                "present_count": 100,
+                "sample_count": 100,
+                "types": [
+                  "string"
+                ]
+              },
+              "tribunal": {
+                "present_count": 100,
+                "sample_count": 100,
+                "types": [
+                  "string"
+                ]
+              }
+            },
+            "hit_count": 100,
+            "sort_received": {
+              "duplicate_primary_values": 0,
+              "fields": [
+                "@timestamp"
+              ],
+              "ordered_ascending_in_sample": true,
+              "value_types_by_position": [
+                [
+                  "integer"
+                ]
+              ],
+              "values_per_hit": [
+                1
+              ]
+            },
+            "total_relation": "gte",
+            "total_value": 10000
+          }
+        }
+      ],
+      "requests_made": 1,
+      "runtime_activation_changed": false,
+      "sample_status": {
+        "evidence": {
+          "distinct_matching_documents": 100,
+          "matched_codes": {
+            "class": {
+              "1116": 2,
+              "12078": 4,
+              "12154": 68,
+              "156": 26
+            }
+          },
+          "minimum_required": 3,
+          "reason": "Amostra estruturada suficiente observada."
+        },
+        "state": "VALIDATED"
+      },
+      "total_observed": {
+        "relation": "gte",
+        "value": 10000
+      }
+    },
+    {
+      "applicability": {
+        "rationale": "Aplicabilidade confirmada na revisão TPU/competência registrada.",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026"
+      },
+      "catalog_version": "1.1.0",
+      "filed_from": "2026-05-01",
+      "filed_to_exclusive": "2026-06-01",
+      "pair_state": "VALIDATED",
+      "preset_id": "recuperacao_judicial.por_classe",
+      "preset_version": "1.0.0",
+      "query_status": {
+        "evidence": {
+          "matched_codes": {
+            "class": {
+              "108": 8,
+              "129": 14
+            }
+          },
+          "matching_hits": 22,
+          "mismatched_hits": 0,
+          "reason": "Todos os hits observados contêm código pedido por dimensão filtrada.",
+          "sample_count": 22
+        },
+        "state": "VALIDATED"
+      },
+      "request_budget": {
+        "automatic_retries": false,
+        "max_requests": 2,
+        "page_size": 100,
+        "spacing_seconds": 1.0
+      },
+      "requests": [
+        {
+          "duration_ms": 32300,
+          "http_status": 200,
+          "name": "s5_recuperacao_judicial_por_classe_pagina_1",
+          "outcome": "SUCCESS",
+          "query": {
+            "query": {
+              "bool": {
+                "filter": [
+                  {
+                    "match": {
+                      "tribunal": "TJGO"
+                    }
+                  },
+                  {
+                    "range": {
+                      "dataAjuizamento": {
+                        "gte": "20260501000000",
+                        "lt": "20260601000000"
+                      }
+                    }
+                  },
+                  {
+                    "terms": {
+                      "classe.codigo": [
+                        108,
+                        129
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "size": 100,
+            "sort": [
+              {
+                "@timestamp": {
+                  "order": "asc"
+                }
+              }
+            ]
+          },
+          "response": {
+            "field_shapes": {
+              "dataAjuizamento": {
+                "present_count": 22,
+                "sample_count": 22,
+                "types": [
+                  "string"
+                ]
+              },
+              "id": {
+                "present_count": 22,
+                "sample_count": 22,
+                "types": [
+                  "string"
+                ]
+              },
+              "numeroProcesso": {
+                "present_count": 22,
+                "sample_count": 22,
+                "types": [
+                  "string"
+                ]
+              },
+              "tribunal": {
+                "present_count": 22,
+                "sample_count": 22,
+                "types": [
+                  "string"
+                ]
+              }
+            },
+            "hit_count": 22,
+            "sort_received": {
+              "duplicate_primary_values": 0,
+              "fields": [
+                "@timestamp"
+              ],
+              "ordered_ascending_in_sample": true,
+              "value_types_by_position": [
+                [
+                  "integer"
+                ]
+              ],
+              "values_per_hit": [
+                1
+              ]
+            },
+            "total_relation": "eq",
+            "total_value": 22
+          }
+        }
+      ],
+      "requests_made": 1,
+      "runtime_activation_changed": false,
+      "sample_status": {
+        "evidence": {
+          "distinct_matching_documents": 22,
+          "matched_codes": {
+            "class": {
+              "108": 8,
+              "129": 14
+            }
+          },
+          "minimum_required": 3,
+          "reason": "Amostra estruturada suficiente observada."
+        },
+        "state": "VALIDATED"
+      },
+      "total_observed": {
+        "relation": "eq",
+        "value": 22
+      }
+    },
+    {
+      "applicability": {
+        "rationale": "Aplicabilidade confirmada na revisão TPU/competência registrada.",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026"
+      },
+      "catalog_version": "1.1.0",
+      "filed_from": "2026-05-01",
+      "filed_to_exclusive": "2026-06-01",
+      "pair_state": "INCONCLUSIVE",
+      "preset_id": "recuperacao_judicial.por_assunto",
+      "preset_version": "1.0.0",
+      "query_status": {
+        "evidence": {
+          "matched_codes": {
+            "subject": {
+              "13277": 1
+            }
+          },
+          "matching_hits": 1,
+          "mismatched_hits": 0,
+          "reason": "Todos os hits observados contêm código pedido por dimensão filtrada.",
+          "sample_count": 1
+        },
+        "state": "VALIDATED"
+      },
+      "request_budget": {
+        "automatic_retries": false,
+        "max_requests": 2,
+        "page_size": 100,
+        "spacing_seconds": 1.0
+      },
+      "requests": [
+        {
+          "duration_ms": 39284,
+          "http_status": 200,
+          "name": "s5_recuperacao_judicial_por_assunto_pagina_1",
+          "outcome": "SUCCESS",
+          "query": {
+            "query": {
+              "bool": {
+                "filter": [
+                  {
+                    "match": {
+                      "tribunal": "TJGO"
+                    }
+                  },
+                  {
+                    "range": {
+                      "dataAjuizamento": {
+                        "gte": "20260501000000",
+                        "lt": "20260601000000"
+                      }
+                    }
+                  },
+                  {
+                    "terms": {
+                      "assuntos.codigo": [
+                        4993,
+                        13277
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "size": 100,
+            "sort": [
+              {
+                "@timestamp": {
+                  "order": "asc"
+                }
+              }
+            ]
+          },
+          "response": {
+            "field_shapes": {
+              "dataAjuizamento": {
+                "present_count": 1,
+                "sample_count": 1,
+                "types": [
+                  "string"
+                ]
+              },
+              "id": {
+                "present_count": 1,
+                "sample_count": 1,
+                "types": [
+                  "string"
+                ]
+              },
+              "numeroProcesso": {
+                "present_count": 1,
+                "sample_count": 1,
+                "types": [
+                  "string"
+                ]
+              },
+              "tribunal": {
+                "present_count": 1,
+                "sample_count": 1,
+                "types": [
+                  "string"
+                ]
+              }
+            },
+            "hit_count": 1,
+            "sort_received": {
+              "duplicate_primary_values": 0,
+              "fields": [
+                "@timestamp"
+              ],
+              "ordered_ascending_in_sample": true,
+              "value_types_by_position": [
+                [
+                  "integer"
+                ]
+              ],
+              "values_per_hit": [
+                1
+              ]
+            },
+            "total_relation": "eq",
+            "total_value": 1
+          }
+        }
+      ],
+      "requests_made": 1,
+      "runtime_activation_changed": false,
+      "sample_status": {
+        "evidence": {
+          "distinct_matching_documents": 1,
+          "matched_codes": {
+            "subject": {
+              "13277": 1
+            }
+          },
+          "minimum_required": 3,
+          "reason": "Menos de três documentos distintos; a amostra fica inconclusiva."
+        },
+        "state": "INCONCLUSIVE"
+      },
+      "total_observed": {
+        "relation": "eq",
+        "value": 1
+      }
+    }
+  ],
+  "started_at": "2026-10-12T00:11:24.840476+00:00",
+  "stop_reason": null,
+  "terms_review": {
+    "operator_confirmed_before_probe": true,
+    "references": [
+      "https://www.cnj.jus.br/sistemas/datajud/api-publica/",
+      "https://atos.cnj.jus.br/atos/detalhar/3453",
+      "https://atos.cnj.jus.br/atos/detalhar/6972"
+    ]
+  }
+}

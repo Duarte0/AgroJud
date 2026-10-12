@@ -308,9 +308,13 @@ export async function startCollection(
   await page.getByLabel("Ajuizados a partir de").fill(window.from);
   await page.getByLabel("Ajuizados até (inclusive)").fill(window.through);
   await page.getByLabel("Limite de registros desta execução").fill(String(hitBudget));
+  await page.getByRole("button", { name: /Limpar seleção/ }).click();
+  await page.getByRole("checkbox", { name: /TJGO/ }).check();
   const submit = page.getByRole("button", { name: "Iniciar coleta" });
   if (doubleClick) await submit.dblclick();
   else await submit.click();
+  await page.waitForURL(/\/job-groups\/[0-9a-f-]{36}$/);
+  await page.getByRole("link", { name: "Abrir execução" }).first().click();
   await page.waitForURL(/\/jobs\/[0-9a-f-]{36}$/);
   return page.url().split("/").pop()!;
 }

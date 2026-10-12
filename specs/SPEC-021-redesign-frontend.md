@@ -74,3 +74,12 @@ Todas as validações funcionais usaram fixtures sintéticas em Compose demo iso
 ## Refinamento cromático
 
 Em 10/10/2026, a paleta foi alinhada à identidade definida para o produto: `#1F5D42`, `#163C2D`, `#EAF3EE`, `#B68A3A`, `#F7F8F5`, `#FFFFFF`, `#DDE2DD`, `#18211B` e `#667069`. Os tokens centrais e os contrastes calculados estão em [Sistema visual do frontend](../frontend/DESIGN_SYSTEM.md). Testes verificam os valores/contrastes e estilos computados em navegação, ação, badge, filtros, tabela, detalhe e timeline. A estrutura, os fluxos funcionais, contratos da API e semântica jurídica não foram alterados.
+
+## Correções pós auditoria de qualidade — 12/10/2026
+
+- No Radar, a ação “Iniciar coleta” fica fixa na base da tela abaixo de 1280 px, com espaço reservado no formulário; em telas largas continua no resumo lateral.
+- O painel de triagem empilha os seletores para mostrar o valor completo; os links “ver coleta” ficam sublinhados no estado normal; os landmarks laterais recebem nomes distintos.
+- A rota raiz oferece o próprio `AppShell` como `hydrateFallbackElement`, mantendo a casca da aplicação durante a carga inicial das páginas lazy e removendo o warning do React Router.
+- Validação visual no navegador sobre a API local do ambiente Real, somente com leituras: Radar em 320, 390, 768 e 1440 px; Processos e triagem em desktop e mobile; clique em Pesquisar com sugestão CNJ aberta; carregamento direto sem warning. Axe-core 4.12.1 encontrou zero violações no Radar desktop e em Processos mobile.
+- Validações de código: frontend lint, typecheck, 68 testes e build aprovados; OpenAPI conferido em ambiente Python temporário; backend Ruff, formatação Ruff, mypy e 364 testes aprovados em PostgreSQL isolado. O teste backend manteve um aviso já existente de depreciação Starlette.
+- Playwright: `./scripts/e2e.sh e2e/filter-options.spec.ts e2e/redesign.spec.ts` passou 5/5 em Compose sintético isolado. O helper agora seleciona TJGO no cenário que espera uma execução e acompanha o fluxo atual por grupo até a execução filha; isso mantém as asserções e evita qualquer chamada à fonte real.

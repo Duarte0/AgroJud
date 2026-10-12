@@ -16,6 +16,7 @@ def schedule_dispatch_response(
         scheduled_for_date=dispatch.scheduled_for_date,
         status=cast(Any, dispatch.status),
         job_id=dispatch.job_id,
+        group_id=dispatch.group_id,
         missed_from=dispatch.missed_from,
         missed_through=dispatch.missed_through,
         reason=dispatch.reason,

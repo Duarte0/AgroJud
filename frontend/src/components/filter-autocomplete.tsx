@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 
 import type { ProcessFilterField, ProcessFilterOption } from "@/api/types";
 import { useProcessFilterOptions } from "@/api/queries";
@@ -30,6 +30,7 @@ export function FilterAutocomplete({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [debouncedTerm, setDebouncedTerm] = useState(value);
+  const blurTimeout = useRef<number | undefined>(undefined);
   const optionsQuery = useProcessFilterOptions(
     name,
     debouncedTerm,
@@ -44,6 +45,10 @@ export function FilterAutocomplete({
     return () => window.clearTimeout(timer);
   }, [value]);
 
+  useEffect(() => () => {
+    if (blurTimeout.current !== undefined) window.clearTimeout(blurTimeout.current);
+  }, []);
+
   function updateValue(next: string) {
     setActiveIndex(-1);
     setOpen(true);
@@ -51,6 +56,7 @@ export function FilterAutocomplete({
   }
 
   function choose(option: ProcessFilterOption) {
+    if (blurTimeout.current !== undefined) window.clearTimeout(blurTimeout.current);
     onSelect(option);
     setDebouncedTerm(option.label);
     setActiveIndex(-1);
@@ -91,8 +97,14 @@ export function FilterAutocomplete({
         value={value}
         placeholder={placeholder}
         onChange={event => updateValue(event.target.value)}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
+        onFocus={() => {
+          if (blurTimeout.current !== undefined) window.clearTimeout(blurTimeout.current);
+          setOpen(true);
+        }}
+        onBlur={() => {
+          // Keep the suggestion row in place until a submit button's click fires.
+          blurTimeout.current = window.setTimeout(() => setOpen(false), 120);
+        }}
         onKeyDown={handleKeyDown}
       />
       {showListbox ? (
@@ -101,7 +113,7 @@ export function FilterAutocomplete({
           role="listbox"
           aria-label={`Sugestões para ${name}`}
           aria-busy={waitingForSearch}
-          className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          className="mt-1 max-h-64 w-full overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
         >
           {options.map((option, index) => (
             <button

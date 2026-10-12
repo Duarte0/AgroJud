@@ -72,7 +72,7 @@ def test_query_by_cnj_accepts_formatted_number_and_removes_punctuation() -> None
 @pytest.mark.parametrize(
     "query_fields",
     [
-        {"tribunal": "TJSP", "class_codes": (1116,)},
+        {"tribunal": "TJRANDOM", "class_codes": (1116,)},
         {"filed_from": date(2026, 1, 1)},
         {"filed_from": date(2026, 2, 1), "filed_to": date(2026, 1, 1)},
         {"class_codes": (0,)},

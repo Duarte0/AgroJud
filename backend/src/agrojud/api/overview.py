@@ -7,7 +7,7 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import distinct, func, select, text
+from sqlalchemy import and_, distinct, func, select, text
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.selectable import CTE
 
@@ -58,12 +58,14 @@ def get_overview(
     selected_processes = _selected_processes(filters, environment)
     with request.app.state.session_factory() as session, session.begin():
         session.execute(text("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"))
-        totals = session.execute(_overview_statistics_statement(selected_processes)).one()
+        totals = session.execute(_overview_statistics_statement(selected_processes, filters)).one()
         signal_rows = session.execute(
             _signal_distribution_statement(selected_processes, environment)
         ).all()
-        theme_rows = session.execute(_theme_distribution_statement(selected_processes)).all()
-        collection_rows = session.execute(_latest_collections_statement()).all()
+        theme_rows = session.execute(
+            _theme_distribution_statement(selected_processes, filters)
+        ).all()
+        collection_rows = session.execute(_latest_collections_statement(filters)).all()
 
     source = "datajud" if environment == "real" else "synthetic"
     return OverviewResponse(
@@ -119,7 +121,10 @@ def _selected_processes(
     )
 
 
-def _overview_statistics_statement(selected_processes: CTE) -> Select[Any]:
+def _overview_statistics_statement(
+    selected_processes: CTE,
+    filters: ProcessFilters,
+) -> Select[Any]:
     selected_ids = select(selected_processes.c.process_id)
     active_followed = (
         select(func.count(distinct(ProcessWatchlistEntry.process_id)))
@@ -138,6 +143,12 @@ def _overview_statistics_statement(selected_processes: CTE) -> Select[Any]:
         .scalar_subquery()
     )
     process_count = func.count(distinct(selected_processes.c.process_id))
+    representation_join = Representation.process_id == selected_processes.c.process_id
+    if filters.tribunals is not None:
+        representation_join = and_(
+            representation_join,
+            Representation.tribunal.in_(filters.tribunals),
+        )
     return (
         select(
             func.transaction_timestamp().label("generated_at"),
@@ -158,7 +169,7 @@ def _overview_statistics_statement(selected_processes: CTE) -> Select[Any]:
         )
         .select_from(selected_processes)
         .outerjoin(ProcessTriage, ProcessTriage.process_id == selected_processes.c.process_id)
-        .outerjoin(Representation, Representation.process_id == selected_processes.c.process_id)
+        .outerjoin(Representation, representation_join)
     )
 
 
@@ -182,8 +193,12 @@ def _signal_distribution_statement(
 
 def _theme_distribution_statement(
     selected_processes: CTE,
+    filters: ProcessFilters,
 ) -> Select[str | None, str | None, int]:
     process_count = func.count(distinct(Representation.process_id))
+    predicates = [Representation.process_id.in_(select(selected_processes.c.process_id))]
+    if filters.tribunals is not None:
+        predicates.append(Representation.tribunal.in_(filters.tribunals))
     return (
         select(
             RepresentationSubject.subject_code.label("subject_code"),
@@ -194,7 +209,7 @@ def _theme_distribution_statement(
             Representation,
             Representation.id == RepresentationSubject.representation_id,
         )
-        .where(Representation.process_id.in_(select(selected_processes.c.process_id)))
+        .where(*predicates)
         .group_by(RepresentationSubject.subject_code, RepresentationSubject.subject_name)
         .order_by(
             process_count.desc(),
@@ -204,8 +219,10 @@ def _theme_distribution_statement(
     )
 
 
-def _latest_collections_statement() -> Select[UUID | None, UUID, str, str, datetime]:
-    return (
+def _latest_collections_statement(
+    filters: ProcessFilters,
+) -> Select[UUID | None, UUID, str, str, datetime]:
+    statement = (
         select(
             Job.collection_id.label("collection_id"),
             Job.id.label("job_id"),
@@ -217,12 +234,16 @@ def _latest_collections_statement() -> Select[UUID | None, UUID, str, str, datet
         .order_by(Job.created_at.desc(), Job.id.desc())
         .limit(5)
     )
+    if filters.tribunals is not None:
+        statement = statement.where(Job.tribunal.in_(filters.tribunals))
+    return statement
 
 
 def _filters_response(filters: ProcessFilters) -> OverviewFiltersResponse:
     return OverviewFiltersResponse.model_validate(
         {
             "process_number": filters.process_number,
+            "tribunals": list(filters.tribunals) if filters.tribunals is not None else None,
             "subject": filters.subject,
             "subject_code": filters.subject_code,
             "subject_name_exact": filters.subject_name_exact,

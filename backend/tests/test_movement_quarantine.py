@@ -73,6 +73,8 @@ EXPECTED_TABLES = {
     "saved_searches",
     "saved_search_versions",
     "schedule_dispatches",
+    "execution_groups",
+    "execution_group_members",
 }
 
 

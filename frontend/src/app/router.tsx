@@ -5,6 +5,7 @@ import { AppShell } from "@/app/app-shell";
 export const router = createBrowserRouter([
   {
     element: <AppShell />,
+    hydrateFallbackElement: <AppShell />,
     children: [
       {
         index: true,
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
       {
         path: "jobs/:jobId",
         lazy: async () => ({ Component: (await import("@/pages/job-detail-page")).JobDetailPage }),
+      },
+      {
+        path: "job-groups/:groupId",
+        lazy: async () => ({ Component: (await import("@/pages/job-group-page")).JobGroupPage }),
       },
       {
         path: "processes",

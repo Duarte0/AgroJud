@@ -150,6 +150,7 @@ def ingest_page(
     page_key: str,
     source: SourceKey,
     page: SourcePage,
+    expected_tribunal: str = "TJGO",
 ) -> IngestPageResult:
     """Persist one page atomically without committing the caller's transaction.
 
@@ -167,7 +168,9 @@ def ingest_page(
     if page.responded_at.tzinfo is None or page.responded_at.utcoffset() is None:
         raise ValueError("O horário local de observação precisa conter fuso.")
 
-    prepared_hits = tuple(_prepare_hit(hit) for hit in page.hits)
+    prepared_hits = tuple(
+        _prepare_hit(hit, expected_tribunal=expected_tribunal) for hit in page.hits
+    )
     observed_at = page.responded_at.astimezone(UTC)
     collection_repository = CollectionRepository(session)
     observation_repository = ObservationRepository(session)
@@ -448,10 +451,10 @@ def ingest_page(
     )
 
 
-def _prepare_hit(hit: SourceHit) -> _PreparedHit | _RejectedHit:
+def _prepare_hit(hit: SourceHit, *, expected_tribunal: str = "TJGO") -> _PreparedHit | _RejectedHit:
     raw_hit = _serialize_source_hit(hit)
     try:
-        cover = normalize_source_cover(hit)
+        cover = normalize_source_cover(hit, expected_tribunal=expected_tribunal)
     except SourceError as error:
         if error.code != SourceErrorCode.VALIDATION:
             raise

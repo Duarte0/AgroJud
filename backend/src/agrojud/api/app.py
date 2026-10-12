@@ -26,6 +26,7 @@ from agrojud.api.errors import (
     validation_error_response,
 )
 from agrojud.api.exports import router as exports_router
+from agrojud.api.job_groups import router as job_groups_router
 from agrojud.api.jobs import SourceCapabilityUnavailable
 from agrojud.api.jobs import router as jobs_router
 from agrojud.api.metadata import router as metadata_router
@@ -40,6 +41,7 @@ from agrojud.api.watchlist import router as watchlist_router
 from agrojud.config import Settings, get_settings
 from agrojud.db.engine import make_engine
 from agrojud.db.migrations_runner import make_alembic_config
+from agrojud.services.execution_groups import ExecutionGroupService
 from agrojud.services.exports import ExportLimitExceeded
 from agrojud.services.jobs import (
     DatabaseUnavailableError,
@@ -86,6 +88,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         app.state.session_factory,
         lease_duration=timedelta(seconds=runtime_settings.job_lease_seconds),
     )
+    app.state.execution_groups = ExecutionGroupService(app.state.jobs, runtime_settings)
     app.state.signal_reprocessing = SignalReprocessingService(
         app.state.session_factory, app.state.jobs
     )
@@ -261,6 +264,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         return response
 
     app.include_router(jobs_router)
+    app.include_router(job_groups_router)
     app.include_router(overview_router)
     app.include_router(processes_router)
     app.include_router(process_filter_options_router)

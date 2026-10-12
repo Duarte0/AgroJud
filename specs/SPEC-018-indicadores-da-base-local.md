@@ -107,3 +107,13 @@ O teste de snapshot inseriu um assunto em uma segunda transação depois da cons
 
 Essas evidências concluem somente a SPEC-018 local. A SPEC-019, a SPEC-020 e a validação externa DataJud/TJGO continuam fora desta entrega.
 
+## Ajuste de expansão da tabela de temas — 12/10/2026
+
+“Ver todos os temas” mantém todas as linhas disponíveis, mas limita a rolagem à tabela por meio da região acessível `Lista de temas da base`. O título, a descrição e “Mostrar menos temas” permanecem fora da região; API, contrato e dados não mudam.
+
+Na reprodução inicial, com 609 temas, expandir a tabela aumentou a página de 3.146 para 44.285 px em 390×844 e de 1.943 para 39.366 px em 1440×900. Na validação após a correção, a resposta continha 632 temas: a região rolável ficou limitada a 591 px em mobile e 630 px em desktop; todas as linhas permaneceram acessíveis, “Mostrar menos temas” ficou fora da região e não houve overflow horizontal. A tecla PageDown moveu a rolagem interna da tabela.
+
+- Frontend: lint, typecheck, build e 69 testes passaram; Playwright `e2e/overview.spec.ts` passou em Compose sintético isolado.
+- Navegador no ambiente Real, somente leitura: expansão e recolhimento verificados em 390×844 e 1440×900. Capturas: [mobile recolhido](</tmp/agrojud-temas-base-after-mobile-collapsed.png>), [mobile expandido](</tmp/agrojud-temas-base-after-mobile-top.png>) e [desktop expandido](</tmp/agrojud-temas-base-after-desktop-top.png>).
+- O container `frontend` foi atualizado isoladamente e ficou saudável; a API respondeu com os indicadores. A navegação real foi somente leitura; o Playwright usou PostgreSQL sintético isolado.
+

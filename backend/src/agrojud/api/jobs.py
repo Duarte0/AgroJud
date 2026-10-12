@@ -25,7 +25,7 @@ from agrojud.api.schemas import (
     RefreshNumberJobRequest,
 )
 from agrojud.config import Settings
-from agrojud.db.models import Job
+from agrojud.db.models import ExecutionGroupMember, Job
 from agrojud.services.collection import build_collection_request
 from agrojud.services.jobs import InvalidJobTransitionError, JobInspection, JobService
 from agrojud.services.watchlist import lock_process_watch
@@ -55,6 +55,7 @@ def create_job(
     if unavailable is not None:
         raise SourceCapabilityUnavailable(unavailable)
 
+    process_number: str | None = None
     if isinstance(body, DiscoveryJobRequest):
         compiled = compile_preset(
             body.criteria.preset_id,
@@ -83,17 +84,19 @@ def create_job(
         )
         if query.process_number is None:  # pragma: no cover - builder guarantees a CNJ number
             raise RuntimeError("A consulta por número não contém o CNJ normalizado.")
+        process_number = query.process_number
+    else:  # pragma: no cover - discriminator validation owns this boundary
+        raise AssertionError("Tipo de job não suportado.")
+
+    if process_number is not None:
         with request.app.state.session_factory() as session, session.begin():
-            process, entry = lock_process_watch(session, process_number=query.process_number)
+            process, entry = lock_process_watch(session, process_number=process_number)
             if process is None:
                 raise HTTPException(status_code=404)
             if entry is None or not entry.active:
                 raise HTTPException(status_code=409)
             result = request.app.state.jobs.enqueue(enqueue_request)
-    else:  # pragma: no cover - discriminator validation owns this boundary
-        raise AssertionError("Tipo de job não suportado.")
-
-    if isinstance(body, DiscoveryJobRequest):
+    else:
         result = request.app.state.jobs.enqueue(enqueue_request)
     inspection = request.app.state.jobs.inspect(result.job_id)
     response.headers["Location"] = str(request.url_for("get_job", job_id=str(result.job_id)))
@@ -223,9 +226,27 @@ def restart_scan(job_id: UUID, request: Request, response: Response) -> JobComma
     jobs: JobService = request.app.state.jobs
     _require_collection_job(jobs.inspect(job_id))
     result = jobs.restart_scan(job_id)
+    _relink_execution_group_members(request, job_id, result.job_id)
     inspection = jobs.inspect(result.job_id)
     response.headers["Location"] = str(request.url_for("get_job", job_id=str(result.job_id)))
     return _command_from_inspection(inspection, reused=not result.created)
+
+
+def _relink_execution_group_members(
+    request: Request, previous_job_id: UUID, next_job_id: UUID
+) -> None:
+    """Keep a member attached to its current scan when a cursor restart creates a child job."""
+
+    if previous_job_id == next_job_id:
+        return
+    with request.app.state.session_factory() as session, session.begin():
+        members = session.scalars(
+            select(ExecutionGroupMember)
+            .where(ExecutionGroupMember.job_id == previous_job_id)
+            .with_for_update()
+        ).all()
+        for member in members:
+            member.job_id = next_job_id
 
 
 class SourceCapabilityUnavailable(RuntimeError):

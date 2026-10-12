@@ -87,6 +87,8 @@ def make_scheduler(app: FastAPI) -> DailyScheduler:
         app.state.jobs,
         mode="demo",
         source="synthetic",
+        settings=app.state.settings,
+        execution_groups=app.state.execution_groups,
     )
 
 
@@ -147,14 +149,15 @@ def test_saved_search_patch_appends_a_revision_and_first_enable_is_future(
             )
 
 
-def test_manual_and_scheduled_saved_search_runs_reuse_one_active_job(
+def test_manual_and_scheduled_saved_search_runs_wait_on_the_active_group(
     saved_search_runtime: tuple[FastAPI, TestClient],
 ) -> None:
     app, client = saved_search_runtime
     search = create_search(client)
     manual = client.post(f"/api/v1/saved-searches/{search['id']}/run")
     assert manual.status_code == 202, manual.text
-    manual_job_id = manual.json()["job_id"]
+    assert manual.json()["member_count"] == 1
+    manual_job_id = manual.json()["members"][0]["job_id"]
 
     enable = client.patch(f"/api/v1/saved-searches/{search['id']}", json={"enabled": True})
     assert enable.status_code == 200
@@ -166,14 +169,15 @@ def test_manual_and_scheduled_saved_search_runs_reuse_one_active_job(
         jobs = session.scalars(select(Job)).all()
         dispatch = session.scalar(select(ScheduleDispatch))
     assert len(jobs) == 1
-    assert dispatch is not None and dispatch.status == "enqueued"
-    assert str(dispatch.job_id) == manual_job_id
+    assert dispatch is not None and dispatch.status == "pending"
+    assert dispatch.group_id is None and dispatch.job_id is None
+    assert jobs[0].id == UUID(manual_job_id)
     assert dispatch.missed_from == date(2026, 10, 9)
     assert dispatch.missed_through == date(2026, 10, 9)
     assert make_scheduler(app).run_due(reference_time=now) == 0
 
 
-def test_watch_enable_waits_for_daily_time_and_schedule_reuses_manual_refresh(
+def test_watch_schedule_waits_for_an_active_manual_group_child(
     saved_search_runtime: tuple[FastAPI, TestClient],
 ) -> None:
     app, client = saved_search_runtime
@@ -192,6 +196,7 @@ def test_watch_enable_waits_for_daily_time_and_schedule_reuses_manual_refresh(
 
     manual = client.post(f"/api/v1/processes/{process_id}/refresh")
     assert manual.status_code == 202, manual.text
+    manual_job_id = manual.json()["members"][0]["job_id"]
     with Session(app.state.database_engine) as session, session.begin():
         session.execute(
             update(ProcessWatchlistEntry)
@@ -205,11 +210,12 @@ def test_watch_enable_waits_for_daily_time_and_schedule_reuses_manual_refresh(
         jobs = session.scalars(select(Job)).all()
         dispatch = session.scalar(select(ScheduleDispatch))
     assert len(jobs) == 1
-    assert dispatch is not None and dispatch.status == "enqueued"
-    assert str(dispatch.job_id) == manual.json()["job_id"]
+    assert dispatch is not None and dispatch.status == "pending"
+    assert dispatch.group_id is None and dispatch.job_id is None
+    assert jobs[0].id == UUID(manual_job_id)
     assert dispatch.missed_from == date(2026, 10, 4)
     status = client.get(f"/api/v1/processes/{process_id}/watch").json()
-    assert status["last_schedule"]["status"] == "enqueued"
+    assert status["last_schedule"]["status"] == "pending"
     assert status["next_run_at"] is not None
 
 
@@ -242,6 +248,7 @@ def test_changed_criteria_wait_for_existing_target_job_then_dispatch_once(
     search = create_search(client, enabled=True)
     old_job = client.post(f"/api/v1/saved-searches/{search['id']}/run")
     assert old_job.status_code == 202
+    old_job_id = old_job.json()["members"][0]["job_id"]
     changed = client.patch(
         f"/api/v1/saved-searches/{search['id']}",
         json={
@@ -263,12 +270,12 @@ def test_changed_criteria_wait_for_existing_target_job_then_dispatch_once(
         dispatch = session.scalar(select(ScheduleDispatch))
         jobs = session.scalars(select(Job).order_by(Job.created_at)).all()
     assert dispatch is not None and dispatch.status == "pending"
-    assert len(jobs) == 1 and str(jobs[0].id) == old_job.json()["job_id"]
+    assert len(jobs) == 1 and str(jobs[0].id) == old_job_id
 
     with Session(app.state.database_engine) as session, session.begin():
         session.execute(
             update(Job)
-            .where(Job.id == UUID(old_job.json()["job_id"]))
+            .where(Job.id == UUID(old_job_id))
             .values(status="completed", finished_at=now, updated_at=now)
         )
     assert scheduler.run_due(reference_time=now) == 1
@@ -276,7 +283,7 @@ def test_changed_criteria_wait_for_existing_target_job_then_dispatch_once(
         dispatch = session.scalar(select(ScheduleDispatch))
         jobs = session.scalars(select(Job).order_by(Job.created_at)).all()
     assert dispatch is not None and dispatch.status == "enqueued"
-    assert dispatch.job_id is not None
+    assert dispatch.job_id is None and dispatch.group_id is not None
     assert len(jobs) == 2
     assert jobs[1].status == "queued"
     assert jobs[1].parameters_snapshot["parameters"]["saved_search_version"] == 2
@@ -289,6 +296,7 @@ def test_disabling_search_cancels_pending_dispatch_without_stopping_active_job(
     search = create_search(client, enabled=True)
     active = client.post(f"/api/v1/saved-searches/{search['id']}/run")
     assert active.status_code == 202
+    active_job_id = active.json()["members"][0]["job_id"]
     client.patch(
         f"/api/v1/saved-searches/{search['id']}",
         json={
@@ -308,7 +316,7 @@ def test_disabling_search_cancels_pending_dispatch_without_stopping_active_job(
     assert disabled.status_code == 200
     with Session(app.state.database_engine) as session:
         dispatch = session.scalar(select(ScheduleDispatch))
-        active_job = session.get(Job, UUID(active.json()["job_id"]))
+        active_job = session.get(Job, UUID(active_job_id))
         job_count = session.scalar(select(func.count()).select_from(Job))
     assert dispatch is not None and dispatch.status == "cancelled"
     assert active_job is not None and active_job.status == "queued"
@@ -450,14 +458,20 @@ def test_real_saved_search_compiles_real_snapshot_and_schedules_datajud_job(
         assert search["availability"]["enabled"] is True
         run = client.post(f"/api/v1/saved-searches/{search['id']}/run")
         assert run.status_code == 202, run.text
-        manual_job = client.get(f"/api/v1/jobs/{run.json()['job_id']}").json()
+        manual_job_id = run.json()["members"][0]["job_id"]
+        manual_job = client.get(f"/api/v1/jobs/{manual_job_id}").json()
         assert manual_job["environment"] == "real"
         assert manual_job["source"] == "datajud"
         client.post(f"/api/v1/jobs/{manual_job['id']}/cancel")
         set_search_due(app, str(search["id"]), date(2026, 10, 4))
         assert (
             DailyScheduler(
-                app.state.session_factory, app.state.jobs, mode="real", source="datajud"
+                app.state.session_factory,
+                app.state.jobs,
+                mode="real",
+                source="datajud",
+                settings=settings,
+                execution_groups=app.state.execution_groups,
             ).run_due(reference_time=datetime(2026, 10, 9, 15, tzinfo=UTC))
             == 1
         )
@@ -465,6 +479,7 @@ def test_real_saved_search_compiles_real_snapshot_and_schedules_datajud_job(
             dispatch = session.scalar(select(ScheduleDispatch))
             snapshots = session.scalars(select(Job.parameters_snapshot)).all()
         assert dispatch is not None and dispatch.status != "blocked"
+        assert dispatch.group_id is not None and dispatch.job_id is None
         assert dispatch.reason is None
         assert snapshots
         assert all(

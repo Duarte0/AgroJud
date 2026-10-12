@@ -35,6 +35,8 @@ from agrojud.sources.contracts import build_query_by_case_number
 
 EXPECTED_JOB_TABLES = {
     "alembic_version",
+    "execution_groups",
+    "execution_group_members",
     "collection_observations",
     "collection_results",
     "collections",

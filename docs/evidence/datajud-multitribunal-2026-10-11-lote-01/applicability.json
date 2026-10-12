@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "tribunals": {
+    "tjgo": {
+      "rural.credito_contratos": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: assuntos 10501, 4964 e 4976 ativos na taxonomia nacional. Aplicável ao ramo estadual para demandas cíveis de crédito rural; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e Constituição, arts. 109 e 125: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm."
+      },
+      "execucoes.amplas": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: classes 1116, 12154, 12079, 156 e 12078 ativas na taxonomia nacional. Abrange execuções fiscais estaduais, títulos e cumprimento de sentença no ramo estadual; referência oficial: https://www.cnj.jus.br/sgt/infWebService.php; Constituição, arts. 109 e 125: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: classes 129 e 108 ativas. A competência para recuperação judicial e falência decorre do art. 3 da Lei 11.101/2005; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101compilado.htm."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: assuntos 4993 e 13277 ativos. A competência para recuperação judicial e falência decorre do art. 3 da Lei 11.101/2005; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101compilado.htm."
+      }
+    },
+    "tjmt": {
+      "rural.credito_contratos": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: assuntos 10501, 4964 e 4976 ativos na taxonomia nacional. Aplicável ao ramo estadual para demandas cíveis de crédito rural; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e Constituição, arts. 109 e 125: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm."
+      },
+      "execucoes.amplas": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: classes 1116, 12154, 12079, 156 e 12078 ativas na taxonomia nacional. Abrange execuções fiscais estaduais, títulos e cumprimento de sentença no ramo estadual; referência oficial: https://www.cnj.jus.br/sgt/infWebService.php; Constituição, arts. 109 e 125: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: classes 129 e 108 ativas. A competência para recuperação judicial e falência decorre do art. 3 da Lei 11.101/2005; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101compilado.htm."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: assuntos 4993 e 13277 ativos. A competência para recuperação judicial e falência decorre do art. 3 da Lei 11.101/2005; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101compilado.htm."
+      }
+    },
+    "tjms": {
+      "rural.credito_contratos": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: assuntos 10501, 4964 e 4976 ativos na taxonomia nacional. Aplicável ao ramo estadual para demandas cíveis de crédito rural; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e Constituição, arts. 109 e 125: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm."
+      },
+      "execucoes.amplas": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: classes 1116, 12154, 12079, 156 e 12078 ativas na taxonomia nacional. Abrange execuções fiscais estaduais, títulos e cumprimento de sentença no ramo estadual; referência oficial: https://www.cnj.jus.br/sgt/infWebService.php; Constituição, arts. 109 e 125: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: classes 129 e 108 ativas. A competência para recuperação judicial e falência decorre do art. 3 da Lei 11.101/2005; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101compilado.htm."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: assuntos 4993 e 13277 ativos. A competência para recuperação judicial e falência decorre do art. 3 da Lei 11.101/2005; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101compilado.htm."
+      }
+    },
+    "tjpr": {
+      "rural.credito_contratos": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: assuntos 10501, 4964 e 4976 ativos na taxonomia nacional. Aplicável ao ramo estadual para demandas cíveis de crédito rural; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e Constituição, arts. 109 e 125: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm."
+      },
+      "execucoes.amplas": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: classes 1116, 12154, 12079, 156 e 12078 ativas na taxonomia nacional. Abrange execuções fiscais estaduais, títulos e cumprimento de sentença no ramo estadual; referência oficial: https://www.cnj.jus.br/sgt/infWebService.php; Constituição, arts. 109 e 125: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: classes 129 e 108 ativas. A competência para recuperação judicial e falência decorre do art. 3 da Lei 11.101/2005; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101compilado.htm."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: assuntos 4993 e 13277 ativos. A competência para recuperação judicial e falência decorre do art. 3 da Lei 11.101/2005; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101compilado.htm."
+      }
+    },
+    "trf1": {
+      "rural.credito_contratos": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "INCONCLUSIVE conforme instrução da pessoa operadora: a evidência oficial examinada não sustenta a competência federal para o conjunto amplo de crédito rural; nenhuma consulta S5 autorizada. Referência TPU examinada: https://www.cnj.jus.br/sgt/infWebService.php."
+      },
+      "execucoes.amplas": {
+        "state": "APPLICABLE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "SGT CNJ v1.27.1, 06/10/2026: classes de execução fiscal e por título extrajudicial ativas na taxonomia nacional. A Portaria do TRF1 autoriza tramitação de execuções fiscais e de título extrajudicial na 1ª Região; referências oficiais: https://www.cnj.jus.br/sgt/infWebService.php e https://www.trf1.jus.br/trf1/avisos/portaria-dispoe-sobre-a-expansao-do-sistema-processo-judicial-eletronico---pje-para-as-execucoes-fiscais-e-execucoes-de-titulo-extrajudicial-e-respectivos-incidentes."
+      },
+      "recuperacao_judicial.por_classe": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "INCONCLUSIVE conforme instrução da pessoa operadora: não foi localizada evidência oficial explícita de exclusão que permita NOT_APPLICABLE; nenhuma consulta S5. Referência TPU examinada: https://www.cnj.jus.br/sgt/infWebService.php."
+      },
+      "recuperacao_judicial.por_assunto": {
+        "state": "INCONCLUSIVE",
+        "tpu_version": "06/10/2026",
+        "reference_url": "https://www.cnj.jus.br/sgt/infWebService.php",
+        "rationale": "INCONCLUSIVE conforme instrução da pessoa operadora: não foi localizada evidência oficial explícita de exclusão que permita NOT_APPLICABLE; nenhuma consulta S5. Referência TPU examinada: https://www.cnj.jus.br/sgt/infWebService.php."
+      }
+    }
+  }
+}

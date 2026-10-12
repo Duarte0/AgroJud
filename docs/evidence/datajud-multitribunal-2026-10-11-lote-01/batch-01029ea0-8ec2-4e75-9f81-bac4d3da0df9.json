@@ -1,0 +1,902 @@
+{
+  "allowlist_version": "2026-10-11",
+  "catalog_version": "1.1.0",
+  "code_version": "1.0.0",
+  "coverage_matrix": [
+    {
+      "alias": "tjac",
+      "canonical_tribunal": "TJAC",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjal",
+      "canonical_tribunal": "TJAL",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjam",
+      "canonical_tribunal": "TJAM",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjap",
+      "canonical_tribunal": "TJAP",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjba",
+      "canonical_tribunal": "TJBA",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjce",
+      "canonical_tribunal": "TJCE",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjdft",
+      "canonical_tribunal": "TJDFT",
+      "justice": "TJDFT",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjes",
+      "canonical_tribunal": "TJES",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjgo",
+      "canonical_tribunal": "TJGO",
+      "justice": "TJ",
+      "s1_s2_state": "VALIDATED",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "INCONCLUSIVE"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        }
+      }
+    },
+    {
+      "alias": "tjma",
+      "canonical_tribunal": "TJMA",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjmg",
+      "canonical_tribunal": "TJMG",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjms",
+      "canonical_tribunal": "TJMS",
+      "justice": "TJ",
+      "s1_s2_state": "INCONCLUSIVE",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        }
+      }
+    },
+    {
+      "alias": "tjmt",
+      "canonical_tribunal": "TJMT",
+      "justice": "TJ",
+      "s1_s2_state": "VALIDATED",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        }
+      }
+    },
+    {
+      "alias": "tjpa",
+      "canonical_tribunal": "TJPA",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjpb",
+      "canonical_tribunal": "TJPB",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjpe",
+      "canonical_tribunal": "TJPE",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjpi",
+      "canonical_tribunal": "TJPI",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjpr",
+      "canonical_tribunal": "TJPR",
+      "justice": "TJ",
+      "s1_s2_state": "VALIDATED",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        }
+      }
+    },
+    {
+      "alias": "tjrj",
+      "canonical_tribunal": "TJRJ",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjrn",
+      "canonical_tribunal": "TJRN",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjro",
+      "canonical_tribunal": "TJRO",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjrr",
+      "canonical_tribunal": "TJRR",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjrs",
+      "canonical_tribunal": "TJRS",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjsc",
+      "canonical_tribunal": "TJSC",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjse",
+      "canonical_tribunal": "TJSE",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjsp",
+      "canonical_tribunal": "TJSP",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "tjto",
+      "canonical_tribunal": "TJTO",
+      "justice": "TJ",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "trf1",
+      "canonical_tribunal": "TRF1",
+      "justice": "TRF",
+      "s1_s2_state": "VALIDATED",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "APPLICABLE",
+          "pair_state": "VALIDATED"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "INCONCLUSIVE",
+          "pair_state": "INCONCLUSIVE"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "INCONCLUSIVE",
+          "pair_state": "INCONCLUSIVE"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "INCONCLUSIVE",
+          "pair_state": "INCONCLUSIVE"
+        }
+      }
+    },
+    {
+      "alias": "trf2",
+      "canonical_tribunal": "TRF2",
+      "justice": "TRF",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "trf3",
+      "canonical_tribunal": "TRF3",
+      "justice": "TRF",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "trf4",
+      "canonical_tribunal": "TRF4",
+      "justice": "TRF",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "trf5",
+      "canonical_tribunal": "TRF5",
+      "justice": "TRF",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    },
+    {
+      "alias": "trf6",
+      "canonical_tribunal": "TRF6",
+      "justice": "TRF",
+      "s1_s2_state": "NOT_RUN",
+      "s5_pairs": {
+        "execucoes.amplas": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_assunto": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "recuperacao_judicial.por_classe": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        },
+        "rural.credito_contratos": {
+          "applicability_state": "NOT_RUN",
+          "pair_state": "NOT_RUN"
+        }
+      }
+    }
+  ],
+  "duration_ms": 1583183,
+  "endpoint_catalog_reference": "https://datajud-wiki.cnj.jus.br/api-publica/endpoints/",
+  "failures_and_not_run": [
+    {
+      "alias": "tjms",
+      "failed_requests": [
+        {
+          "error_code": "NETWORK",
+          "http_status": null,
+          "name": "recorte_sort_composto_pagina_2"
+        }
+      ],
+      "failed_s5_requests": [],
+      "s5_pairs_not_run": [],
+      "stop_reason": null
+    }
+  ],
+  "kind": "datajud_multitribunal_batch_summary",
+  "matrix_review": {
+    "state": "PENDING_HUMAN_REVIEW"
+  },
+  "report_version": 1,
+  "request_budget": {
+    "automatic_retries": false,
+    "max_s1_s2_requests_per_tribunal": 6,
+    "max_s5_requests_per_pair": 2,
+    "max_tribunals": 5,
+    "page_size": 100,
+    "s5_spacing_seconds": 1.0,
+    "s5_window_days": 31,
+    "writes_to_product_database": false
+  },
+  "requested_aliases": [
+    "tjgo",
+    "tjmt",
+    "tjms",
+    "tjpr",
+    "trf1"
+  ],
+  "requested_count": 5,
+  "requests_made": 47,
+  "run_id": "01029ea0-8ec2-4e75-9f81-bac4d3da0df9",
+  "s1_s2_by_tribunal": [
+    {
+      "alias": "tjgo",
+      "state": "VALIDATED"
+    },
+    {
+      "alias": "tjmt",
+      "state": "VALIDATED"
+    },
+    {
+      "alias": "tjms",
+      "state": "INCONCLUSIVE"
+    },
+    {
+      "alias": "tjpr",
+      "state": "VALIDATED"
+    },
+    {
+      "alias": "trf1",
+      "state": "VALIDATED"
+    }
+  ],
+  "s5_pair_counts": {
+    "INCOMPATIBLE": 0,
+    "INCONCLUSIVE": 4,
+    "NOT_APPLICABLE": 0,
+    "NOT_RUN": 0,
+    "VALIDATED": 16
+  },
+  "started_at": "2026-10-12T00:11:24.840476+00:00",
+  "stop_reason": null,
+  "terms_review": {
+    "operator_confirmed_before_probe": true,
+    "references": [
+      "https://www.cnj.jus.br/sistemas/datajud/api-publica/",
+      "https://atos.cnj.jus.br/atos/detalhar/3453",
+      "https://atos.cnj.jus.br/atos/detalhar/6972"
+    ]
+  },
+  "tribunal_reports": [
+    {
+      "alias": "tjgo",
+      "file_key": "tribunal-tjgo-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json"
+    },
+    {
+      "alias": "tjmt",
+      "file_key": "tribunal-tjmt-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json"
+    },
+    {
+      "alias": "tjms",
+      "file_key": "tribunal-tjms-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json"
+    },
+    {
+      "alias": "tjpr",
+      "file_key": "tribunal-tjpr-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json"
+    },
+    {
+      "alias": "trf1",
+      "file_key": "tribunal-trf1-01029ea0-8ec2-4e75-9f81-bac4d3da0df9.json"
+    }
+  ]
+}

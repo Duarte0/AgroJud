@@ -380,6 +380,7 @@ def compile_preset(
     preset_id: str,
     *,
     environment: PresetEnvironment,
+    tribunal: str = "TJGO",
     reference_time: datetime | None = None,
     filed_from: date | None = None,
     filed_through_inclusive: date | None = None,
@@ -406,6 +407,7 @@ def compile_preset(
     catalog = load_catalog()
     explanations = _inclusion_explanations(item, catalog.codes)
     query = SourceQuery(
+        tribunal=tribunal,
         filed_from=resolved_from,
         filed_to=resolved_to,
         class_codes=item.filters["class"],

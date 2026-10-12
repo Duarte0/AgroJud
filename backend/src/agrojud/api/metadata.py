@@ -33,6 +33,9 @@ def get_presets(request: Request) -> PresetsResponse:
     items: list[PresetResponse] = []
     for item in list_presets():
         availability = get_item_availability(item.id, cast(Any, mode))
+        reasons = list(availability.reasons)
+        enabled = availability.enabled
+        label = availability.label
         items.append(
             PresetResponse(
                 id=item.id,
@@ -56,9 +59,9 @@ def get_presets(request: Request) -> PresetsResponse:
                 required_for_real=list(item.required_for_real),
                 availability=PresetAvailabilityResponse(
                     environment=cast(Any, mode),
-                    enabled=availability.enabled,
-                    reasons=list(availability.reasons),
-                    label=availability.label,
+                    enabled=enabled,
+                    reasons=reasons,
+                    label=label,
                 ),
             )
         )

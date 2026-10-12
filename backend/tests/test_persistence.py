@@ -38,6 +38,8 @@ SOURCE_B = "fixture-origin-b"
 OBSERVED_AT = datetime(2026, 10, 9, 12, 0, tzinfo=UTC)
 EXPECTED_TABLES = {
     "alembic_version",
+    "execution_groups",
+    "execution_group_members",
     "collection_observations",
     "collection_results",
     "collections",

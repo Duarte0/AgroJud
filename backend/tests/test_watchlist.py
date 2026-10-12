@@ -75,7 +75,7 @@ def test_watchlist_migration_upgrades_0007_without_losing_local_processes(
         tables = set(inspect(engine).get_table_names())
         assert {"process_watchlist_entries", "process_watchlist_history"}.issubset(tables)
         with engine.connect() as connection:
-            assert MigrationContext.configure(connection).get_current_revision() == "20261009_0010"
+            assert MigrationContext.configure(connection).get_current_revision() == "20261012_0011"
     finally:
         engine.dispose()
 
@@ -184,12 +184,13 @@ def test_refresh_requires_a_local_active_watch_and_deduplicates_each_target(
     repeated = client.post(f"/api/v1/processes/{first_id}/refresh")
     second = client.post(f"/api/v1/processes/{second_id}/refresh")
     assert first.status_code == repeated.status_code == second.status_code == 202
-    assert first.json()["job_id"] == repeated.json()["job_id"]
-    assert first.json()["reused"] is False
-    assert repeated.json()["reused"] is True
-    assert second.json()["job_id"] != first.json()["job_id"]
+    assert first.json()["id"] == repeated.json()["id"]
+    first_job_id = first.json()["members"][0]["job_id"]
+    assert repeated.json()["members"][0]["job_id"] == first_job_id
+    second_job_id = second.json()["members"][0]["job_id"]
+    assert second_job_id != first_job_id
 
-    detail = client.get(f"/api/v1/jobs/{first.json()['job_id']}").json()
+    detail = client.get(f"/api/v1/jobs/{first_job_id}").json()
     assert detail["criteria"]["process_number"] == CNJ_A
     assert detail["criteria"]["filed_from"] is None
     assert detail["criteria"]["filed_to"] is None
@@ -221,11 +222,12 @@ def test_removing_watch_does_not_cancel_an_accepted_refresh_or_change_triage(
     assert client.put(f"/api/v1/processes/{process_id}/watch").status_code == 200
     created = client.post(f"/api/v1/processes/{process_id}/refresh")
     assert created.status_code == 202
+    job_id = created.json()["members"][0]["job_id"]
 
     removed = client.delete(f"/api/v1/processes/{process_id}/watch")
     assert removed.status_code == 200
     with Session(app.state.database_engine) as session:
-        queued = session.get(Job, UUID(created.json()["job_id"]))
+        queued = session.get(Job, UUID(job_id))
         assert queued is not None and queued.status == "queued"
 
     worker = LeasedWorker(

@@ -1,8 +1,8 @@
 # IMPLEMENTATION_PLAN — AgroJud Radar
 
-Data: 10/10/2026.
+Data: 12/10/2026.
 
-Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redesign do frontend jurídico e de dados em 10/10/2026, preservando as funcionalidades existentes. SPEC-022 implementou sugestões pesquisáveis para todos os filtros textuais de Processos e concluiu validação local em 10/10/2026. SPEC-023 aplicou rolagem vertical acessível às listas de eventos compartilhadas e concluiu validação local em 11/10/2026. SPEC-020 foi aprovada local e realmente em 10/10/2026 após S1/S2/S5; `sinal.penhora` permanece desabilitado porque o movimento 11382 não aparece no TJGO.
+Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redesign do frontend jurídico e de dados em 10/10/2026, preservando as funcionalidades existentes. SPEC-022 implementou sugestões pesquisáveis para todos os filtros textuais de Processos e concluiu validação local em 10/10/2026. SPEC-023 aplicou rolagem vertical acessível às listas de eventos compartilhadas e concluiu validação local em 11/10/2026. SPEC-020 foi aprovada local e realmente em 10/10/2026 após S1/S2/S5; `sinal.penhora` permanece desabilitado porque o movimento 11382 não aparece no TJGO. SPEC-024 concluiu localmente o probe, merge auditável e revisão versionada; a matriz externa foi aprovada parcialmente para cinco tribunais, com 28 `NOT_RUN` e quatro pares S5 `INCONCLUSIVE`. SPEC-025 concluiu em 12/10/2026 a seleção no Radar de um, vários ou todos os 33 endpoints allowlisted, sem gate de matriz/flag, e os fluxos de grupo, buscas salvas/agendadas e acompanhamento por tribunal. Os critérios locais passaram; não houve probes ou coletas reais multitribunal, então a evidência não afirma disponibilidade externa nacional.
 
 ## 1. Estado atual e orientação
 
@@ -530,6 +530,8 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 - [x] SPEC-021 — Redesign visual, responsivo e acessível do frontend concluído com testes e evidências.
 - [x] SPEC-022 — Sugestões locais e pesquisáveis nos filtros textuais de Processos; filtros finitos, URLs e semântica da consulta preservados e validados localmente.
 - [x] SPEC-023 — Rolagem vertical acessível nas listas de eventos, com paginação e evidência preservadas e validação local concluída.
+- [x] SPEC-024 — Probe isolado, merge, histórico de tentativas e revisão auditável concluídos; evidência externa revisada parcialmente para cinco tribunais, com 28 `NOT_RUN` e cobertura nacional pendente. Nenhum novo endpoint foi habilitado.
+- [x] SPEC-025 — Seleção de um, vários ou todos os 33 tribunais no Radar, com Todos marcado por padrão; usa a chave DataJud já configurada, sem gate/configuração de matriz, e mantém jobs, collections, checkpoints e falhas independentes. AC1–AC10 passaram localmente; nenhuma probe real foi executada. Ver [SPEC-025](specs/SPEC-025-suporte-multitribunal.md).
 - [x] Aceite sintético completo, conforme matriz da SPEC-020.
 - [x] Aceite real TJGO registrado separadamente na matriz da SPEC-020.
 - [x] Instalação em Compose descartável e restauração verificadas.
@@ -537,7 +539,7 @@ Não criar abstrações antecipadas para esses itens. A interface de fonte e os 
 
 ## 9. Divisão final em SPECs
 
-A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-001 a SPEC-023 estão DONE com os alcances descritos em cada documento. A conclusão de uma SPEC não promove sucessoras nem valida a fonte automaticamente.
+A decomposição e os status gerais estão em [specs/README.md](specs/README.md). SPEC-025 está concluída conforme o escopo reformulado: seleção dos 33 endpoints allowlisted, execuções por membro e compatibilidade TJGO. A matriz da SPEC-024 permanece evidência técnica parcial e não define a disponibilidade no produto. Os testes locais não executaram DataJud real; resultados de rede, autenticação e disponibilidade seguem visíveis por membro e não são inferidos a partir de fixtures.
 
 | Unidade | Milestone/Spike | Entrega | Dependências diretas |
 | --- | --- | --- | --- |
@@ -564,15 +566,19 @@ A decomposição e os status estão em [specs/README.md](specs/README.md). SPEC-
 | [SPEC-021](specs/SPEC-021-redesign-frontend.md) | Pós-M9 / UX | Redesign do frontend jurídico e de dados | SPEC-012–SPEC-020 |
 | [SPEC-022](specs/SPEC-022-sugestoes-filtros-processos.md) | Pós-M9 / UX | Sugestões pesquisáveis para todos os filtros textuais de Processos | SPEC-011, SPEC-012, SPEC-021 |
 | [SPEC-023](specs/SPEC-023-rolagem-listas-eventos.md) | Pós-M9 / UX | Rolagem vertical acessível em listas de eventos do produto | SPEC-012, SPEC-021 |
+| [SPEC-024](specs/SPEC-024-validacao-multitribunal-datajud.md) | S6 / validação externa | Ferramenta e matriz para validar S1/S2 por tribunal e S5 por preset aplicável nos 26 TJs, TJDFT e seis TRFs | SPEC-002, SPEC-003, SPEC-010 |
+| [SPEC-025](specs/SPEC-025-suporte-multitribunal.md) | Pós-M9 / suporte multitribunal | Seleção de um, vários ou todos os 33 endpoints allowlisted; chave existente; jobs, resultados e checkpoints independentes, sem gate de matriz | SPEC-002, SPEC-004–SPEC-019 |
 
-Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023. SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017.
+Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → (024 + 025). SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017; SPEC-025 referencia a evidência SPEC-024, mas não depende dela para runtime.
+
+SPEC-024 valida localmente os 33 endpoints TJ/TJDFT/TRF em lotes explícitos de até cinco e oferece `agrojud-datajud-multitribunal-matrix merge/review` para agregar tentativas e registrar decisões auditáveis. A evidência externa disponível continua parcial: cinco tribunais aprovados em S1/S2, 16 pares S5 validados, quatro inconclusivos e 28 tribunais não executados. Esses resultados documentam observações e não são requisito nem bloqueio de runtime. SPEC-025 implementa seleção de qualquer sigla da allowlist, com Todos selecionado por padrão, e uso da mesma chave DataJud em cada endpoint. Testes e validações locais passaram; não houve probe nem coleta real multitribunal, portanto não se afirma disponibilidade externa nacional.
 
 ### Esclarecimentos técnicos registrados na especificação
 
 1. **M2 sem dependência circular de M3:** a coleta recebe identidade própria em SPEC-005; jobs se vinculam a ela em SPEC-007. Observações não exigem job fictício.
 2. **Baseline histórica:** só se estabelece por representação com lista de movimentos presente e normalizada sem rejeição. Snapshot parcial mantém referência pendente; nova representação produz descoberta de representação, não um alerta por evento histórico.
 3. **Identidade técnica:** SPEC-004 fixa comparação por conteúdo e multiplicidade, com alterações observadas sem afirmar novo ato. Reordenação do bruto pode criar versão bruta distinta sem criar movimento novo.
-4. **Validação real por capacidade:** SPEC-003 separa resultado do probe de aprovação S1/S2; SPEC-010 separa entrega do catálogo de aprovação de presets/regras. Indisponibilidade não impede o núcleo sintético, mas bloqueia habilitação e aceite reais.
+4. **Evidência e uso do DataJud:** SPEC-003 e SPEC-010 mantêm registros e limites de validação real da fonte/catálogo; SPEC-024 documenta resultados técnicos por endpoint. Para o fluxo multitribunal da SPEC-025, esses documentos são evidência e contexto, não gate de runtime. Erros reais continuam explícitos por tribunal e nunca são convertidos em resposta vazia.
 5. **Reprocessamento e continuação:** quarentena tem resolução local auditada; continuar paginação não resolve rejeições nem reescreve cobertura histórica. Regras têm reprocessamento próprio sem HTTP.
 6. **Cancelamento e posse:** cancelamento é serializado com commit; página já confirmada é preservada. Após cancelamento confirmado, nenhuma nova página pode confirmar.
 7. **Defaults operacionais:** SPEC-002 fixa timeouts HTTP (connect 5s, read 60s configurável e menor que o lease no real, write 20s, pool 5s); SPEC-007 mantém lease 120s/heartbeat 20s e limita transações (statement 30s, lock 5s); SPEC-009 fixa espaçamento 1s, backoff com jitter até 60s e orçamentos de recuperação. São parâmetros configuráveis locais, não limites oficiais DataJud.

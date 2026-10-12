@@ -427,10 +427,10 @@ def test_overview_query_plans_with_a_controlled_local_volume(
 
     selected = _selected_processes(ProcessFilters(), "demo")
     statements = {
-        "statistics": _overview_statistics_statement(selected),
+        "statistics": _overview_statistics_statement(selected, ProcessFilters()),
         "signals": _signal_distribution_statement(selected, "demo"),
-        "themes": _theme_distribution_statement(selected),
-        "latest_collections": _latest_collections_statement(),
+        "themes": _theme_distribution_statement(selected, ProcessFilters()),
+        "latest_collections": _latest_collections_statement(ProcessFilters()),
     }
     with app.state.database_engine.connect() as connection:
         for label, statement in statements.items():

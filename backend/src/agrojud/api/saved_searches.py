@@ -11,11 +11,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from agrojud.api.errors import ERROR_RESPONSES
-from agrojud.api.jobs import _source_for_environment
+from agrojud.api.job_groups import _group_response
+from agrojud.api.jobs import SourceCapabilityUnavailable, _source_for_environment
 from agrojud.api.schedule_status import schedule_dispatch_response
 from agrojud.api.schemas import (
-    JobCreatedResponse,
-    JobStatus,
+    ExecutionGroupResponse,
     SavedSearchAvailabilityResponse,
     SavedSearchCreateRequest,
     SavedSearchFilters,
@@ -23,11 +23,15 @@ from agrojud.api.schemas import (
     SavedSearchResponse,
 )
 from agrojud.db.models import SavedSearch, SavedSearchVersion, ScheduleDispatch
+from agrojud.services.execution_groups import execution_group_idempotency_key
 from agrojud.services.saved_searches import (
     SavedSearchNotFoundError,
     availability_reasons,
+    request_for_revision,
 )
-from agrojud.sources.contracts import SourceError
+from agrojud.sources.contracts import SourceError, SourceErrorCode
+from agrojud.sources.factory import real_source_unavailable_reason
+from agrojud.sources.tribunals import canonicalize_tribunal
 
 router = APIRouter(prefix="/api/v1/saved-searches", tags=["saved-searches"])
 
@@ -130,7 +134,7 @@ def patch_saved_search(
 
 @router.post(
     "/{search_id}/run",
-    response_model=JobCreatedResponse,
+    response_model=ExecutionGroupResponse,
     status_code=202,
     responses=ERROR_RESPONSES,
     summary="Inicia explicitamente uma execução manual da busca salva",
@@ -139,23 +143,72 @@ def run_saved_search(
     search_id: UUID,
     request: Request,
     response: Response,
-) -> JobCreatedResponse:
-    mode, source = _source_for_environment(request.app.state.settings)
+) -> ExecutionGroupResponse:
+    settings = request.app.state.settings
+    mode, source = _source_for_environment(settings)
+    unavailable = real_source_unavailable_reason(settings)
+    if unavailable is not None:
+        raise SourceCapabilityUnavailable(unavailable)
     try:
         with request.app.state.session_factory() as session, session.begin():
-            result = request.app.state.saved_searches.manual_run(
-                session, search_id, mode=mode, source=source
+            search = session.get(SavedSearch, search_id)
+            if search is None:
+                raise SavedSearchNotFoundError("A busca salva não existe.")
+            revision = request.app.state.saved_searches.current_revision(session, search)
+            filters = dict(revision.filters)
+            tribunals = filters.get("tribunals", ["TJGO"])
+            if not isinstance(tribunals, list):
+                raise SourceError(
+                    SourceErrorCode.CONTRACT,
+                    "A lista de tribunais da revisão salva é inválida.",
+                )
+            now = datetime.now(UTC)
+            member_requests = {
+                tribunal: request_for_revision(
+                    revision,
+                    search_id=search.id,
+                    mode=mode,
+                    source=source,
+                    reference_time=now,
+                    tribunal=tribunal,
+                )
+                for tribunal in tribunals
+                if isinstance(tribunal, str)
+            }
+            if len(member_requests) != len(tribunals):
+                raise SourceError(
+                    SourceErrorCode.CONTRACT,
+                    "A lista de tribunais da revisão salva é inválida.",
+                )
+            created = request.app.state.execution_groups.create_in_session(
+                session,
+                kind="discovery",
+                mode=mode,
+                source=source,
+                tribunals=tribunals,
+                preset_id=revision.preset_id,
+                request_snapshot={
+                    "saved_search_id": str(search.id),
+                    "saved_search_version": revision.version,
+                    "criteria": filters,
+                },
+                request_for_tribunal=lambda tribunal: member_requests[tribunal],
+                idempotency_key=execution_group_idempotency_key(
+                    target_id=search.id,
+                    kind="discovery",
+                    requests=tuple(member_requests.values()),
+                ),
             )
+            view = request.app.state.execution_groups.inspect_in_session(session, created.group_id)
+            if view is None:  # pragma: no cover - just inserted in this transaction
+                raise RuntimeError("O grupo criado não pôde ser lido.")
+            group_response = _group_response(view)
     except SavedSearchNotFoundError:
         raise HTTPException(status_code=404, detail="A busca salva não existe.") from None
-    inspection = request.app.state.jobs.inspect(result.job_id)
-    response.headers["Location"] = str(request.url_for("get_job", job_id=str(result.job_id)))
-    return JobCreatedResponse(
-        job_id=result.job_id,
-        collection_id=result.collection_id,
-        status=cast(JobStatus, inspection.status),
-        reused=not result.created,
+    response.headers["Location"] = str(
+        request.url_for("get_job_group", group_id=str(group_response.id))
     )
+    return group_response
 
 
 def _search_response(
@@ -194,11 +247,42 @@ def _search_response(
         filters=SavedSearchFilters.model_validate(revision.filters),
         enabled=search.enabled,
         next_run_at=search.next_run_at,
-        availability=SavedSearchAvailabilityResponse(
-            enabled=not reasons,
+        availability=_saved_search_availability(
+            revision=revision,
             reasons=reasons,
         ),
         last_dispatch=schedule_dispatch_response(dispatch),
         created_at=search.created_at,
         updated_at=search.updated_at,
+    )
+
+
+def _saved_search_availability(
+    *,
+    revision: SavedSearchVersion,
+    reasons: list[str],
+) -> SavedSearchAvailabilityResponse:
+    saved_tribunals = revision.filters.get("tribunals", ["TJGO"])
+    if not isinstance(saved_tribunals, list):
+        return SavedSearchAvailabilityResponse(
+            enabled=False,
+            reasons=["A lista de tribunais da revisão salva é inválida."],
+        )
+    allowlist_reasons: list[str] = []
+    canonical: list[str] = []
+    for tribunal in saved_tribunals:
+        try:
+            resolved = canonicalize_tribunal(tribunal) if isinstance(tribunal, str) else None
+        except ValueError:
+            resolved = None
+        if resolved is None:
+            allowlist_reasons.append(f"{tribunal}: tribunal fora da allowlist DataJud.")
+        elif resolved in canonical:
+            allowlist_reasons.append(f"{tribunal}: tribunal duplicado na revisão salva.")
+        else:
+            canonical.append(resolved)
+    combined = list(dict.fromkeys([*reasons, *allowlist_reasons]))
+    return SavedSearchAvailabilityResponse(
+        enabled=not combined,
+        reasons=combined,
     )

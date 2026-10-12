@@ -33,6 +33,14 @@ Abra `http://127.0.0.1:5173`. A API também publica `http://127.0.0.1:8000/api/v
 
 O real usa `.env.real`, `agrojud-real`, frontend em `127.0.0.1:5174` e API em `127.0.0.1:8001`. O arquivo de exemplo não contém chave DataJud; a credencial local deve ser configurada somente no backend. Desde 10/10/2026 a coleta real fica habilitada quando `DATAJUD_API_KEY` está configurada; sem chave, a API informa o motivo e não enfileira jobs. Presets e regras de sinais seguem a evidência por item do catálogo. Não execute migração ou probe real como parte da demonstração sintética.
 
+### Coleta por tribunal
+
+O runtime usa os 33 endpoints da allowlist DataJud. API e worker leem a mesma `DATAJUD_API_KEY` do backend; não exigem arquivo/hash de matriz nem flag multitribunal. A matriz e as probes da SPEC-024 continuam registrando evidências técnicas, mas não controlam a seleção no produto.
+
+No Radar, **Todos** vem selecionado para consultar os 33 endpoints. A pessoa pode limpar a seleção e marcar um ou mais tribunais; o resumo informa o tamanho do escopo antes do envio. Cada tribunal gera um job, uma collection e um checkpoint próprios. A página do grupo mostra status, cobertura, checkpoint e erro por membro. Falha em um endpoint não cancela os demais nem apaga resultados confirmados.
+
+Uma atualização manual ou agendada de processo acompanhado consulta, separadamente, os tribunais das representações já conhecidas. Uma coleta legada sem tribunal continua direcionada a TJGO. A configuração real ainda seleciona exclusivamente DataJud e não usa fixture sintética quando a chave está ausente ou a fonte falha.
+
 ## Migrations, jobs e desligamento
 
 Subir PostgreSQL não aplica migrations. Rode `alembic upgrade head` explicitamente antes de esperar readiness ou iniciar worker. Uma readiness 503 com motivo de revisão pendente exige aplicar a migration compatível; não apague schema ou volume para contornar o erro.

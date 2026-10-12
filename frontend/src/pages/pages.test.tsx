@@ -24,7 +24,9 @@ function filterOptions(request: Request): Response {
   const field = url.searchParams.get("field") ?? "";
   const query = url.searchParams.get("q")?.toLowerCase() ?? "";
   const values: Record<string, { value: string; label: string; detail?: string; process_count: number }[]> = {
+    process_number: [{ value: "0112556-70.2014.8.09.0181", label: "0112556-70.2014.8.09.0181", process_count: 1 }],
     class: [{ value: "execucao_canonica", label: "Execução rural", process_count: 3 }],
+    tribunal: [{ value: "TJGO", label: "TJGO", process_count: 1 }],
     collection_id: [{
       value: "22222222-2222-4222-8222-222222222222",
       label: "10/10/2026 09:00 · rural.credito_contratos · Concluída",
@@ -111,6 +113,50 @@ describe("ProcessesPage", () => {
       expect(screen.getByTestId("location")).toHaveTextContent("rural_link=confirmed");
       expect(screen.getByTestId("location")).not.toHaveTextContent("page=3");
     });
+  });
+
+  it("submits the process search while a CNJ suggestion is open", async () => {
+    mockApi({
+      "GET /api/v1/processes": () => json(page([])),
+      "GET /api/v1/process-filter-options": filterOptions,
+    });
+    renderRoute(<ProcessesPage />, { path: "/processes", url: "/processes" });
+
+    await userEvent.type(screen.getByLabelText("Número CNJ"), "0112556-70.2014.8.09.0181");
+    const suggestion = await screen.findByRole("option", { name: /0112556-70\.2014\.8\.09\.0181/ });
+    expect(suggestion).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Pesquisar" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("location")).toHaveTextContent(
+        "process_number=0112556-70.2014.8.09.0181",
+      );
+    });
+  });
+
+  it("applies the tribunal checkbox without crashing the page", async () => {
+    const api = mockApi({
+      "GET /api/v1/processes": () => json(page([buildProcess()])),
+      "GET /api/v1/process-filter-options": filterOptions,
+    });
+    renderRoute(<ProcessesPage />, { path: "/processes", url: "/processes" });
+    await screen.findByText("0000001-00.2026.8.09.0001");
+
+    await userEvent.click(screen.getByRole("button", { name: /Mais filtros/ }));
+    const tribunal = await screen.findByRole("checkbox", { name: "TJGO" });
+    await userEvent.click(tribunal);
+
+    expect(tribunal).toBeChecked();
+    expect(screen.getByRole("heading", { name: "Processos" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Pesquisar" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("location")).toHaveTextContent("tribunal=TJGO");
+    });
+    const processRequest = api.calls
+      .filter((request) => new URL(request.url).pathname === "/api/v1/processes")
+      .at(-1);
+    expect(new URL(processRequest!.url).searchParams.getAll("tribunal")).toEqual(["TJGO"]);
   });
 
   it("selects a canonical suggestion with the keyboard", async () => {
@@ -219,7 +265,23 @@ describe("RadarPage", () => {
           ],
         }),
       "GET /api/v1/jobs": () => json(page([])),
-      "POST /api/v1/jobs": () =>
+      "GET /api/v1/tribunal-availability": () => json({
+        selection_enabled: true,
+        preset_id: "rural.credito_contratos",
+        matrix_sha256: null,
+        allowlist_version: "2026-10-11",
+        catalog_version: null,
+        tpu_version: null,
+        global_reasons: [],
+        tribunals: [{
+          tribunal: "TJGO",
+          s1_s2_state: "NOT_REQUIRED",
+          preset_state: "NOT_REQUIRED",
+          enabled: true,
+          reason: null,
+        }],
+      }),
+      "POST /api/v1/job-groups": () =>
         new Promise<Response>((resolve) => {
           resolvePost = resolve;
         }),
@@ -240,28 +302,34 @@ describe("RadarPage", () => {
     resolvePost(
       json(
         {
-          job_id: "11111111-1111-4111-8111-111111111111",
-          collection_id: "22222222-2222-4222-8222-222222222222",
-          status: "queued",
-          reused: false,
+          id: "66666666-6666-4666-8666-666666666666",
+          kind: "discovery",
+          state: "queued",
+          matrix_sha256: null,
+          allowlist_version: "2026-10-11",
+          catalog_version: null,
+          tpu_version: null,
+          request_snapshot: {},
+          member_count: 1,
+          completed_count: 0,
+          created_at: "2026-10-09T12:00:00Z",
+          updated_at: "2026-10-09T12:00:00Z",
+          finished_at: null,
+          members: [],
         },
         202,
       ),
     );
     await waitFor(() =>
-      expect(screen.getByTestId("location")).toHaveTextContent(
-        "/jobs/11111111-1111-4111-8111-111111111111",
-      ),
+      expect(screen.getByTestId("location")).toHaveTextContent("/job-groups/66666666-6666-4666-8666-666666666666"),
     );
-    expect(api.count("POST", "/api/v1/jobs")).toBe(1);
+    expect(api.count("POST", "/api/v1/job-groups")).toBe(1);
     const body = (await api.calls.find((call) => call.method === "POST")!.json()) as {
       criteria: Record<string, unknown>;
+      tribunals: string[];
     };
-    expect(body.criteria).toEqual({
-      preset_id: "rural.credito_contratos",
-      hit_budget: 2000,
-      page_size: 100,
-    });
+    expect(body.criteria).toMatchObject({ preset_id: "rural.credito_contratos", hit_budget: 2000, page_size: 100 });
+    expect(body.tribunals).toEqual(["TJGO"]);
   });
 
   it("disables submission when the environment source is unavailable", async () => {

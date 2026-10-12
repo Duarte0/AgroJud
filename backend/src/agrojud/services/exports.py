@@ -123,6 +123,7 @@ def create_process_csv_export(
                     writer,
                     session,
                     predicates,
+                    filters=filters,
                     environment=environment,
                     exported_at=exported_at,
                 )
@@ -152,11 +153,12 @@ def _write_process_rows(
     session: Session,
     predicates: Sequence[ColumnElement[bool]],
     *,
+    filters: ProcessFilters,
     environment: SignalEnvironment,
     exported_at: datetime,
 ) -> None:
     for processes in _process_batches(session, predicates):
-        values = _load_process_values(session, processes)
+        values = _load_process_values(session, processes, filters=filters)
         triage_records = session.scalars(
             select(ProcessTriage).where(ProcessTriage.process_id.in_([p.id for p in processes]))
         ).all()
@@ -225,26 +227,34 @@ def _process_batches(
 
 
 def _load_process_values(
-    session: Session, processes: Sequence[Process]
+    session: Session,
+    processes: Sequence[Process],
+    *,
+    filters: ProcessFilters,
 ) -> dict[UUID, _ProcessValues]:
     process_ids = [process.id for process in processes]
     values = {process_id: _ProcessValues() for process_id in process_ids}
+    representation_statement = select(
+        Representation.id.label("representation_id"),
+        Representation.process_id.label("process_id"),
+        Representation.tribunal.label("tribunal"),
+        Representation.class_code.label("class_code"),
+        Representation.class_name.label("class_name"),
+        Representation.grau.label("degree"),
+        Representation.court_unit_code.label("court_unit_code"),
+        Representation.court_unit_name.label("court_unit_name"),
+        Representation.created_at.label("created_at"),
+        Representation.last_observed_at.label("last_observed_at"),
+    ).where(Representation.process_id.in_(process_ids))
+    if filters.tribunals is not None:
+        representation_statement = representation_statement.where(
+            Representation.tribunal.in_(filters.tribunals)
+        )
     representation_rows = (
         session.execute(
-            select(
-                Representation.id.label("representation_id"),
-                Representation.process_id.label("process_id"),
-                Representation.tribunal.label("tribunal"),
-                Representation.class_code.label("class_code"),
-                Representation.class_name.label("class_name"),
-                Representation.grau.label("degree"),
-                Representation.court_unit_code.label("court_unit_code"),
-                Representation.court_unit_name.label("court_unit_name"),
-                Representation.created_at.label("created_at"),
-                Representation.last_observed_at.label("last_observed_at"),
+            representation_statement.order_by(
+                Representation.process_id.asc(), Representation.id.asc()
             )
-            .where(Representation.process_id.in_(process_ids))
-            .order_by(Representation.process_id.asc(), Representation.id.asc())
         )
         .mappings()
         .all()

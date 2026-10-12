@@ -1,6 +1,8 @@
 # SPECs — AgroJud Radar
 
-Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004 a SPEC-019 foram concluídas localmente em 09/10/2026, incluindo reconciliação, persistência, fila/leases, paginação/checkpoints, retries/recuperação, catálogo temático, API/OpenAPI, frontend, triagem/histórico, sinais/reprocessamento, acompanhamento manual, baselines por representação, novidades revisáveis, buscas versionadas, agendamento diário, indicadores da base local e exportação CSV filtrada. SPEC-020 concluiu implementação e aceite local em 10/10/2026 e, no mesmo dia, o aceite real (AC4) após a aprovação de S1/S2 e S5 com evidência DataJud/TJGO; está DONE. SPEC-021 redesenhou o frontend sem alterar contratos de API ou dados e passou seus aceites localmente em 10/10/2026; está DONE. SPEC-022 implementou sugestões pesquisáveis para os filtros textuais de Processos, preservou valores livres e links existentes e passou os testes locais em 10/10/2026; está DONE. SPEC-023 aplicou rolagem vertical acessível às listas de eventos e concluiu validação local em 11/10/2026; está DONE. `sinal.penhora` segue desabilitado no real.
+Este índice organiza as unidades executáveis do [IMPLEMENTATION_PLAN](../IMPLEMENTATION_PLAN.md), respeitando o [PRD](../PRD.md). Data da divisão: 08/10/2026. SPEC-001, SPEC-002 e a unidade de ferramenta/testes/relatório da SPEC-003 foram concluídas em 08/10/2026. SPEC-004 a SPEC-019 foram concluídas localmente em 09/10/2026, incluindo reconciliação, persistência, fila/leases, paginação/checkpoints, retries/recuperação, catálogo temático, API/OpenAPI, frontend, triagem/histórico, sinais/reprocessamento, acompanhamento manual, baselines por representação, novidades revisáveis, buscas versionadas, agendamento diário, indicadores da base local e exportação CSV filtrada. SPEC-020 concluiu implementação e aceite local em 10/10/2026 e, no mesmo dia, o aceite real (AC4) após a aprovação de S1/S2 e S5 com evidência DataJud/TJGO; está DONE. SPEC-021 redesenhou o frontend sem alterar contratos de API ou dados e passou seus aceites localmente em 10/10/2026; está DONE. SPEC-022 implementou sugestões pesquisáveis para os filtros textuais de Processos, preservou valores livres e links existentes e passou os testes locais em 10/10/2026; está DONE. SPEC-023 aplicou rolagem vertical acessível às listas de eventos e concluiu validação local em 11/10/2026; está DONE. SPEC-024 concluiu localmente a ferramenta e a matriz de cobertura em 11/10/2026; a execução externa e revisão humana foram parciais para cinco tribunais, com 28 `NOT_RUN` e quatro pares S5 `INCONCLUSIVE`. SPEC-025 concluiu em 12/10/2026 o suporte de produto para selecionar um, vários ou todos os 33 endpoints allowlisted, sem gate de matriz ou flag; seus critérios AC1–AC10 passaram localmente. Nenhuma probe ou coleta real multitribunal foi executada, e as evidências locais não atestam disponibilidade externa nacional. `sinal.penhora` segue desabilitado no real.
+
+SPEC-024 está DONE para implementação local da ferramenta de validação S1/S2 e S5, merge de lotes e revisão auditável nos 26 TJs estaduais, TJDFT e seis TRFs. A evidência externa da matriz é parcial: cinco tribunais revisados, 28 `NOT_RUN`, quatro pares S5 `INCONCLUSIVE`; não comprova disponibilidade nacional e não controla o runtime de SPEC-025.
 
 ## Como executar uma unidade
 
@@ -15,6 +17,7 @@ Uma SPEC contém objetivo, contexto, dependências, escopo, requisitos/contratos
 ## Status e validações
 
 - **READY:** informações e dependências necessárias disponíveis; autorização de implementação não significa conclusão.
+- **PLANNED:** escopo e critérios registrados; execução da unidade ainda não iniciada.
 - **BLOCKED_DEPENDENCY:** depende de implementação predecessora ainda não entregue.
 - **BLOCKED_VALIDATION:** implementação necessária existe, mas falta evidência técnica externa ou decisão explicitamente exigida.
 - **IN_PROGRESS:** execução iniciada.
@@ -25,6 +28,10 @@ SPEC-021 está DONE. O sistema visual, os componentes afetados e a matriz de val
 SPEC-022 está DONE localmente. Contrato, decisões e evidências de backend, frontend e Playwright estão no [documento da unidade](SPEC-022-sugestoes-filtros-processos.md).
 
 SPEC-023 está DONE localmente. O componente compartilhado, as listas cobertas e as evidências de teclado, foco da movimentação e responsividade estão no [documento da unidade](SPEC-023-rolagem-listas-eventos.md).
+
+SPEC-024 está DONE para a implementação local. O probe, o merge auditável, a revisão com SHA-256, os gates da ferramenta e a matriz de 33 tribunais × quatro presets estão descritos na [evidência da unidade](SPEC-024-validacao-multitribunal-datajud.md). A evidência externa foi revisada parcialmente para cinco tribunais; 28 permanecem `NOT_RUN`, sem cobertura nacional validada. Essa matriz é documentação técnica e não controla a seleção implementada em SPEC-025.
+
+SPEC-025 está DONE após passar localmente AC1–AC10: allowlist de 33, seleção padrão nacional e por subconjunto, jobs/collections/checkpoints independentes, falha parcial por membro, compatibilidade TJGO, fluxos salvos/agendados/acompanhados e tipos OpenAPI. A matriz da SPEC-024 é referência técnica, sem gate no produto. Consulte a [especificação e evidências de suporte multitribunal](SPEC-025-suporte-multitribunal.md); os testes não executaram chamadas reais ao DataJud.
 
 SPEC-001 a SPEC-019 estão DONE localmente. SPEC-005/006 comprovam efeitos locais de capas, movimentos e quarentena; SPEC-007/008/009 comprovam fila/posse, paginação/checkpoints e recuperação em PostgreSQL isolado com HTTP simulado e ensaio de interrupção por subprocesso. SPEC-010 registra códigos TPU ativos e aplicáveis ao TJGO; em 10/10/2026 a probe S5 validou filtros e exemplos dos 4 presets e das regras de leilão e recuperação judicial. SPEC-011 comprova API, filtros e transições em PostgreSQL isolado. SPEC-012 comprova a jornada visual com Playwright sobre API/worker/banco demo isolados; falhas foram simuladas no navegador e não validam a fonte real. SPEC-013 comprova triagem, histórico append-only, concorrência otimista, defaults projetados, filtros e preservação após recoleta. SPEC-014 comprova sinais estruturados demo-only, persistência versionada, execução local retomável, ausência de HTTP no worker, publicação por processo e evidência Playwright na timeline. SPEC-015 comprova lista acompanhada, histórico auditável, gate de refresh por processo ativo, deduplicação por CNJ, preservação após vazio/falha e UI Playwright. SPEC-016 comprova ciclos de acompanhamento, baseline completa ou pendente por representação, novidades idempotentes, revisão persistente, datas e evidências por API/UI, inclusive após replay e reprocessamento. SPEC-017 comprova buscas salvas editáveis inline (nome, preset e critérios) com revisões imutáveis, dispatches idempotentes, agregação de agendas vencidas, deduplicação manual/agendada, janela rolling congelada por coleta e alternância persistente da fila. SPEC-018 comprova agregados sem duplicação, filtros/drill-down, exclusão de versões históricas de sinais e snapshot read-only; teve 266 testes backend, 54 frontend e 14 cenários Playwright. SPEC-019 comprova exportação filtrada sem paginação, snapshot read-only em lotes, CSV seguro com origem explícita, tratamento de limite/falhas e limpeza após cancelamento; teve 280 testes backend, 55 frontend e 15 cenários Playwright, além de Ruff, mypy, lint, typecheck, build e OpenAPI atualizado. Essas conclusões locais, por si, não validam a fonte real; a validação real veio das probes S1/S2 (SPEC-003) e S5 (SPEC-010) de 10/10/2026. SPEC-004/006 fixam a política técnica local com fixtures sintéticas; não validam movimentos reais nem liberam a fonte DataJud.
 
@@ -65,14 +72,16 @@ SPEC-020 passou localmente em AC1, AC2, AC3, AC5 e AC6: Compose com frontend Ngi
 | [SPEC-021 — Redesign do frontend jurídico e de dados](SPEC-021-redesign-frontend.md) | Pós-M9 / UX | [SPEC-012](SPEC-012-frontend-de-coleta-e-consulta.md)–[SPEC-020](SPEC-020-operacao-e-aceite-integrado.md) | DONE |
 | [SPEC-022 — Sugestões pesquisáveis nos filtros de Processos](SPEC-022-sugestoes-filtros-processos.md) | Pós-M9 / UX | [SPEC-011](SPEC-011-api-operacional-e-openapi.md), [SPEC-012](SPEC-012-frontend-de-coleta-e-consulta.md), [SPEC-021](SPEC-021-redesign-frontend.md) | DONE |
 | [SPEC-023 — Rolagem vertical nas listas de eventos](SPEC-023-rolagem-listas-eventos.md) | Pós-M9 / UX | [SPEC-012](SPEC-012-frontend-de-coleta-e-consulta.md), [SPEC-021](SPEC-021-redesign-frontend.md) | DONE |
+| [SPEC-024 — Validação multitribunal do DataJud (TJs e TRFs)](SPEC-024-validacao-multitribunal-datajud.md) | S6 / validação externa | [SPEC-002](SPEC-002-contratos-e-adaptadores-de-fonte.md), [SPEC-003](SPEC-003-validacao-datajud-tjgo.md), [SPEC-010](SPEC-010-catalogo-tematico-versionado.md) | DONE — revisão parcial de evidências externas; 28 tribunais `NOT_RUN` |
+| [SPEC-025 — Suporte multitribunal no produto](SPEC-025-suporte-multitribunal.md) | Pós-M9 / suporte multitribunal | SPEC-002, SPEC-004–SPEC-019 | DONE — AC1–AC10 locais; sem gate de matriz/flag; sem probe real |
 
 As dependências transitivas estão implícitas no grafo acima. Dependências de capacidades reais são adicionais: identidade/consultas/sort por SPEC-003 e presets/regras por SPEC-010. Não há dependência circular entre transporte, catálogo e persistência.
 
 ## Ordem e Critical Path
 
-Ordem recomendada: **001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023**.
+Ordem recomendada: **001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → (024 + 025)**.
 
-SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017. Esta independência não exige execução por agentes paralelos.
+SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017. SPEC-025 referencia a evidência SPEC-024, mas não depende dela para runtime.
 
 Caminho do núcleo local: **001 → 002 → (004 + 005) → 006 → 007 → 008 → 009 → 011 → 012**, com catálogo 010 necessário para 011.
 
@@ -81,6 +90,8 @@ Caminho jurídico: **012 → 013 → 014 → 015 → 016 → 017**.
 Aceite: **017 → (018 + 019) → 020**, mais validações reais de 003/010.
 
 A indisponibilidade do TJGO permite desenvolver o núcleo local com fixtures, mas não alterar o status das capacidades reais. Reexecutar probes somente de forma limitada e quando houver motivo para nova verificação.
+
+SPEC-024 mantém o registro de validação externa e revisão da matriz; a cobertura parcial não certifica disponibilidade nacional. SPEC-025 usa a allowlist como fronteira de seleção e não exige matriz, hash ou flag para habilitar tribunais no produto. Buscas salvas/agendadas, acompanhamentos, filtros, indicadores e exportação mantêm suas semânticas por CNJ. A validação local não executou probes nem coletas reais; erros externos continuam sendo registrados por membro e não são interpretados como resultado vazio.
 
 ## Cobertura do plano
 
@@ -98,6 +109,8 @@ A indisponibilidade do TJGO permite desenvolver o núcleo local com fixtures, ma
 | M9 | 018, 019 e 020 |
 | Pós-M9 / UX | 021 |
 | Pós-M9 / UX | 022 |
+| Pós-M9 — suporte multitribunal | 025 |
+| S6 — validação multitribunal | 024 |
 | S1 e S2 | 003 |
 | S3 | 004 |
 | S4 | 009, apoiada pelos testes de 007/008 |

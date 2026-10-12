@@ -101,7 +101,7 @@ export function reasonLabel(reason: string | null | undefined): string | null {
 
 const ENVIRONMENT_LABELS: Record<EnvironmentName, string> = {
   demo: "Demonstração — dados sintéticos",
-  real: "Real — DataJud/TJGO",
+  real: "Real — DataJud",
   test: "Teste — banco isolado",
 };
 

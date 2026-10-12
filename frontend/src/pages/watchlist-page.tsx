@@ -37,7 +37,8 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
 
   function update() {
     refresh.mutate(undefined, {
-      onSuccess: (accepted) => void navigate(`/jobs/${accepted.job_id}`),
+      onSuccess: (accepted) =>
+        void navigate(`/job-groups/${accepted.id}`),
     });
   }
 
@@ -66,10 +67,26 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
           {item.last_schedule?.status === "pending" ? (
             <div className="text-xs text-muted-foreground">Aguardando o job anterior deste alvo.</div>
           ) : null}
+          {item.last_schedule?.group_id ? (
+            <Link
+              to={`/job-groups/${item.last_schedule.group_id}`}
+              className="text-xs text-primary underline-offset-4 hover:underline"
+            >
+              Ver último grupo agendado
+            </Link>
+          ) : null}
         </div>
       </TableCell>
       <TableCell data-label="Última consulta por número">
-        <ProcessRefreshStatus result={item.last_refresh} />
+        {(item.refreshes ?? []).length ? (
+          <ul className="space-y-2">
+            {(item.refreshes ?? []).map((result) => (
+              <li key={result.tribunal}><ProcessRefreshStatus result={result} /></li>
+            ))}
+          </ul>
+        ) : (
+          <ProcessRefreshStatus result={item.last_refresh} />
+        )}
       </TableCell>
       <TableCell data-label="Ações">
         <div className="flex flex-wrap gap-2">
