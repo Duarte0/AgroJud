@@ -37,7 +37,7 @@ router = APIRouter(prefix="/api/v1", tags=["execution-groups"])
     "/tribunal-availability",
     response_model=TribunalAvailabilityResponse,
     responses=ERROR_RESPONSES,
-    summary="Lista tribunais e capacidades liberadas pela matriz revisada",
+    summary="Lista os tribunais disponíveis na allowlist DataJud",
 )
 def get_tribunal_availability(
     request: Request,

@@ -377,7 +377,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Enfileira atualização manual do processo acompanhado */
+        /** Enfileira atualização independente por tribunal do processo acompanhado */
         post: operations["refresh_process_api_v1_processes__process_id__refresh_post"];
         delete?: never;
         options?: never;
@@ -599,7 +599,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lista tribunais e capacidades liberadas pela matriz revisada */
+        /** Lista os tribunais disponíveis na allowlist DataJud */
         get: operations["get_tribunal_availability_api_v1_tribunal_availability_get"];
         put?: never;
         post?: never;
@@ -2095,14 +2095,14 @@ export interface components {
             /** Enabled */
             enabled: boolean;
             /** Preset State */
-            preset_state: ("VALIDATED" | "INCONCLUSIVE" | "INCOMPATIBLE" | "NOT_RUN" | "NOT_APPLICABLE" | "OBSOLETE") | null;
+            preset_state: ("VALIDATED" | "INCONCLUSIVE" | "INCOMPATIBLE" | "NOT_RUN" | "NOT_APPLICABLE" | "OBSOLETE" | "NOT_REQUIRED") | null;
             /** Reason */
             reason: string | null;
             /**
              * S1 S2 State
              * @enum {string}
              */
-            s1_s2_state: "VALIDATED" | "INCONCLUSIVE" | "INCOMPATIBLE" | "NOT_RUN" | "NOT_APPLICABLE" | "OBSOLETE";
+            s1_s2_state: "VALIDATED" | "INCONCLUSIVE" | "INCOMPATIBLE" | "NOT_RUN" | "NOT_APPLICABLE" | "OBSOLETE" | "NOT_REQUIRED";
             /** Tribunal */
             tribunal: string;
         };
@@ -3454,7 +3454,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JobCreatedResponse"] | components["schemas"]["ExecutionGroupResponse"];
+                    "application/json": components["schemas"]["ExecutionGroupResponse"];
                 };
             };
             /** @description Recurso não encontrado. */
@@ -4284,7 +4284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JobCreatedResponse"] | components["schemas"]["ExecutionGroupResponse"];
+                    "application/json": components["schemas"]["ExecutionGroupResponse"];
                 };
             };
             /** @description Recurso não encontrado. */

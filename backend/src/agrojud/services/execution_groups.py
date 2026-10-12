@@ -101,9 +101,8 @@ class ExecutionGroupService:
         request_snapshot: dict[str, Any],
         request_for_tribunal: Callable[[str], EnqueueRequest],
         idempotency_key: str | None = None,
-        allow_blocked: bool = False,
     ) -> CreatedExecutionGroup:
-        canonical_tribunals = _canonical_tribunals(tribunals, allow_empty=allow_blocked)
+        canonical_tribunals = _canonical_tribunals(tribunals)
         if idempotency_key is not None:
             lock_key = int.from_bytes(bytes.fromhex(idempotency_key[:16]), "big", signed=True)
             session.execute(select(func.pg_advisory_xact_lock(lock_key)))
@@ -129,21 +128,6 @@ class ExecutionGroupService:
                 )
 
         availability = self.availability(preset_id=preset_id)
-        by_tribunal = {item.tribunal: item for item in availability.tribunals}
-        selected = [(tribunal, by_tribunal[tribunal]) for tribunal in canonical_tribunals]
-        unavailable = [(tribunal, item) for tribunal, item in selected if not item.enabled]
-        if unavailable and not allow_blocked:
-            details = "; ".join(
-                f"{tribunal}: {item.reason or 'capacidade não validada'}"
-                for tribunal, item in unavailable
-            )
-            raise SourceError(
-                SourceErrorCode.CONTRACT,
-                f"A combinação solicitada não pode ser executada. {details}",
-                validation_code="TRIBUNAL_CAPABILITY_UNAVAILABLE",
-            )
-
-        matrix = availability
         now = datetime.now(UTC)
         group = ExecutionGroup(
             id=uuid4(),
@@ -157,37 +141,36 @@ class ExecutionGroupService:
                 "preset_id": preset_id,
             },
             idempotency_key=idempotency_key,
-            matrix_sha256=matrix.matrix_sha256,
-            allowlist_version=matrix.allowlist_version,
-            catalog_version=matrix.catalog_version,
-            tpu_version=matrix.tpu_version,
+            matrix_sha256=None,
+            allowlist_version=availability.allowlist_version,
+            catalog_version=None,
+            tpu_version=None,
             created_at=now,
             updated_at=now,
         )
         session.add(group)
         session.flush()
         members: list[ExecutionGroupMember] = []
-        for tribunal, capability in selected:
+        for tribunal in canonical_tribunals:
             member = ExecutionGroupMember(
                 id=uuid4(),
                 group_id=group.id,
                 tribunal=tribunal,
-                state="BLOCKED_NOT_VALIDATED" if not capability.enabled else "QUEUED",
+                state="QUEUED",
                 job_id=None,
-                reason=capability.reason,
-                availability_state=(capability.preset_state or capability.s1_s2_state),
+                reason=None,
+                availability_state="NOT_REQUIRED",
                 created_at=now,
                 updated_at=now,
             )
             session.add(member)
-            if capability.enabled:
-                request = request_for_tribunal(tribunal)
-                result: EnqueueResult = self.jobs.enqueue_in_session(session, request)
-                job = session.get(Job, result.job_id)
-                if job is None:  # pragma: no cover - enqueue flushes the inserted or reused job
-                    raise RuntimeError("O job filho não pôde ser lido dentro da transação.")
-                member.job_id = job.id
-                member.state = _job_member_state(job.status)
+            request = request_for_tribunal(tribunal)
+            result: EnqueueResult = self.jobs.enqueue_in_session(session, request)
+            job = session.get(Job, result.job_id)
+            if job is None:  # pragma: no cover - enqueue flushes the inserted or reused job
+                raise RuntimeError("O job filho não pôde ser lido dentro da transação.")
+            member.job_id = job.id
+            member.state = _job_member_state(job.status)
             members.append(member)
         session.flush()
         group.state = _group_state([item.state for item in members])
@@ -290,8 +273,8 @@ class ExecutionGroupService:
 _TERMINAL_GROUP_STATES = frozenset({"completed", "partial", "failed", "blocked", "cancelled"})
 
 
-def _canonical_tribunals(tribunals: Sequence[str], *, allow_empty: bool = False) -> tuple[str, ...]:
-    if isinstance(tribunals, (str, bytes)) or (not tribunals and not allow_empty):
+def _canonical_tribunals(tribunals: Sequence[str]) -> tuple[str, ...]:
+    if isinstance(tribunals, (str, bytes)) or not tribunals:
         raise SourceError(
             SourceErrorCode.VALIDATION,
             "Selecione ao menos um tribunal.",

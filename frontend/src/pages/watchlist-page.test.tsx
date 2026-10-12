@@ -38,10 +38,20 @@ describe("WatchlistPage", () => {
       [`POST /api/v1/processes/${processId}/refresh`]: () =>
         json(
           {
-            job_id: jobId,
-            collection_id: "22222222-2222-4222-8222-222222222222",
-            status: "queued",
-            reused: false,
+            id: "66666666-6666-4666-8666-666666666666",
+            kind: "refresh_number",
+            state: "queued",
+            matrix_sha256: null,
+            allowlist_version: "2026-10-11",
+            catalog_version: null,
+            tpu_version: null,
+            request_snapshot: {},
+            member_count: 1,
+            completed_count: 0,
+            created_at: "2026-10-09T12:00:00Z",
+            updated_at: "2026-10-09T12:00:00Z",
+            finished_at: null,
+            members: [],
           },
           202,
         ),
@@ -53,7 +63,7 @@ describe("WatchlistPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Atualizar" }));
 
     await waitFor(() =>
-      expect(screen.getByTestId("location")).toHaveTextContent(`/jobs/${jobId}`),
+      expect(screen.getByTestId("location")).toHaveTextContent("/job-groups/66666666-6666-4666-8666-666666666666"),
     );
     expect(api.count("POST", `/api/v1/processes/${processId}/refresh`)).toBe(1);
   });

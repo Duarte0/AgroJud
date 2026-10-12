@@ -158,7 +158,7 @@ class DailyScheduler:
             reason = "saved_search_revision_missing"
         else:
             try:
-                if self._multi_groups_enabled:
+                if self._group_dispatch_enabled:
                     raw_tribunals = revision.filters.get("tribunals", ["TJGO"])
                     if not isinstance(raw_tribunals, list):
                         raise SourceError(
@@ -261,7 +261,7 @@ class DailyScheduler:
         dispatch_id = uuid4()
         group_snapshot: dict[str, JSONValue] | None = None
         request: EnqueueRequest | None = None
-        if self._multi_groups_enabled:
+        if self._group_dispatch_enabled:
             tribunals = session.scalars(
                 select(Representation.tribunal)
                 .where(
@@ -271,6 +271,8 @@ class DailyScheduler:
                 .distinct()
                 .order_by(Representation.tribunal.asc())
             ).all()
+            if not tribunals:
+                tribunals = ["TJGO"]
             requests: dict[str, EnqueueRequest] = {}
             for tribunal in tribunals:
                 candidate = build_collection_request(
@@ -433,12 +435,8 @@ class DailyScheduler:
         return target.active
 
     @property
-    def _multi_groups_enabled(self) -> bool:
-        return bool(
-            self.settings is not None
-            and self.settings.datajud_multitribunal_enabled
-            and self.execution_groups is not None
-        )
+    def _group_dispatch_enabled(self) -> bool:
+        return self.execution_groups is not None
 
     def _enqueue_group_or_defer(
         self,
@@ -504,7 +502,6 @@ class DailyScheduler:
                 kind=kind,
                 requests=tuple(requests.values()),
             ),
-            allow_blocked=True,
         )
         dispatch.status = "enqueued"
         dispatch.group_id = created.group_id

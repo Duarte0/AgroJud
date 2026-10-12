@@ -28,7 +28,7 @@ export function ProcessWatchPanel({ processId, section = "controls" }: { process
   function refreshProcess() {
     refresh.mutate(undefined, {
       onSuccess: (accepted) =>
-        void navigate("id" in accepted ? `/job-groups/${accepted.id}` : `/jobs/${accepted.job_id}`),
+        void navigate(`/job-groups/${accepted.id}`),
     });
   }
 

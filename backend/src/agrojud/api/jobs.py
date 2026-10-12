@@ -32,7 +32,6 @@ from agrojud.services.watchlist import lock_process_watch
 from agrojud.sources.catalog import compile_preset
 from agrojud.sources.contracts import SourceError, build_query_by_case_number
 from agrojud.sources.factory import real_source_unavailable_reason
-from agrojud.sources.tribunal_availability import require_tribunal_available
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
 _ACTIVE_STATUSES = ("queued", "running", "retry_wait")
@@ -88,15 +87,6 @@ def create_job(
         process_number = query.process_number
     else:  # pragma: no cover - discriminator validation owns this boundary
         raise AssertionError("Tipo de job não suportado.")
-
-    if mode == "real" and settings.datajud_multitribunal_enabled:
-        raw_query = enqueue_request.resolved_query
-        raw_preset = raw_query.get("preset_id") if isinstance(raw_query, dict) else None
-        require_tribunal_available(
-            settings,
-            enqueue_request.tribunal,
-            preset_id=raw_preset if isinstance(raw_preset, str) else None,
-        )
 
     if process_number is not None:
         with request.app.state.session_factory() as session, session.begin():

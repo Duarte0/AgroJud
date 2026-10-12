@@ -40,6 +40,9 @@ const MEMBER_STATE_LABELS: Record<ExecutionGroupMember["state"], string> = {
 
 function MemberCard({ member }: { member: ExecutionGroupMember }) {
   const progress = readJobProgress(member.coverage);
+  const availabilityLabel = member.availability_state === "NOT_REQUIRED"
+    ? "Endpoint na allowlist DataJud"
+    : member.availability_state;
   const tone = member.state === "FAILED" || member.state === "BLOCKED_NOT_VALIDATED"
     ? "destructive"
     : member.state === "PARTIAL" || member.state === "RETRY_WAIT"
@@ -54,7 +57,7 @@ function MemberCard({ member }: { member: ExecutionGroupMember }) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <CardTitle>{member.tribunal}</CardTitle>
-              <CardDescription>{member.availability_state}</CardDescription>
+              <CardDescription>{availabilityLabel}</CardDescription>
             </div>
             <Badge variant={tone}>{MEMBER_STATE_LABELS[member.state]}</Badge>
           </div>
@@ -158,9 +161,8 @@ export function JobGroupPage() {
               ) : null}
               <dl className="grid gap-3 text-sm sm:grid-cols-2">
                 <div><dt className="text-xs text-muted-foreground">Criado em</dt><dd>{formatDateTime(group.data.created_at)}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Matriz revisada</dt><dd className="break-all">{group.data.matrix_sha256 ?? "Não registrada"}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Tribunais no grupo</dt><dd>{group.data.member_count}</dd></div>
                 <div><dt className="text-xs text-muted-foreground">Allowlist</dt><dd>{group.data.allowlist_version ?? "—"}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Catálogo / TPU</dt><dd>{group.data.catalog_version ?? "—"} / {group.data.tpu_version ?? "—"}</dd></div>
               </dl>
             </CardContent>
           </Card>

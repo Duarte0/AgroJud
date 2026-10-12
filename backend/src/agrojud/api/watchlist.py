@@ -16,7 +16,6 @@ from agrojud.api.jobs import SourceCapabilityUnavailable, _source_for_environmen
 from agrojud.api.schedule_status import schedule_dispatch_response
 from agrojud.api.schemas import (
     ExecutionGroupResponse,
-    JobCreatedResponse,
     JobStatus,
     PaginationResponse,
     ProcessRefreshResultResponse,
@@ -144,75 +143,21 @@ def remove_process_watch(process_id: UUID, request: Request) -> ProcessWatchResp
 
 @router.post(
     "/processes/{process_id}/refresh",
-    response_model=JobCreatedResponse | ExecutionGroupResponse,
+    response_model=ExecutionGroupResponse,
     status_code=202,
     responses=ERROR_RESPONSES,
-    summary="Enfileira atualização manual do processo acompanhado",
+    summary="Enfileira atualização independente por tribunal do processo acompanhado",
 )
 def refresh_process(
     process_id: UUID,
     request: Request,
     response: Response,
-) -> JobCreatedResponse | ExecutionGroupResponse:
+) -> ExecutionGroupResponse:
     settings = request.app.state.settings
     mode, source = _source_for_environment(settings)
     unavailable = real_source_unavailable_reason(settings)
     if unavailable is not None:
         raise SourceCapabilityUnavailable(unavailable)
-
-    if settings.datajud_multitribunal_enabled:
-        with request.app.state.session_factory() as session, session.begin():
-            process, entry = lock_process_watch(session, process_id=process_id)
-            if process is None:
-                raise HTTPException(status_code=404)
-            if entry is None or not entry.active:
-                raise HTTPException(status_code=409)
-            process_number = process.numero_cnj
-            watched_process_id = process.id
-            tribunals = session.scalars(
-                select(Representation.tribunal)
-                .where(
-                    Representation.process_id == watched_process_id,
-                    Representation.source == source,
-                )
-                .distinct()
-                .order_by(Representation.tribunal.asc())
-            ).all()
-
-            def request_for(tribunal: str) -> EnqueueRequest:
-                return build_collection_request(
-                    mode=mode,
-                    source=source,
-                    job_type="refresh_number",
-                    query=build_query_by_case_number(process_number, tribunal=tribunal),
-                )
-
-            member_requests = {tribunal: request_for(tribunal) for tribunal in tribunals}
-
-            created = request.app.state.execution_groups.create_in_session(
-                session,
-                kind="refresh_number",
-                mode=mode,
-                source=source,
-                tribunals=tribunals,
-                preset_id=None,
-                request_snapshot={"process_id": str(watched_process_id)},
-                request_for_tribunal=lambda tribunal: member_requests[tribunal],
-                idempotency_key=execution_group_idempotency_key(
-                    target_id=watched_process_id,
-                    kind="refresh_number",
-                    requests=tuple(member_requests.values()),
-                ),
-                allow_blocked=True,
-            )
-            view = request.app.state.execution_groups.inspect_in_session(session, created.group_id)
-            if view is None:  # pragma: no cover - inserted in this transaction
-                raise RuntimeError("O grupo de atualização não pôde ser lido.")
-            group_response = _group_response(view)
-        response.headers["Location"] = str(
-            request.url_for("get_job_group", group_id=str(group_response.id))
-        )
-        return group_response
 
     with request.app.state.session_factory() as session, session.begin():
         process, entry = lock_process_watch(session, process_id=process_id)
@@ -220,23 +165,52 @@ def refresh_process(
             raise HTTPException(status_code=404)
         if entry is None or not entry.active:
             raise HTTPException(status_code=409)
-        result = request.app.state.jobs.enqueue(
-            build_collection_request(
+        process_number = process.numero_cnj
+        watched_process_id = process.id
+        tribunals = session.scalars(
+            select(Representation.tribunal)
+            .where(
+                Representation.process_id == watched_process_id,
+                Representation.source == source,
+            )
+            .distinct()
+            .order_by(Representation.tribunal.asc())
+        ).all()
+        if not tribunals:
+            tribunals = ["TJGO"]
+
+        def request_for(tribunal: str) -> EnqueueRequest:
+            return build_collection_request(
                 mode=mode,
                 source=source,
                 job_type="refresh_number",
-                query=build_query_by_case_number(process.numero_cnj),
+                query=build_query_by_case_number(process_number, tribunal=tribunal),
             )
-        )
 
-    inspection = request.app.state.jobs.inspect(result.job_id)
-    response.headers["Location"] = str(request.url_for("get_job", job_id=str(result.job_id)))
-    return JobCreatedResponse(
-        job_id=result.job_id,
-        collection_id=result.collection_id,
-        status=cast(JobStatus, inspection.status),
-        reused=not result.created,
+        member_requests = {tribunal: request_for(tribunal) for tribunal in tribunals}
+        created = request.app.state.execution_groups.create_in_session(
+            session,
+            kind="refresh_number",
+            mode=mode,
+            source=source,
+            tribunals=tribunals,
+            preset_id=None,
+            request_snapshot={"process_id": str(watched_process_id)},
+            request_for_tribunal=lambda tribunal: member_requests[tribunal],
+            idempotency_key=execution_group_idempotency_key(
+                target_id=watched_process_id,
+                kind="refresh_number",
+                requests=tuple(member_requests.values()),
+            ),
+        )
+        view = request.app.state.execution_groups.inspect_in_session(session, created.group_id)
+        if view is None:  # pragma: no cover - inserted in this transaction
+            raise RuntimeError("O grupo de atualização não pôde ser lido.")
+        group_response = _group_response(view)
+    response.headers["Location"] = str(
+        request.url_for("get_job_group", group_id=str(group_response.id))
     )
+    return group_response
 
 
 def _watch_response(

@@ -219,7 +219,23 @@ describe("RadarPage", () => {
           ],
         }),
       "GET /api/v1/jobs": () => json(page([])),
-      "POST /api/v1/jobs": () =>
+      "GET /api/v1/tribunal-availability": () => json({
+        selection_enabled: true,
+        preset_id: "rural.credito_contratos",
+        matrix_sha256: null,
+        allowlist_version: "2026-10-11",
+        catalog_version: null,
+        tpu_version: null,
+        global_reasons: [],
+        tribunals: [{
+          tribunal: "TJGO",
+          s1_s2_state: "NOT_REQUIRED",
+          preset_state: "NOT_REQUIRED",
+          enabled: true,
+          reason: null,
+        }],
+      }),
+      "POST /api/v1/job-groups": () =>
         new Promise<Response>((resolve) => {
           resolvePost = resolve;
         }),
@@ -240,28 +256,34 @@ describe("RadarPage", () => {
     resolvePost(
       json(
         {
-          job_id: "11111111-1111-4111-8111-111111111111",
-          collection_id: "22222222-2222-4222-8222-222222222222",
-          status: "queued",
-          reused: false,
+          id: "66666666-6666-4666-8666-666666666666",
+          kind: "discovery",
+          state: "queued",
+          matrix_sha256: null,
+          allowlist_version: "2026-10-11",
+          catalog_version: null,
+          tpu_version: null,
+          request_snapshot: {},
+          member_count: 1,
+          completed_count: 0,
+          created_at: "2026-10-09T12:00:00Z",
+          updated_at: "2026-10-09T12:00:00Z",
+          finished_at: null,
+          members: [],
         },
         202,
       ),
     );
     await waitFor(() =>
-      expect(screen.getByTestId("location")).toHaveTextContent(
-        "/jobs/11111111-1111-4111-8111-111111111111",
-      ),
+      expect(screen.getByTestId("location")).toHaveTextContent("/job-groups/66666666-6666-4666-8666-666666666666"),
     );
-    expect(api.count("POST", "/api/v1/jobs")).toBe(1);
+    expect(api.count("POST", "/api/v1/job-groups")).toBe(1);
     const body = (await api.calls.find((call) => call.method === "POST")!.json()) as {
       criteria: Record<string, unknown>;
+      tribunals: string[];
     };
-    expect(body.criteria).toEqual({
-      preset_id: "rural.credito_contratos",
-      hit_budget: 2000,
-      page_size: 100,
-    });
+    expect(body.criteria).toMatchObject({ preset_id: "rural.credito_contratos", hit_budget: 2000, page_size: 100 });
+    expect(body.tribunals).toEqual(["TJGO"]);
   });
 
   it("disables submission when the environment source is unavailable", async () => {

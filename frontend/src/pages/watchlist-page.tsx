@@ -38,7 +38,7 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
   function update() {
     refresh.mutate(undefined, {
       onSuccess: (accepted) =>
-        void navigate("id" in accepted ? `/job-groups/${accepted.id}` : `/jobs/${accepted.job_id}`),
+        void navigate(`/job-groups/${accepted.id}`),
     });
   }
 

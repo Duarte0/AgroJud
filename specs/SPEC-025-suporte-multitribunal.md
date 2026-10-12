@@ -1,6 +1,6 @@
 # SPEC-025 — Suporte multitribunal no produto
 
-Status: REFORMULADA — implementação conforme este escopo pendente.
+Status: DONE — implementação e critérios de aceite AC1–AC10 aprovados localmente em 12/10/2026.
 
 Data: 12/10/2026
 
@@ -63,7 +63,32 @@ Campos opcionais de hash/versão de matriz já persistidos podem permanecer para
 - Probes externas, quando executadas, são limitadas, somente de leitura, separadas dos testes e documentadas por endpoint, horário, status e classificação. Não persistem resultados operacionais.
 - Uma falha externa pontual deve ser registrada como indisponibilidade daquele endpoint, sem voltar a bloquear os demais por gate de matriz. O runtime segue tentando as consultas selecionadas e informa os erros individualmente.
 - A matriz da SPEC-024 permanece disponível para consulta técnica e evolução da evidência. Seu status parcial, hash ou decisão humana não habilitam nem desabilitam consultas no produto.
-- Esta revisão documental não conclui a SPEC. O status só muda para DONE depois da implementação e da aprovação de todos os critérios de aceite desta versão.
+- Implementação validada em PostgreSQL Compose isolado: `364 passed`; Ruff (`check` e `format --check`) e mypy passaram. Frontend: `66 passed`, lint, typecheck, build e OpenAPI/tipos passaram. Playwright em Compose demo com banco temporário: `e2e/multitribunal.spec.ts`, `1 passed`; a jornada confirmou escopo de 33, seleção TJGO+TJMT e estado parcial com falha por membro. `docker compose config --quiet` passou para os arquivos real e de teste.
+- A checagem renderizada de `/radar` confirmou HTTP 200, tela não vazia, ausência de overlay, allowlist de 33 itens inicialmente marcados, controles limpar/restaurar e zero erros de console; registrou um aviso de console não bloqueante do React Router (`HydrateFallback`). A evidência visual foi salva fora do repositório em `/tmp/agrojud-spec025-radar.png`.
+- Não foram executadas probes nem coletas reais DataJud. Os testes do adaptador usam HTTP simulado e uma chave sintética; provam configuração/alias e isolamento de falhas no contrato local, não a disponibilidade externa dos 33 endpoints.
+
+Comandos de validação executados:
+
+```sh
+COMPOSE_PROJECT_NAME=agrojud-spec025-20261012 TEST_DB_HOST_PORT=57625 DATAJUD_API_KEY= \
+  docker compose --env-file .env.test -f compose.test.yaml --profile test run --rm tests \
+  uv run --no-sync pytest -q
+
+COMPOSE_PROJECT_NAME=agrojud-spec025-20261012 TEST_DB_HOST_PORT=57625 DATAJUD_API_KEY= \
+  docker compose --env-file .env.test -f compose.test.yaml --profile test run --rm --no-deps tests \
+  sh -lc 'uv run --no-sync ruff check src tests && uv run --no-sync ruff format --check src tests && uv run --no-sync mypy src'
+
+cd frontend
+npm test -- --run
+npm run lint && npm run typecheck && npm run build
+UV_PROJECT_ENVIRONMENT=/tmp/agrojud-spec025-openapi-venv npm run openapi:check
+cd ..
+
+E2E_ENV_FILE=/tmp/agrojud-spec025-e2e.env E2E_API_PORT=18775 E2E_FRONTEND_PORT=18776 \
+  sh scripts/e2e.sh e2e/multitribunal.spec.ts
+```
+
+O arquivo E2E temporário foi derivado de `.env.e2e.example`, com projeto/portas isolados e chave DataJud vazia. A checagem do OpenAPI usou ambiente Python temporário porque o `.venv` local aponta para um interpretador inexistente e sua pasta não pode ser removida pelo usuário atual.
 
 ## Fora de escopo
 

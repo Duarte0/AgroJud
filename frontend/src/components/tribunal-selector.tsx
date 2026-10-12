@@ -1,4 +1,5 @@
 import type { TribunalAvailability } from "@/api/types";
+import { Button } from "@/components/ui/button";
 
 type TribunalOption = TribunalAvailability["tribunals"][number];
 
@@ -23,17 +24,50 @@ export function TribunalSelector({
     );
   }
 
+  const enabledItems = items.filter((item) => item.enabled);
+  const allSelected = enabledItems.length > 0 && enabledItems.every((item) => selected.includes(item.tribunal));
+  const scopeLabel = selected.length === items.length
+    ? items.length === 33
+      ? "Coleta nacional: todos os 33 tribunais."
+      : `Todos os ${items.length} tribunais da lista selecionados.`
+    : `Consulta em ${selected.length} de ${items.length} tribunais.`;
+
   return (
     <fieldset className="space-y-3" disabled={disabled}>
       <legend className="text-sm font-semibold">{label}</legend>
       <p className="text-xs text-muted-foreground">
-        As opções habilitadas foram validadas para a capacidade desta consulta. As demais mostram
-        o motivo do bloqueio.
+        Escolha um ou mais endpoints da allowlist DataJud. A resposta da consulta será acompanhada
+        separadamente por tribunal.
       </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange(enabledItems.map((item) => item.tribunal))}
+          disabled={disabled || allSelected}
+        >
+          Selecionar todos ({enabledItems.length})
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange([])}
+          disabled={disabled || selected.length === 0}
+        >
+          Limpar seleção
+        </Button>
+        <span className="text-xs font-medium text-muted-foreground" aria-live="polite">
+          {scopeLabel}
+        </span>
+      </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {items.map((item) => {
           const reasonId = `tribunal-reason-${item.tribunal.toLowerCase()}`;
-          const stateLabel = item.preset_state
+          const stateLabel = item.s1_s2_state === "NOT_REQUIRED"
+            ? "allowlist DataJud"
+            : item.preset_state
             ? `S1/S2 ${item.s1_s2_state} · S5 ${item.preset_state}`
             : `S1/S2 ${item.s1_s2_state}`;
           return (
@@ -60,7 +94,7 @@ export function TribunalSelector({
                   id={reasonId}
                   className={item.enabled ? "block text-xs text-muted-foreground" : "block text-xs text-warning-foreground"}
                 >
-                  {item.enabled ? "Disponível para esta consulta." : item.reason ?? "Capacidade não validada."}
+                  {item.enabled ? "Endpoint disponível na allowlist." : item.reason ?? "Endpoint indisponível."}
                 </span>
               </span>
             </label>

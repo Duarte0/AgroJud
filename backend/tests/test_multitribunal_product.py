@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from uuid import UUID
 
 import pytest
@@ -31,13 +30,8 @@ from agrojud.db.models import (
     ScheduleDispatch,
 )
 from agrojud.services.scheduling import DailyScheduler
+from agrojud.sources.tribunals import TRIBUNAL_ALLOWLIST
 
-_ROOT = Path(__file__).parents[2]
-_MATRIX = (
-    _ROOT / "docs/evidence/datajud-multitribunal-2026-10-11-lote-01/"
-    "matrix-merged-after-tjms-rerun-reviewed.json"
-)
-_MATRIX_SHA256 = "c9d43ac5879acf4fde6d2a99d3485b96dba73af54e06ebe4db746a8d3fb42b8d"
 _PRESET = "rural.credito_contratos"
 
 
@@ -52,9 +46,6 @@ def multitribunal_runtime(
     settings = Settings(
         environment="demo",
         database_url=database_url,
-        datajud_multitribunal_enabled=True,
-        datajud_multitribunal_matrix_path=str(_MATRIX),
-        datajud_multitribunal_matrix_sha256=_MATRIX_SHA256,
     )
     app = create_app(settings, engine)
     with TestClient(app) as client:
@@ -94,7 +85,7 @@ def _saved_search_body(
     }
 
 
-def test_availability_api_matches_reviewed_pairs_and_rejects_stale_selection_before_jobs(
+def test_availability_api_lists_all_and_groups_accept_every_allowlisted_endpoint(
     multitribunal_runtime: tuple[FastAPI, TestClient],
 ) -> None:
     app, client = multitribunal_runtime
@@ -103,26 +94,41 @@ def test_availability_api_matches_reviewed_pairs_and_rejects_stale_selection_bef
     assert availability.status_code == 200
     body = availability.json()
     enabled = {item["tribunal"] for item in body["tribunals"] if item["enabled"]}
-    assert enabled == {"TJGO", "TJMT", "TJMS", "TJPR"}
+    expected = {endpoint.canonical_tribunal for endpoint in TRIBUNAL_ALLOWLIST.values()}
+    assert enabled == expected
     assert len(body["tribunals"]) == 33
-    assert body["matrix_sha256"] == _MATRIX_SHA256
+    assert body["selection_enabled"] is True
+    assert body["matrix_sha256"] is None
+    assert all(item["reason"] is None for item in body["tribunals"])
+    assert all(item["s1_s2_state"] == "NOT_REQUIRED" for item in body["tribunals"])
 
-    blocked = client.post(
+    single = client.post(
         "/api/v1/job-groups",
-        json=_discovery_group_body(["TRF1"]),
+        json=_discovery_group_body(["TRF6"]),
     )
     unknown = client.post(
         "/api/v1/job-groups",
         json=_discovery_group_body(["TJOUTRO"]),
     )
-    assert blocked.status_code == 409
-    assert blocked.json()["error"]["details"]["validation_code"] == (
-        "TRIBUNAL_CAPABILITY_UNAVAILABLE"
-    )
+    assert single.status_code == 202, single.text
+    assert single.json()["member_count"] == 1
+    assert single.json()["members"][0]["tribunal"] == "TRF6"
     assert unknown.status_code == 422
+
+    national = client.post(
+        "/api/v1/job-groups",
+        json=_discovery_group_body(
+            [endpoint.canonical_tribunal for endpoint in TRIBUNAL_ALLOWLIST.values()]
+        ),
+    )
+    assert national.status_code == 202, national.text
+    assert national.json()["member_count"] == 33
+    assert {member["tribunal"] for member in national.json()["members"]} == expected
+    assert len({member["job_id"] for member in national.json()["members"]}) == 33
     with Session(app.state.database_engine) as session:
-        assert session.scalar(select(func.count()).select_from(ExecutionGroup)) == 0
-        assert session.scalar(select(func.count()).select_from(Job)) == 0
+        assert session.scalar(select(func.count()).select_from(ExecutionGroup)) == 2
+        assert session.scalar(select(func.count()).select_from(Job)) == 33
+        assert {job.tribunal for job in session.scalars(select(Job)).all()} == expected
 
 
 def test_group_children_keep_independent_jobs_coverage_and_checkpoints_after_partial_failure(
@@ -247,6 +253,62 @@ def test_group_children_keep_independent_jobs_coverage_and_checkpoints_after_par
         assert old_failed_checkpoint is not None and old_failed_checkpoint.next_page == 2
         assert new_checkpoint is not None and new_checkpoint.next_page == 1
         assert persisted_group is not None and persisted_group.state == "queued"
+
+
+def test_legacy_saved_revision_runs_as_tjgo_without_rewriting_its_snapshot(
+    multitribunal_runtime: tuple[FastAPI, TestClient],
+) -> None:
+    app, client = multitribunal_runtime
+    saved = client.post(
+        "/api/v1/saved-searches",
+        json=_saved_search_body(enabled=False, tribunals=["TJGO"]),
+    )
+    assert saved.status_code == 201, saved.text
+    search_id = UUID(saved.json()["id"])
+    with Session(app.state.database_engine) as session, session.begin():
+        original = session.scalar(
+            select(SavedSearchVersion).where(
+                SavedSearchVersion.saved_search_id == search_id,
+                SavedSearchVersion.version == 1,
+            )
+        )
+        search = session.get(SavedSearch, search_id)
+        assert original is not None and search is not None
+        legacy_filters = dict(original.filters)
+        legacy_filters.pop("tribunals")
+        session.add(
+            SavedSearchVersion(
+                saved_search_id=search_id,
+                version=2,
+                name=original.name,
+                preset_id=original.preset_id,
+                preset_version=original.preset_version,
+                window_mode=original.window_mode,
+                filters=legacy_filters,
+                catalog_snapshot=original.catalog_snapshot,
+            )
+        )
+        search.current_version = 2
+
+    listed = client.get("/api/v1/saved-searches")
+    assert listed.status_code == 200, listed.text
+    listed_search = next(item for item in listed.json() if item["id"] == str(search_id))
+    assert listed_search["filters"]["tribunals"] == ["TJGO"]
+
+    run = client.post(f"/api/v1/saved-searches/{search_id}/run")
+    assert run.status_code == 202, run.text
+    assert run.json()["member_count"] == 1
+    assert run.json()["members"][0]["tribunal"] == "TJGO"
+    assert run.json()["members"][0]["job_id"] is not None
+    with Session(app.state.database_engine) as session:
+        revision = session.scalar(
+            select(SavedSearchVersion).where(
+                SavedSearchVersion.saved_search_id == search_id,
+                SavedSearchVersion.version == 2,
+            )
+        )
+        assert revision is not None
+        assert "tribunals" not in revision.filters
 
 
 def test_saved_revision_and_daily_dispatch_preserve_group_snapshots_and_coalesce_active_target(

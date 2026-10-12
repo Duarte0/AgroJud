@@ -2,8 +2,14 @@ import { expect, test } from "@playwright/test";
 
 const groupId = "66666666-6666-4666-8666-666666666666";
 const timestamp = "2026-10-12T12:00:00Z";
+const tribunals = [
+  "TJAC", "TJAL", "TJAM", "TJAP", "TJBA", "TJCE", "TJDFT", "TJES", "TJGO", "TJMA",
+  "TJMG", "TJMS", "TJMT", "TJPA", "TJPB", "TJPE", "TJPI", "TJPR", "TJRJ", "TJRN",
+  "TJRO", "TJRR", "TJRS", "TJSC", "TJSE", "TJSP", "TJTO", "TRF1", "TRF2", "TRF3",
+  "TRF4", "TRF5", "TRF6",
+];
 
-test("seleciona tribunais validados e mostra o resultado parcial por membro", async ({ page }) => {
+test("seleciona tribunais da allowlist e mostra resultado parcial por membro", async ({ page }) => {
   let submitted: Record<string, unknown> | null = null;
   await page.setViewportSize({ width: 390, height: 844 });
 
@@ -11,10 +17,10 @@ test("seleciona tribunais validados e mostra o resultado parcial por membro", as
     id: groupId,
     kind: "discovery",
     state: "partial",
-    matrix_sha256: "a".repeat(64),
+    matrix_sha256: null,
     allowlist_version: "2026-10-11",
-    catalog_version: "1.1.0",
-    tpu_version: "06/10/2026",
+    catalog_version: null,
+    tpu_version: null,
     request_snapshot: {},
     member_count: 2,
     completed_count: 1,
@@ -26,7 +32,7 @@ test("seleciona tribunais validados e mostra o resultado parcial por membro", as
         id: "77777777-7777-4777-8777-777777777777",
         tribunal: "TJGO",
         state: "COMPLETED",
-        availability_state: "VALIDATED",
+        availability_state: "NOT_REQUIRED",
         reason: null,
         job_id: "88888888-8888-4888-8888-888888888888",
         collection_id: "99999999-9999-4999-8999-999999999999",
@@ -49,7 +55,7 @@ test("seleciona tribunais validados e mostra o resultado parcial por membro", as
         id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
         tribunal: "TJMT",
         state: "FAILED",
-        availability_state: "VALIDATED",
+        availability_state: "NOT_REQUIRED",
         reason: "A fonte ficou indisponível; o checkpoint foi preservado.",
         job_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
         collection_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
@@ -117,18 +123,18 @@ test("seleciona tribunais validados e mostra o resultado parcial por membro", as
         json: {
           selection_enabled: true,
           preset_id: "rural.credito_contratos",
-          matrix_sha256: "a".repeat(64),
+          matrix_sha256: null,
           allowlist_version: "2026-10-11",
-          catalog_version: "1.1.0",
-          tpu_version: "06/10/2026",
+          catalog_version: null,
+          tpu_version: null,
           global_reasons: [],
-          tribunals: [
-            { tribunal: "TJGO", s1_s2_state: "VALIDATED", preset_state: "VALIDATED", enabled: true, reason: null },
-            { tribunal: "TJMT", s1_s2_state: "VALIDATED", preset_state: "VALIDATED", enabled: true, reason: null },
-            { tribunal: "TJMS", s1_s2_state: "VALIDATED", preset_state: "VALIDATED", enabled: true, reason: null },
-            { tribunal: "TJPR", s1_s2_state: "VALIDATED", preset_state: "VALIDATED", enabled: true, reason: null },
-            { tribunal: "TRF1", s1_s2_state: "VALIDATED", preset_state: "NOT_APPLICABLE", enabled: false, reason: "S5: NOT_APPLICABLE para este preset." },
-          ],
+          tribunals: tribunals.map((tribunal) => ({
+            tribunal,
+            s1_s2_state: "NOT_REQUIRED",
+            preset_state: "NOT_REQUIRED",
+            enabled: true,
+            reason: null,
+          })),
         },
       });
       return;
@@ -154,7 +160,12 @@ test("seleciona tribunais validados e mostra o resultado parcial por membro", as
   await expect(page.getByRole("region", { name: "Ambiente" })).toContainText("Real — DataJud");
   await expect(page.getByRole("checkbox", { name: /TJGO/ })).toBeChecked();
   await expect(page.getByRole("checkbox", { name: /TJMT/ })).toBeChecked();
-  await expect(page.getByRole("checkbox", { name: /TRF1/ })).toBeDisabled();
+  await expect(page.getByRole("checkbox", { name: /TRF1/ })).toBeChecked();
+  const selector = page.getByRole("group", { name: "Tribunais para esta execução" });
+  await expect(selector.getByRole("checkbox")).toHaveCount(33);
+  await selector.getByRole("button", { name: "Limpar seleção" }).click();
+  await selector.getByRole("checkbox", { name: /TJGO/ }).check();
+  await selector.getByRole("checkbox", { name: /TJMT/ }).check();
   await page.getByRole("button", { name: "Iniciar coleta" }).click();
 
   await expect(page).toHaveURL(new RegExp(`/job-groups/${groupId}$`));
@@ -174,6 +185,6 @@ test("seleciona tribunais validados e mostra o resultado parcial por membro", as
   expect(submitted).toMatchObject({
     kind: "discovery",
     criteria: { preset_id: "rural.credito_contratos" },
-    tribunals: ["TJGO", "TJMT", "TJMS", "TJPR"],
+    tribunals: ["TJGO", "TJMT"],
   });
 });

@@ -1,36 +1,40 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { TribunalSelector } from "@/components/tribunal-selector";
 import type { TribunalAvailability } from "@/api/types";
 
 describe("TribunalSelector", () => {
-  it("allows validated targets and explains disabled capabilities", () => {
+  it("offers select-all and clear controls over the allowlist", () => {
     const onChange = vi.fn();
     const items: TribunalAvailability["tribunals"] = [
       {
         tribunal: "TJMT",
-        s1_s2_state: "VALIDATED",
-        preset_state: "VALIDATED",
+        s1_s2_state: "NOT_REQUIRED",
+        preset_state: "NOT_REQUIRED",
         enabled: true,
         reason: null,
       },
       {
         tribunal: "TRF1",
-        s1_s2_state: "VALIDATED",
-        preset_state: "INCONCLUSIVE",
-        enabled: false,
-        reason: "S5: INCONCLUSIVE para TRF1/rural.credito_contratos.",
+        s1_s2_state: "NOT_REQUIRED",
+        preset_state: "NOT_REQUIRED",
+        enabled: true,
+        reason: null,
       },
     ];
-    render(<TribunalSelector items={items} selected={[]} onChange={onChange} />);
+    const { rerender } = render(<TribunalSelector items={items} selected={[]} onChange={onChange} />);
+    const selector = screen.getByRole("group", { name: "Tribunais para esta execução" });
 
-    const validated = screen.getByRole("checkbox", { name: /TJMT/ });
-    const blocked = screen.getByRole("checkbox", { name: /TRF1/ });
-    expect(validated).toBeEnabled();
-    expect(blocked).toBeDisabled();
-    expect(screen.getByText(/S5: INCONCLUSIVE/)).toBeInTheDocument();
+    expect(within(selector).getByText("Consulta em 0 de 2 tribunais.")).toBeInTheDocument();
 
-    fireEvent.click(validated);
-    expect(onChange).toHaveBeenCalledWith(["TJMT"]);
+    fireEvent.click(within(selector).getByRole("button", { name: "Selecionar todos (2)" }));
+    expect(onChange).toHaveBeenCalledWith(["TJMT", "TRF1"]);
+    rerender(<TribunalSelector items={items} selected={["TJMT", "TRF1"]} onChange={onChange} />);
+    expect(within(selector).getByRole("checkbox", { name: /TJMT/ })).toBeChecked();
+    expect(within(selector).getByRole("checkbox", { name: /TRF1/ })).toBeChecked();
+    expect(within(selector).getByText("Todos os 2 tribunais da lista selecionados.")).toBeInTheDocument();
+
+    fireEvent.click(within(selector).getByRole("button", { name: "Limpar seleção" }));
+    expect(onChange).toHaveBeenLastCalledWith([]);
   });
 });

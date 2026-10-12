@@ -200,11 +200,23 @@ CreateJobGroupRequest = Annotated[
 class TribunalAvailabilityItemResponse(APIModel):
     tribunal: str
     s1_s2_state: Literal[
-        "VALIDATED", "INCONCLUSIVE", "INCOMPATIBLE", "NOT_RUN", "NOT_APPLICABLE", "OBSOLETE"
+        "VALIDATED",
+        "INCONCLUSIVE",
+        "INCOMPATIBLE",
+        "NOT_RUN",
+        "NOT_APPLICABLE",
+        "OBSOLETE",
+        "NOT_REQUIRED",
     ]
     preset_state: (
         Literal[
-            "VALIDATED", "INCONCLUSIVE", "INCOMPATIBLE", "NOT_RUN", "NOT_APPLICABLE", "OBSOLETE"
+            "VALIDATED",
+            "INCONCLUSIVE",
+            "INCOMPATIBLE",
+            "NOT_RUN",
+            "NOT_APPLICABLE",
+            "OBSOLETE",
+            "NOT_REQUIRED",
         ]
         | None
     )

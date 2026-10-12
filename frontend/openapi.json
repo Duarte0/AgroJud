@@ -4142,7 +4142,8 @@
                   "INCOMPATIBLE",
                   "NOT_RUN",
                   "NOT_APPLICABLE",
-                  "OBSOLETE"
+                  "OBSOLETE",
+                  "NOT_REQUIRED"
                 ],
                 "type": "string"
               },
@@ -4170,7 +4171,8 @@
               "INCOMPATIBLE",
               "NOT_RUN",
               "NOT_APPLICABLE",
-              "OBSOLETE"
+              "OBSOLETE",
+              "NOT_REQUIRED"
             ],
             "title": "S1 S2 State",
             "type": "string"
@@ -7094,15 +7096,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/JobCreatedResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ExecutionGroupResponse"
-                    }
-                  ],
-                  "title": "Response Refresh Process Api V1 Processes  Process Id  Refresh Post"
+                  "$ref": "#/components/schemas/ExecutionGroupResponse"
                 }
               }
             },
@@ -7149,7 +7143,7 @@
             "description": "Banco de dados indisponível."
           }
         },
-        "summary": "Enfileira atualização manual do processo acompanhado",
+        "summary": "Enfileira atualização independente por tribunal do processo acompanhado",
         "tags": [
           "watchlist"
         ]
@@ -8182,15 +8176,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/JobCreatedResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ExecutionGroupResponse"
-                    }
-                  ],
-                  "title": "Response Run Saved Search Api V1 Saved Searches  Search Id  Run Post"
+                  "$ref": "#/components/schemas/ExecutionGroupResponse"
                 }
               }
             },
@@ -8379,7 +8365,7 @@
             "description": "Banco de dados indisponível."
           }
         },
-        "summary": "Lista tribunais e capacidades liberadas pela matriz revisada",
+        "summary": "Lista os tribunais disponíveis na allowlist DataJud",
         "tags": [
           "execution-groups"
         ]
