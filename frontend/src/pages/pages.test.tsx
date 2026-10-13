@@ -339,7 +339,8 @@ describe("RadarPage", () => {
     expect(await screen.findByRole("heading", { name: "Tema da busca" })).toBeInTheDocument();
     const disabled = await screen.findByRole("radio", { name: "Execuções relacionadas ao agro" });
     expect(disabled).toBeDisabled();
-    expect(screen.getByText("A consulta combinada aguarda evidência S5 suficiente.")).toBeInTheDocument();
+    expect(screen.getByText("Esta busca ainda não está habilitada para coleta neste ambiente.")).toBeInTheDocument();
+    expect(screen.queryByText(/S5|query_status|sample_status/)).not.toBeInTheDocument();
     expect(screen.getByText("Temas do sistema")).toBeInTheDocument();
     expect(screen.getByText("Minhas buscas")).toBeInTheDocument();
     expect(screen.queryByText("rural.credito_contratos")).not.toBeInTheDocument();

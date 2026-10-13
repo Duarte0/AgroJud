@@ -596,7 +596,6 @@ function SearchDefinitionSelector({
   function renderChoice(choice: SearchChoice, index: number, custom: boolean) {
     const enabled = choice.availability?.enabled !== false;
     const inputId = `${groupName}-${custom ? "custom" : "official"}-${index}`;
-    const reasons = choice.availability?.reasons ?? [];
     return (
       <div
         key={choice.key}
@@ -635,7 +634,7 @@ function SearchDefinitionSelector({
             {!enabled ? (
               <div className="text-sm text-warning-foreground" role="status">
                 <p className="font-medium">Indisponível neste ambiente</p>
-                {reasons.map((reason) => <p key={reason}>{reason}</p>)}
+                <p>Esta busca ainda não está habilitada para coleta neste ambiente.</p>
               </div>
             ) : null}
             {custom && (onEditCustom || onDuplicateCustom || onArchiveCustom) ? (
