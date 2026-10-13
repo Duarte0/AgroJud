@@ -9,7 +9,11 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response
 from sqlalchemy import select
 
 from agrojud.api.errors import ERROR_RESPONSES
-from agrojud.api.jobs import SourceCapabilityUnavailable, _source_for_environment
+from agrojud.api.jobs import (
+    SourceCapabilityUnavailable,
+    _compile_discovery_criteria,
+    _source_for_environment,
+)
 from agrojud.api.schemas import (
     CreateJobGroupRequest,
     DiscoveryJobGroupRequest,
@@ -26,8 +30,7 @@ from agrojud.services.execution_groups import (
     execution_group_idempotency_key,
 )
 from agrojud.services.jobs import EnqueueRequest
-from agrojud.sources.catalog import compile_preset
-from agrojud.sources.contracts import SourceError, build_query_by_case_number
+from agrojud.sources.contracts import SourceError, SourceErrorCode, build_query_by_case_number
 from agrojud.sources.factory import real_source_unavailable_reason
 
 router = APIRouter(prefix="/api/v1", tags=["execution-groups"])
@@ -84,15 +87,22 @@ def create_job_group(
         raise SourceCapabilityUnavailable(unavailable)
 
     if isinstance(body, DiscoveryJobGroupRequest):
-        preset_id = body.criteria.preset_id
+        if body.criteria.preset_id is not None:
+            preset_id = body.criteria.preset_id
+        elif body.criteria.search_definition is not None:
+            reference = body.criteria.search_definition
+            preset_id = (
+                reference.id if reference.kind == "official_theme" else f"custom:{reference.id}"
+            )
+        else:  # pragma: no cover - request schema enforces exactly one reference
+            raise SourceError(SourceErrorCode.VALIDATION, "A definição da busca está ausente.")
 
         def make_request(tribunal: str) -> EnqueueRequest:
-            compiled = compile_preset(
-                preset_id,
-                environment=mode,
+            compiled = _compile_discovery_criteria(
+                request,
+                body.criteria,
+                mode=mode,
                 tribunal=tribunal,
-                filed_from=body.criteria.filed_from,
-                filed_through_inclusive=body.criteria.filed_through,
             )
             return build_collection_request(
                 mode=mode,

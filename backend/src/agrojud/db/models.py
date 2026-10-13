@@ -5,6 +5,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    ARRAY,
     Boolean,
     CheckConstraint,
     Date,
@@ -1011,6 +1012,70 @@ class SavedSearchVersion(Base):
     window_mode: Mapped[str] = mapped_column(String(24), nullable=False)
     filters: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     catalog_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class CustomSearch(Base):
+    """Mutable head pointer for a user's append-only search definition history."""
+
+    __tablename__ = "custom_searches"
+    __table_args__ = (
+        CheckConstraint("current_version >= 1", name="ck_custom_searches_version_positive"),
+        Index("ix_custom_searches_created", "created_at", "id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    current_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class CustomSearchVersion(Base):
+    """Immutable, typed TPU criteria for one custom-search revision."""
+
+    __tablename__ = "custom_search_versions"
+    __table_args__ = (
+        UniqueConstraint("custom_search_id", "version", name="uq_custom_search_versions_number"),
+        CheckConstraint("version >= 1", name="ck_custom_search_versions_positive"),
+        CheckConstraint(
+            "length(btrim(name)) between 1 and 160", name="ck_custom_search_versions_name"
+        ),
+        CheckConstraint(
+            "description is null or length(description) <= 2000",
+            name="ck_custom_search_versions_description",
+        ),
+        CheckConstraint(
+            "cardinality(class_codes) + cardinality(subject_codes) > 0",
+            name="ck_custom_search_versions_criteria_nonempty",
+        ),
+        CheckConstraint(
+            "dimension_combination in ('AND', 'OR')",
+            name="ck_custom_search_versions_combination",
+        ),
+        ForeignKeyConstraint(
+            ["custom_search_id"],
+            ["custom_searches.id"],
+            name="fk_custom_search_versions_search",
+            ondelete="RESTRICT",
+        ),
+        Index("ix_custom_search_versions_search", "custom_search_id", "version"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    custom_search_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(2000))
+    class_codes: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False)
+    subject_codes: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False)
+    dimension_combination: Mapped[str] = mapped_column(String(3), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

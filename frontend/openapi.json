@@ -20,6 +20,316 @@
         "title": "ContinueJobRequest",
         "type": "object"
       },
+      "CustomSearchArchiveResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "archived_at": {
+            "format": "date-time",
+            "title": "Archived At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "archived_at"
+        ],
+        "title": "CustomSearchArchiveResponse",
+        "type": "object"
+      },
+      "CustomSearchCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "class_codes": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 100,
+            "title": "Class Codes",
+            "type": "array"
+          },
+          "copy_from_theme": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy From Theme"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "dimension_combination": {
+            "default": "AND",
+            "enum": [
+              "AND",
+              "OR"
+            ],
+            "title": "Dimension Combination",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "maxLength": 160,
+            "title": "Name",
+            "type": "string"
+          },
+          "subject_codes": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 100,
+            "title": "Subject Codes",
+            "type": "array"
+          }
+        },
+        "title": "CustomSearchCreateRequest",
+        "type": "object"
+      },
+      "CustomSearchCriteriaResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "classes": {
+            "items": {
+              "$ref": "#/components/schemas/TPUCodeSelectionResponse"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "dimension_combination": {
+            "enum": [
+              "AND",
+              "OR"
+            ],
+            "title": "Dimension Combination",
+            "type": "string"
+          },
+          "subjects": {
+            "items": {
+              "$ref": "#/components/schemas/TPUCodeSelectionResponse"
+            },
+            "title": "Subjects",
+            "type": "array"
+          }
+        },
+        "required": [
+          "classes",
+          "subjects",
+          "dimension_combination"
+        ],
+        "title": "CustomSearchCriteriaResponse",
+        "type": "object"
+      },
+      "CustomSearchPatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "class_codes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class Codes"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "dimension_combination": {
+            "anyOf": [
+              {
+                "enum": [
+                  "AND",
+                  "OR"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension Combination"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "subject_codes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Codes"
+          }
+        },
+        "title": "CustomSearchPatchRequest",
+        "type": "object"
+      },
+      "CustomSearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "criteria": {
+            "$ref": "#/components/schemas/CustomSearchCriteriaResponse"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "name",
+          "description",
+          "criteria",
+          "archived_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CustomSearchResponse",
+        "type": "object"
+      },
+      "CustomSearchVersionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "criteria": {
+            "$ref": "#/components/schemas/CustomSearchCriteriaResponse"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "name",
+          "description",
+          "criteria",
+          "created_at"
+        ],
+        "title": "CustomSearchVersionResponse",
+        "type": "object"
+      },
       "DiscoveryCriteria": {
         "additionalProperties": false,
         "properties": {
@@ -67,15 +377,29 @@
             "type": "integer"
           },
           "preset_id": {
-            "maxLength": 120,
-            "minLength": 1,
-            "title": "Preset Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Id"
+          },
+          "search_definition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchDefinitionReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "required": [
-          "preset_id"
-        ],
         "title": "DiscoveryCriteria",
         "type": "object"
       },
@@ -2573,6 +2897,13 @@
             ],
             "title": "Court Unit Name"
           },
+          "discovery_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Discovery Reasons",
+            "type": "array"
+          },
           "grau": {
             "anyOf": [
               {
@@ -2718,6 +3049,7 @@
           "source_updated_at_timezone_ambiguous",
           "last_observed_at",
           "latest_collection",
+          "discovery_reasons",
           "movement_diagnostic"
         ],
         "title": "ProcessRepresentationResponse",
@@ -3492,10 +3824,27 @@
             "type": "string"
           },
           "preset_id": {
-            "maxLength": 120,
-            "minLength": 1,
-            "title": "Preset Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Id"
+          },
+          "search_definition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchDefinitionReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "window_mode": {
             "enum": [
@@ -3508,7 +3857,6 @@
         },
         "required": [
           "name",
-          "preset_id",
           "window_mode",
           "filters"
         ],
@@ -3624,6 +3972,16 @@
             ],
             "title": "Preset Id"
           },
+          "search_definition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchDefinitionReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "window_mode": {
             "anyOf": [
               {
@@ -3653,6 +4011,17 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "definition_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition Name"
           },
           "enabled": {
             "title": "Enabled",
@@ -3699,6 +4068,16 @@
           "preset_version": {
             "title": "Preset Version",
             "type": "string"
+          },
+          "search_definition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchDefinitionReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "updated_at": {
             "format": "date-time",
@@ -3837,6 +4216,172 @@
           "updated_at"
         ],
         "title": "ScheduleDispatchResponse",
+        "type": "object"
+      },
+      "SearchDefinitionReference": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "official_theme",
+              "custom_search"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "version"
+        ],
+        "title": "SearchDefinitionReference",
+        "type": "object"
+      },
+      "SearchTypeCombinationsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "between_dimensions": {
+            "enum": [
+              "AND",
+              "OR"
+            ],
+            "title": "Between Dimensions",
+            "type": "string"
+          },
+          "within_dimension": {
+            "const": "OR",
+            "title": "Within Dimension",
+            "type": "string"
+          }
+        },
+        "required": [
+          "within_dimension",
+          "between_dimensions"
+        ],
+        "title": "SearchTypeCombinationsResponse",
+        "type": "object"
+      },
+      "SearchTypeCriteriaResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "classes": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "movements": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Movements",
+            "type": "array"
+          },
+          "subjects": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Subjects",
+            "type": "array"
+          }
+        },
+        "required": [
+          "classes",
+          "subjects",
+          "movements"
+        ],
+        "title": "SearchTypeCriteriaResponse",
+        "type": "object"
+      },
+      "SearchTypeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/PresetAvailabilityResponse"
+          },
+          "capture_explanation": {
+            "title": "Capture Explanation",
+            "type": "string"
+          },
+          "combinations": {
+            "$ref": "#/components/schemas/SearchTypeCombinationsResponse"
+          },
+          "criteria": {
+            "$ref": "#/components/schemas/SearchTypeCriteriaResponse"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "name",
+          "description",
+          "criteria",
+          "combinations",
+          "capture_explanation",
+          "availability"
+        ],
+        "title": "SearchTypeResponse",
+        "type": "object"
+      },
+      "SearchTypesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "environment": {
+            "enum": [
+              "demo",
+              "real"
+            ],
+            "title": "Environment",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SearchTypeResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "environment",
+          "items"
+        ],
+        "title": "SearchTypesResponse",
         "type": "object"
       },
       "SignalRuleCatalogItemResponse": {
@@ -4160,6 +4705,63 @@
         "title": "SignalRunStatusResponse",
         "type": "object"
       },
+      "TPUCodeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "integer"
+          },
+          "dimension": {
+            "enum": [
+              "class",
+              "subject"
+            ],
+            "title": "Dimension",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "tjgo_first_grade": {
+            "title": "Tjgo First Grade",
+            "type": "boolean"
+          },
+          "tjgo_second_grade": {
+            "title": "Tjgo Second Grade",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dimension",
+          "code",
+          "name",
+          "tjgo_first_grade",
+          "tjgo_second_grade"
+        ],
+        "title": "TPUCodeResponse",
+        "type": "object"
+      },
+      "TPUCodeSelectionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "TPUCodeSelectionResponse",
+        "type": "object"
+      },
       "TribunalAvailabilityItemResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4387,6 +4989,385 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/custom-searches": {
+      "get": {
+        "operationId": "list_custom_searches_api_v1_custom_searches_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Archived",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CustomSearchResponse"
+                  },
+                  "title": "Response List Custom Searches Api V1 Custom Searches Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "List Custom Searches",
+        "tags": [
+          "custom-searches"
+        ]
+      },
+      "post": {
+        "operationId": "create_custom_search_api_v1_custom_searches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomSearchCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Cria uma busca personalizada estruturada e versionada",
+        "tags": [
+          "custom-searches"
+        ]
+      }
+    },
+    "/api/v1/custom-searches/{search_id}": {
+      "patch": {
+        "operationId": "patch_custom_search_api_v1_custom_searches__search_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomSearchPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Edita uma busca criando uma nova versão",
+        "tags": [
+          "custom-searches"
+        ]
+      }
+    },
+    "/api/v1/custom-searches/{search_id}/archive": {
+      "post": {
+        "operationId": "archive_custom_search_api_v1_custom_searches__search_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomSearchArchiveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Arquiva uma busca sem remover versões nem coletas",
+        "tags": [
+          "custom-searches"
+        ]
+      }
+    },
+    "/api/v1/custom-searches/{search_id}/versions": {
+      "get": {
+        "operationId": "list_custom_search_versions_api_v1_custom_searches__search_id__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "search_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Search Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CustomSearchVersionResponse"
+                  },
+                  "title": "Response List Custom Search Versions Api V1 Custom Searches  Search Id  Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Lista versões históricas sem reescrevê-las",
+        "tags": [
+          "custom-searches"
+        ]
+      }
+    },
     "/api/v1/environment": {
       "get": {
         "operationId": "get_environment_api_v1_environment_get",
@@ -8280,6 +9261,67 @@
         ]
       }
     },
+    "/api/v1/search-types": {
+      "get": {
+        "operationId": "get_search_types_api_v1_search_types_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchTypesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Lista temas oficiais disponíveis no Radar",
+        "tags": [
+          "metadata"
+        ]
+      }
+    },
     "/api/v1/signal-rules": {
       "get": {
         "operationId": "list_signal_rules_api_v1_signal_rules_get",
@@ -8338,6 +9380,97 @@
         "summary": "Lista regras de sinais e habilitação no ambiente atual",
         "tags": [
           "signals"
+        ]
+      }
+    },
+    "/api/v1/tpu-codes": {
+      "get": {
+        "operationId": "search_tpu_codes_api_v1_tpu_codes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dimension",
+            "required": true,
+            "schema": {
+              "enum": [
+                "class",
+                "subject"
+              ],
+              "title": "Dimension",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 120,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TPUCodeResponse"
+                  },
+                  "title": "Response Search Tpu Codes Api V1 Tpu Codes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recurso não encontrado."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflito de estado ou capacidade indisponível."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Entrada inválida."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Banco de dados indisponível."
+          }
+        },
+        "summary": "Pesquisa códigos TPU ativos e aprovados para buscas personalizadas",
+        "tags": [
+          "metadata"
         ]
       }
     },

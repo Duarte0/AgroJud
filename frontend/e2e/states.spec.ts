@@ -4,6 +4,7 @@ import {
   evidence,
   expectJobStatus,
   expectNoHorizontalScroll,
+  openFirstGroupExecution,
   startCollection,
   startWorker,
   stopWorker,
@@ -33,7 +34,7 @@ test("AC3: falha de rede mantém dados antigos identificados e retry não cria c
   await page.unroute(`**/api/v1/jobs/${jobId}`);
   await page.getByRole("button", { name: "Tentar novamente" }).click();
   await expect(page.getByText(/Falha ao atualizar/)).toHaveCount(0);
-  expect(requests.count("POST", /^\/api\/v1\/jobs$/)).toBe(1);
+  expect(requests.count("POST", /^\/api\/v1\/job-groups$/)).toBe(1);
 
   await page.getByRole("button", { name: "Cancelar coleta" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Cancelar coleta" }).click();
@@ -130,14 +131,15 @@ test("AC2: reload e link direto preservam filtros, página e contexto", async ({
   await page.goto("/processes");
   await page.getByRole("button", { name: /Mais filtros/ }).click();
   await page.getByLabel("Classe").fill("Classe TPU");
-  await page.getByLabel("Preset").fill("rural.credito_contratos");
+  await page.getByLabel("Tema da busca").fill("Crédito e contratos rurais");
+  await page.getByRole("option", { name: "Crédito e contratos rurais" }).click();
   await page.getByRole("button", { name: "Pesquisar" }).click();
   await expect(page).toHaveURL(/class=Classe\+TPU/);
-  await expect(page).toHaveURL(/preset_id=rural.credito_contratos/);
+  await expect(page).toHaveURL(/preset_id=tema.credito_contratos_rurais/);
   const url = page.url();
   await page.reload();
   await expect(page.getByLabel("Classe", { exact: true })).toHaveValue("Classe TPU");
-  await expect(page.getByLabel("Preset", { exact: true })).toHaveValue("rural.credito_contratos");
+  await expect(page.getByLabel("Tema da busca", { exact: true })).toHaveValue("Crédito e contratos rurais");
   await expect(page.getByRole("table")).toBeVisible();
 
   const direct = await context.newPage();
@@ -178,12 +180,12 @@ test("AC5: teclado, foco visível e largura de 390px", async ({ page }) => {
   const requests = trackApiRequests(page);
   await page.goto("/radar");
   await expect(page.getByRole("radio", { name: "Crédito e contratos rurais" })).toBeChecked();
-  await page.getByLabel("Limite de registros desta execução").focus();
+  await page.getByLabel("Limite cumulativo por tribunal").focus();
   await page.keyboard.press("Control+A");
   await page.keyboard.type("5");
   await page.keyboard.press("Enter");
-  await page.waitForURL(/\/jobs\/[0-9a-f-]{36}$/);
-  expect(requests.count("POST", /^\/api\/v1\/jobs$/)).toBe(1);
+  expect(requests.count("POST", /^\/api\/v1\/job-groups$/)).toBe(1);
+  await openFirstGroupExecution(page);
   await expectJobStatus(page, "Concluído");
   const jobUrl = page.url();
 

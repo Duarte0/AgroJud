@@ -10,7 +10,12 @@ from uuid import UUID, uuid4
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
-from agrojud.db.models import SavedSearch, SavedSearchVersion, ScheduleDispatch
+from agrojud.db.models import (
+    CustomSearchVersion,
+    SavedSearch,
+    SavedSearchVersion,
+    ScheduleDispatch,
+)
 from agrojud.services.collection import (
     LEGACY_DEFAULT_PAGE_SIZE,
     LEGACY_HIT_BUDGET,
@@ -18,8 +23,13 @@ from agrojud.services.collection import (
 )
 from agrojud.services.jobs import EnqueueRequest, EnqueueResult, JobService
 from agrojud.services.schedule_time import next_daily_occurrence
-from agrojud.sources.catalog import compile_preset
-from agrojud.sources.contracts import DEFAULT_PAGE_SIZE, SourceError, SourceErrorCode
+from agrojud.sources.catalog import (
+    _resolve_window,
+    compile_custom_search,
+    compile_preset,
+    validate_catalog_snapshot,
+)
+from agrojud.sources.contracts import DEFAULT_PAGE_SIZE, SourceError, SourceErrorCode, SourceQuery
 from agrojud.sources.tribunals import canonicalize_tribunal
 
 type WindowMode = Literal["fixed", "rolling_12_months"]
@@ -43,6 +53,7 @@ class SavedSearchService:
         *,
         name: str,
         preset_id: str,
+        preset_version: str | None = None,
         window_mode: WindowMode,
         filters: dict[str, Any],
         enabled: bool,
@@ -51,10 +62,12 @@ class SavedSearchService:
         now = _database_now(session)
         normalized_name = _name(name)
         revision = _make_revision(
+            session=session,
             saved_search_id=uuid4(),
             version=1,
             name=normalized_name,
             preset_id=preset_id,
+            preset_version=preset_version,
             window_mode=window_mode,
             filters=filters,
             mode=mode,
@@ -80,6 +93,7 @@ class SavedSearchService:
         *,
         name: str | None,
         preset_id: str | None,
+        preset_version: str | None = None,
         window_mode: WindowMode | None,
         filters: dict[str, Any] | None,
         enabled: bool | None,
@@ -95,20 +109,24 @@ class SavedSearchService:
 
         next_name = _name(name) if name is not None else current.name
         next_preset_id = preset_id if preset_id is not None else current.preset_id
+        next_preset_version = current.preset_version if preset_id is None else preset_version
         next_window_mode = window_mode or cast(WindowMode, current.window_mode)
         next_filters = filters if filters is not None else dict(current.filters)
         content_changed = (
             next_name != current.name
             or next_preset_id != current.preset_id
+            or next_preset_version != current.preset_version
             or next_window_mode != current.window_mode
             or _normalized_filter_dict(next_filters) != _normalized_filter_dict(current.filters)
         )
         if content_changed:
             revision = _make_revision(
+                session=session,
                 saved_search_id=search.id,
                 version=search.current_version + 1,
                 name=next_name,
                 preset_id=next_preset_id,
+                preset_version=next_preset_version,
                 window_mode=next_window_mode,
                 filters=next_filters,
                 mode=mode,
@@ -197,42 +215,47 @@ def request_for_revision(
             "A janela relativa contém datas fixas inesperadas.",
         )
 
-    compiled = compile_preset(
-        revision.preset_id,
-        environment=mode,
-        tribunal=selected_tribunal,
-        reference_time=reference_time,
-        filed_from=filed_from,
-        filed_through_inclusive=filed_through,
-    )
-    if compiled.item.version != revision.preset_version:
-        raise SourceError(
-            SourceErrorCode.VALIDATION,
-            "O preset salvo mudou de versão; esta busca precisa ser revisada antes de executar.",
-            validation_code="SAVED_PRESET_VERSION_CHANGED",
+    if revision.preset_id.startswith("custom:"):
+        query, catalog_snapshot = _compile_pinned_custom_revision(
+            revision,
+            environment=mode,
+            tribunal=selected_tribunal,
+            reference_time=reference_time,
+            filed_from=filed_from,
+            filed_through=filed_through,
         )
-    stored_codes = revision.catalog_snapshot.get("effective_codes")
-    current_codes = compiled.snapshot().get("effective_codes")
-    if stored_codes != current_codes:
-        raise SourceError(
-            SourceErrorCode.VALIDATION,
-            "Os filtros do preset salvo mudaram; esta busca precisa ser revisada "
-            "antes de executar.",
-            validation_code="SAVED_PRESET_FILTERS_CHANGED",
+    else:
+        compiled = compile_preset(
+            revision.preset_id,
+            environment=mode,
+            tribunal=selected_tribunal,
+            reference_time=reference_time,
+            filed_from=filed_from,
+            filed_through_inclusive=filed_through,
         )
-
-    # Preserve the revision's rationale and evidence. Only the resolved dates move
-    # for rolling windows, and build_collection_request validates this snapshot
-    # against the compiled allowlisted query before enqueueing it.
-    catalog_snapshot = deepcopy(revision.catalog_snapshot)
-    fresh_snapshot = compiled.snapshot()
-    catalog_snapshot["window_template"] = fresh_snapshot["window_template"]
-    catalog_snapshot["resolved_interval"] = fresh_snapshot["resolved_interval"]
+        if compiled.item.version != revision.preset_version:
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "O tema salvo mudou de versão; esta busca precisa ser revisada antes de executar.",
+                validation_code="SAVED_PRESET_VERSION_CHANGED",
+            )
+        stored_codes = revision.catalog_snapshot.get("effective_codes")
+        if stored_codes != compiled.snapshot().get("effective_codes"):
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "Os filtros salvos mudaram; esta busca precisa ser revisada antes de executar.",
+                validation_code="SAVED_PRESET_FILTERS_CHANGED",
+            )
+        catalog_snapshot = deepcopy(revision.catalog_snapshot)
+        fresh_snapshot = compiled.snapshot()
+        catalog_snapshot["window_template"] = fresh_snapshot["window_template"]
+        catalog_snapshot["resolved_interval"] = fresh_snapshot["resolved_interval"]
+        query = compiled.query
     request = build_collection_request(
         mode=mode,
         source=source,
         job_type="discovery",
-        query=compiled.query,
+        query=query,
         catalog_snapshot=catalog_snapshot,
         page_size=int(filters.get("page_size", LEGACY_DEFAULT_PAGE_SIZE)),
         hit_budget=filters.get("hit_budget", LEGACY_HIT_BUDGET),
@@ -250,6 +273,63 @@ def request_for_revision(
             "saved_search_version": revision.version,
         },
     )
+
+
+def _compile_pinned_custom_revision(
+    revision: SavedSearchVersion,
+    *,
+    environment: SearchMode,
+    tribunal: str,
+    reference_time: datetime,
+    filed_from: date | None,
+    filed_through: date | None,
+) -> tuple[SourceQuery, dict[str, Any]]:
+    """Rebuild a saved custom definition from its immutable search revision snapshot."""
+
+    snapshot = deepcopy(revision.catalog_snapshot)
+    codes = snapshot.get("effective_codes")
+    combinations = snapshot.get("combinations")
+    if not isinstance(codes, dict) or not isinstance(combinations, dict):
+        raise SourceError(
+            SourceErrorCode.CONTRACT, "A revisão da busca personalizada está inválida."
+        )
+    class_codes = _snapshot_code_list(codes.get("class_codes"), "class_codes")
+    subject_codes = _snapshot_code_list(codes.get("subject_codes"), "subject_codes")
+    movement_codes = _snapshot_code_list(codes.get("movement_codes"), "movement_codes")
+    combination = combinations.get("between_dimensions", "AND")
+    if combination not in ("AND", "OR"):
+        raise SourceError(SourceErrorCode.CONTRACT, "A combinação salva está inválida.")
+    resolved_from, resolved_to, template = _resolve_window(
+        reference_time=reference_time,
+        filed_from=filed_from,
+        filed_through_inclusive=filed_through,
+    )
+    query = SourceQuery(
+        tribunal=tribunal,
+        filed_from=resolved_from,
+        filed_to=resolved_to,
+        class_codes=class_codes,
+        subject_codes=subject_codes,
+        movement_codes=movement_codes,
+        dimension_combination=cast(Literal["AND", "OR"], combination),
+        preset_id=revision.preset_id,
+        preset_version=revision.preset_version,
+    )
+    snapshot["window_template"] = template
+    snapshot["resolved_interval"] = {
+        "filed_from": resolved_from.isoformat(),
+        "filed_to_exclusive": resolved_to.isoformat(),
+    }
+    validate_catalog_snapshot(snapshot, environment=environment, query=query)
+    return query, snapshot
+
+
+def _snapshot_code_list(value: object, name: str) -> tuple[int, ...]:
+    if not isinstance(value, list) or any(
+        isinstance(code, bool) or not isinstance(code, int) or code < 1 for code in value
+    ):
+        raise SourceError(SourceErrorCode.CONTRACT, f"A lista {name} da revisão está inválida.")
+    return tuple(value)
 
 
 def availability_reasons(
@@ -277,10 +357,12 @@ def availability_reasons(
 
 def _make_revision(
     *,
+    session: Session,
     saved_search_id: UUID,
     version: int,
     name: str,
     preset_id: str,
+    preset_version: str | None,
     window_mode: WindowMode,
     filters: dict[str, Any],
     mode: SearchMode,
@@ -294,13 +376,54 @@ def _make_revision(
             SourceErrorCode.VALIDATION,
             "Janela fixa exige início e fim; janela rolling_12_months não aceita datas fixas.",
         )
-    compiled = compile_preset(
-        preset_id,
-        environment=mode,
-        reference_time=reference_time,
-        filed_from=filed_from,
-        filed_through_inclusive=filed_through,
-    )
+    if preset_id.startswith("custom:"):
+        try:
+            custom_search_id = UUID(preset_id.removeprefix("custom:"))
+            selected_version = int(preset_version or "")
+        except ValueError:
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "A referência da busca personalizada está inválida.",
+            ) from None
+        custom_revision = session.scalar(
+            select(CustomSearchVersion).where(
+                CustomSearchVersion.custom_search_id == custom_search_id,
+                CustomSearchVersion.version == selected_version,
+            )
+        )
+        if custom_revision is None:
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "A versão da busca personalizada não existe mais.",
+                validation_code="CUSTOM_SEARCH_VERSION_NOT_FOUND",
+            )
+        compiled = compile_custom_search(
+            custom_search_id=str(custom_search_id),
+            version=custom_revision.version,
+            name=custom_revision.name,
+            description=custom_revision.description,
+            class_codes=custom_revision.class_codes,
+            subject_codes=custom_revision.subject_codes,
+            dimension_combination=cast(Literal["AND", "OR"], custom_revision.dimension_combination),
+            environment=mode,
+            reference_time=reference_time,
+            filed_from=filed_from,
+            filed_through_inclusive=filed_through,
+        )
+    else:
+        compiled = compile_preset(
+            preset_id,
+            environment=mode,
+            reference_time=reference_time,
+            filed_from=filed_from,
+            filed_through_inclusive=filed_through,
+        )
+        if preset_version is not None and compiled.item.version != preset_version:
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "A versão do tema oficial mudou; recarregue a seleção antes de salvar.",
+                validation_code="SEARCH_DEFINITION_VERSION_CHANGED",
+            )
     return SavedSearchVersion(
         id=uuid4(),
         saved_search_id=saved_search_id,

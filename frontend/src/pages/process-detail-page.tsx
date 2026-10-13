@@ -133,6 +133,16 @@ function RepresentationCard({ representation }: { representation: Representation
             },
             { term: "Grau", value: representation.grau ?? NOT_INFORMED },
             {
+              term: "Encontrado por",
+              value: representation.discovery_reasons.length ? (
+                <ul className="list-disc space-y-1 pl-5">
+                  {representation.discovery_reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                </ul>
+              ) : (
+                "Motivo estruturado não disponível nesta coleta histórica."
+              ),
+            },
+            {
               term: "Ajuizamento (fonte)",
               value: (
                 <SourceInstant

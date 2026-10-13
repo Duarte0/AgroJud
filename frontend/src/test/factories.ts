@@ -1,6 +1,7 @@
 import type {
   Environment,
   JobDetail,
+  SearchType,
   Preset,
   ProcessSummary,
 } from "@/api/types";
@@ -55,6 +56,25 @@ export function buildPreset(overrides: Partial<Preset> = {}): Preset {
     capture_explanation: "Capturado por assunto TPU.",
     evidence: {},
     required_for_real: [],
+    availability: {
+      environment: "demo",
+      enabled: true,
+      label: "demonstrativo sintético",
+      reasons: ["Demonstração sintética explícita; isto não valida o TJGO."],
+    },
+    ...overrides,
+  };
+}
+
+export function buildSearchType(overrides: Partial<SearchType> = {}): SearchType {
+  return {
+    id: "tema.credito_contratos_rurais",
+    version: "1.0.0",
+    name: "Crédito e contratos rurais",
+    description: "Busca assuntos de crédito e contratos rurais aprovados no catálogo.",
+    criteria: { classes: [], subjects: [4964, 4976, 10501], movements: [] },
+    combinations: { within_dimension: "OR", between_dimensions: "AND" },
+    capture_explanation: "Assuntos estruturados do catálogo TPU.",
     availability: {
       environment: "demo",
       enabled: true,

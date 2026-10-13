@@ -1,19 +1,28 @@
-import { Info, Loader2, Play } from "lucide-react";
-import { useId, useRef, useState, type SubmitEvent } from "react";
+import { Archive, Copy, Info, Loader2, Pencil, Play } from "lucide-react";
+import { useRef, useState, type SubmitEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { describeError } from "@/api/client";
 import {
   useCreateJobGroup,
   useCreateSavedSearch,
+  useArchiveCustomSearch,
+  useCustomSearches,
   useJobList,
   usePatchSavedSearch,
-  usePresets,
   useRunSavedSearch,
+  useSearchTypes,
   useSavedSearches,
   useTribunalAvailability,
+  useTpuCodes,
 } from "@/api/queries";
-import type { Preset, SavedSearch } from "@/api/types";
+import type {
+  CustomSearch,
+  SavedSearch,
+  SearchDefinitionReference,
+  SearchType,
+} from "@/api/types";
+import { CustomSearchEditor, type CustomSearchSeed } from "@/pages/custom-search-editor";
 import { useCurrentEnvironment } from "@/app/environment-context";
 import { TribunalSelector } from "@/components/tribunal-selector";
 import { JobStatusBadge } from "@/components/job-status-badge";
@@ -27,7 +36,6 @@ import {
   StaleNotice,
 } from "@/components/query-feedback";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,7 +47,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultWindow, DEFAULT_WINDOW_MONTHS } from "@/lib/date-window";
-import { formatDateTime, jobKindLabel, ruralLinkLabel } from "@/lib/format";
+import { formatDateTime, jobKindLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const MIN_PAGE_SIZE = 10;
@@ -61,19 +69,84 @@ function savedSearchScheduleLabel(search: SavedSearch): string {
   return dispatch.job_id ? `Job ${dispatch.job_id}` : "Disparo enfileirado.";
 }
 
+type SearchChoice = {
+  key: string;
+  reference: SearchDefinitionReference;
+  name: string;
+  description: string;
+  classes: Array<{ code: number; name?: string }>;
+  subjects: Array<{ code: number; name?: string }>;
+  combination: "AND" | "OR";
+  availability?: SearchType["availability"];
+  theme?: SearchType;
+  custom?: CustomSearch;
+};
+
+function definitionKey(reference: SearchDefinitionReference): string {
+  return `${reference.kind}:${reference.id}:${reference.version}`;
+}
+
+function searchChoices(themes: SearchType[], customSearches: CustomSearch[]): SearchChoice[] {
+  return [
+    ...themes.map((theme) => {
+      const reference: SearchDefinitionReference = {
+        kind: "official_theme",
+        id: theme.id,
+        version: theme.version,
+      };
+      return {
+        key: definitionKey(reference),
+        reference,
+        name: theme.name,
+        description: theme.description,
+        classes: theme.criteria.classes.map((code) => ({ code })),
+        subjects: theme.criteria.subjects.map((code) => ({ code })),
+        combination: theme.combinations.between_dimensions,
+        availability: theme.availability,
+        theme,
+      };
+    }),
+    ...customSearches.map((search) => {
+      const reference: SearchDefinitionReference = {
+        kind: "custom_search",
+        id: search.id,
+        version: search.version,
+      };
+      return {
+        key: definitionKey(reference),
+        reference,
+        name: search.name,
+        description: search.description ?? "Busca personalizada.",
+        classes: search.criteria.classes,
+        subjects: search.criteria.subjects,
+        combination: search.criteria.dimension_combination,
+        custom: search,
+      };
+    }),
+  ];
+}
+
 function SavedSearchEditForm({
   search,
-  presets,
+  themes,
+  customSearches,
   onCancel,
 }: {
   search: SavedSearch;
-  presets: Preset[];
+  themes: SearchType[];
+  customSearches: CustomSearch[];
   onCancel: () => void;
 }) {
   const patch = usePatchSavedSearch();
   const prefix = "saved-search-" + search.id;
   const [name, setName] = useState(search.name);
-  const [presetId, setPresetId] = useState(search.preset_id);
+  const choices = searchChoices(themes, customSearches);
+  const originalDefinitionKey = search.search_definition
+    ? definitionKey(search.search_definition)
+    : "historical";
+  const [selectedKey, setSelectedKey] = useState(originalDefinitionKey);
+  const selectedChoice = choices.find((choice) => choice.key === selectedKey) ?? null;
+  const selectedDefinitionId = selectedChoice?.reference.id ?? search.preset_id;
   const [useDefaultWindow, setUseDefaultWindow] = useState(
     search.window_mode === "rolling_12_months",
   );
@@ -90,16 +163,16 @@ function SavedSearchEditForm({
   const [pageSize, setPageSize] = useState(String(search.filters.page_size));
   const [validation, setValidation] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<string | null>(null);
-  const availability = useTribunalAvailability(presetId);
+  const availability = useTribunalAvailability(selectedDefinitionId);
   const [tribunalSelection, setTribunalSelection] = useState({
-    presetId: search.preset_id,
+    definitionKey: originalDefinitionKey,
     tribunals: search.filters.tribunals ?? ["TJGO"],
   });
   const availableTribunals = availability.data?.tribunals
     .filter((item) => item.enabled)
     .map((item) => item.tribunal) ?? [];
   const selectedTribunals = availability.data
-    ? (tribunalSelection.presetId === presetId
+    ? (tribunalSelection.definitionKey === selectedKey
         ? tribunalSelection.tribunals
         : availableTribunals
       ).filter((tribunal) => availableTribunals.includes(tribunal))
@@ -154,7 +227,9 @@ function SavedSearchEditForm({
         id: search.id,
         body: {
           name: normalizedName,
-          preset_id: presetId,
+          ...(selectedChoice && selectedKey !== originalDefinitionKey
+            ? { search_definition: selectedChoice.reference }
+            : {}),
           window_mode: useDefaultWindow ? "rolling_12_months" : "fixed",
           filters: {
             tribunals: availability.data?.selection_enabled
@@ -197,28 +272,27 @@ function SavedSearchEditForm({
       </div>
 
       <fieldset className="space-y-3">
-        <legend className="mb-2 text-sm font-semibold">Preset temático</legend>
-        {presets.map((preset) => (
-          <PresetOption
-            key={preset.id}
-            preset={preset}
-            checked={presetId === preset.id}
-            groupName={prefix + "-preset"}
-            onSelect={() => setPresetId(preset.id)}
-          />
-        ))}
-        {!presets.some((preset) => preset.id === search.preset_id) ? (
-          <p className="text-xs text-warning-foreground" role="status">
-            O preset atual ({search.preset_id}, versão {search.preset_version}) não está no catálogo carregado.
+        <legend className="mb-2 text-sm font-semibold">Tema da busca</legend>
+        {selectedKey === "historical" || !selectedChoice ? (
+          <p className="text-sm text-muted-foreground" role="status">
+            Esta busca mantém “{search.definition_name ?? "Definição histórica"}” e seus critérios originais.
+            Escolha outro tema somente se quiser alterar a próxima execução.
           </p>
         ) : null}
+        <SearchDefinitionSelector
+          themes={themes}
+          customSearches={customSearches}
+          selectedKey={selectedKey}
+          groupName={prefix + "-definition"}
+          onSelect={(choice) => setSelectedKey(choice.key)}
+        />
       </fieldset>
 
       {availability.data?.selection_enabled ? (
         <TribunalSelector
           items={availability.data.tribunals}
           selected={selectedTribunals}
-          onChange={(tribunals) => setTribunalSelection({ presetId, tribunals })}
+          onChange={(tribunals) => setTribunalSelection({ definitionKey: selectedKey, tribunals })}
           label="Tribunais da próxima revisão"
         />
       ) : null}
@@ -335,7 +409,15 @@ function SavedSearchEditForm({
   );
 }
 
-function SavedSearchRow({ search, presets }: { search: SavedSearch; presets: Preset[] }) {
+function SavedSearchRow({
+  search,
+  themes,
+  customSearches,
+}: {
+  search: SavedSearch;
+  themes: SearchType[];
+  customSearches: CustomSearch[];
+}) {
   const navigate = useNavigate();
   const patch = usePatchSavedSearch();
   const run = useRunSavedSearch();
@@ -348,8 +430,9 @@ function SavedSearchRow({ search, presets }: { search: SavedSearch; presets: Pre
         <div className="min-w-0 space-y-1">
           <h3 className="font-medium">{search.name}</h3>
           <p className="text-xs text-muted-foreground">
-            {search.preset_id} · tribunais {(search.filters.tribunals ?? ["TJGO"]).join(", ")} · preset {search.preset_version} · busca v{search.version}
+            {search.definition_name ?? "Definição histórica"} · tribunais {(search.filters.tribunals ?? ["TJGO"]).join(", ")}
           </p>
+          <p className="text-xs text-muted-foreground">Revisão {search.version}</p>
           <p className="text-sm text-muted-foreground">
             {search.window_mode === "rolling_12_months"
               ? "Janela móvel de 12 meses"
@@ -426,7 +509,8 @@ function SavedSearchRow({ search, presets }: { search: SavedSearch; presets: Pre
       {editing ? (
         <SavedSearchEditForm
           search={search}
-          presets={presets}
+          themes={themes}
+          customSearches={customSearches}
           onCancel={() => setEditing(false)}
         />
       ) : null}
@@ -434,7 +518,13 @@ function SavedSearchRow({ search, presets }: { search: SavedSearch; presets: Pre
   );
 }
 
-function SavedSearchesPanel({ presets }: { presets: Preset[] }) {
+function SavedSearchesPanel({
+  themes,
+  customSearches,
+}: {
+  themes: SearchType[];
+  customSearches: CustomSearch[];
+}) {
   const searches = useSavedSearches();
   return (
     <section className="pt-2" aria-labelledby="saved-searches-title">
@@ -461,7 +551,12 @@ function SavedSearchesPanel({ presets }: { presets: Preset[] }) {
       ) : (
         <ul className="divide-y">
           {searches.data.map((search) => (
-            <SavedSearchRow key={search.id} search={search} presets={presets} />
+            <SavedSearchRow
+              key={search.id}
+              search={search}
+              themes={themes}
+              customSearches={customSearches}
+            />
           ))}
         </ul>
       )}
@@ -469,79 +564,157 @@ function SavedSearchesPanel({ presets }: { presets: Preset[] }) {
   );
 }
 
-function PresetOption({
-  preset,
-  checked,
+function SearchDefinitionSelector({
+  themes,
+  customSearches,
+  selectedKey,
   groupName,
   onSelect,
+  onDuplicateTheme,
+  onEditCustom,
+  onDuplicateCustom,
+  onArchiveCustom,
+  archivePending = false,
 }: {
-  preset: Preset;
-  checked: boolean;
+  themes: SearchType[];
+  customSearches: CustomSearch[];
+  selectedKey: string;
   groupName: string;
-  onSelect: () => void;
+  onSelect: (choice: SearchChoice) => void;
+  onDuplicateTheme?: (theme: SearchType) => void;
+  onEditCustom?: (search: CustomSearch) => void;
+  onDuplicateCustom?: (search: CustomSearch) => void;
+  onArchiveCustom?: (search: CustomSearch) => void;
+  archivePending?: boolean;
 }) {
-  const id = useId();
-  const enabled = preset.availability.enabled;
-  return (
-    <div
-      className={cn(
-        "rounded-md border px-4 py-3 transition-colors",
-        checked && "border-primary bg-primary-soft",
-        !enabled && "bg-muted/60",
-      )}
-      data-preset={preset.id}
-      data-enabled={enabled}
-    >
-      <div className="flex items-start gap-3">
-        <input
-          id={id}
-          type="radio"
-          name={groupName}
-          value={preset.id}
-          checked={checked}
-          disabled={!enabled}
-          onChange={onSelect}
-          aria-describedby={`${id}-details`}
-          className="mt-1 size-4 accent-primary disabled:cursor-not-allowed"
-        />
-        <div className="min-w-0 flex-1">
-          <label htmlFor={id} className={cn("font-medium", enabled && "cursor-pointer")}>
-            {preset.name}
-          </label>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            <Badge variant="outline" className="max-w-full whitespace-normal wrap-anywhere">
-              {preset.id} · versão {preset.version}
-            </Badge>
-            <Badge variant="secondary" className="max-w-full whitespace-normal">{ruralLinkLabel(preset.rural_link_status)}</Badge>
-            <Badge variant={enabled ? "success" : "outline"} className="max-w-full whitespace-normal">{preset.availability.label}</Badge>
-          </div>
-          <div id={`${id}-details`} className="mt-2 space-y-1 text-sm text-muted-foreground">
-            <p>{preset.capture_explanation}</p>
-            {enabled ? (
-              preset.availability.reasons.map((reason) => <p key={reason}>{reason}</p>)
-            ) : (
-              <div>
-                <p className="font-medium text-foreground">Indisponível neste ambiente:</p>
-                <ul className="list-disc pl-5">
-                  {preset.availability.reasons.map((reason) => (
-                    <li key={reason}>{reason}</li>
-                  ))}
-                </ul>
+  const classCodes = useTpuCodes("class");
+  const subjectCodes = useTpuCodes("subject");
+  const choices = searchChoices(themes, customSearches);
+  const classNames = new Map((classCodes.data ?? []).map((item) => [item.code, item.name]));
+  const subjectNames = new Map((subjectCodes.data ?? []).map((item) => [item.code, item.name]));
+
+  function renderChoice(choice: SearchChoice, index: number, custom: boolean) {
+    const enabled = choice.availability?.enabled !== false;
+    const inputId = `${groupName}-${custom ? "custom" : "official"}-${index}`;
+    const reasons = choice.availability?.reasons ?? [];
+    return (
+      <div
+        key={choice.key}
+        className={cn(
+          "rounded-md border px-4 py-3 transition-colors",
+          selectedKey === choice.key && "border-primary bg-primary-soft",
+          !enabled && "bg-muted/60",
+        )}
+        data-search-definition={choice.key}
+        data-enabled={enabled}
+      >
+        <div className="flex items-start gap-3">
+          <input
+            id={inputId}
+            type="radio"
+            name={groupName}
+            value={choice.key}
+            checked={selectedKey === choice.key}
+            disabled={!enabled}
+            onChange={() => onSelect(choice)}
+            className="mt-1 size-4 accent-primary disabled:cursor-not-allowed"
+          />
+          <div className="min-w-0 flex-1 space-y-2">
+            <label htmlFor={inputId} className={cn("font-medium", enabled && "cursor-pointer")}>
+              {choice.name}
+            </label>
+            <p className="text-sm text-muted-foreground">{choice.description}</p>
+            <details className="text-sm">
+              <summary className="cursor-pointer font-medium text-primary">Visualizar critérios</summary>
+              <div className="mt-2 space-y-2 text-muted-foreground">
+                <p>Classes: {formatCriteria(choice.classes, classNames)}</p>
+                <p>Assuntos: {formatCriteria(choice.subjects, subjectNames)}</p>
+                <p>Combinação entre dimensões: {choice.combination}</p>
               </div>
-            )}
+            </details>
+            {!enabled ? (
+              <div className="text-sm text-warning-foreground" role="status">
+                <p className="font-medium">Indisponível neste ambiente</p>
+                {reasons.map((reason) => <p key={reason}>{reason}</p>)}
+              </div>
+            ) : null}
+            {custom && (onEditCustom || onDuplicateCustom || onArchiveCustom) ? (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {onEditCustom ? (
+                  <Button type="button" size="sm" variant="outline" onClick={() => choice.custom && onEditCustom(choice.custom)}>
+                    <Pencil aria-hidden="true" /> Editar
+                  </Button>
+                ) : null}
+                {onDuplicateCustom ? (
+                  <Button type="button" size="sm" variant="outline" onClick={() => choice.custom && onDuplicateCustom(choice.custom)}>
+                    <Copy aria-hidden="true" /> Duplicar
+                  </Button>
+                ) : null}
+                {onArchiveCustom ? (
+                  <Button type="button" size="sm" variant="outline" disabled={archivePending} onClick={() => choice.custom && onArchiveCustom(choice.custom)}>
+                    <Archive aria-hidden="true" /> Arquivar
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+            {!custom && onDuplicateTheme && choice.theme ? (
+              <Button type="button" size="sm" variant="outline" onClick={() => onDuplicateTheme(choice.theme!)}>
+                <Copy aria-hidden="true" /> Duplicar e personalizar
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <fieldset className="space-y-3">
+        <legend className="mb-2 text-sm font-semibold">Temas do sistema</legend>
+        {themes.map((_theme, index) => {
+          const choice = choices[index];
+          return choice ? renderChoice(choice, index, false) : null;
+        })}
+      </fieldset>
+      <fieldset className="space-y-3">
+        <legend className="mb-2 text-sm font-semibold">Minhas buscas</legend>
+        {customSearches.length ? (
+          customSearches.map((_search, index) =>
+            choices[themes.length + index]
+              ? renderChoice(choices[themes.length + index]!, index, true)
+              : null,
+          )
+        ) : (
+          <p className="text-sm text-muted-foreground">Você ainda não criou uma busca personalizada.</p>
+        )}
+      </fieldset>
     </div>
   );
 }
 
-function CollectionForm({ presets }: { presets: Preset[] }) {
+function formatCriteria(
+  items: Array<{ code: number; name?: string }>,
+  currentNames: Map<number, string>,
+): string {
+  return items.length
+    ? items.map((item) => `${item.code} — ${item.name ?? currentNames.get(item.code) ?? "nome do catálogo"}`).join("; ")
+    : "Nenhum";
+}
+
+function CollectionForm({
+  themes,
+  customSearches,
+}: {
+  themes: SearchType[];
+  customSearches: CustomSearch[];
+}) {
   const environment = useCurrentEnvironment();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const createJobGroup = useCreateJobGroup();
   const createSavedSearch = useCreateSavedSearch();
+  const archiveCustomSearch = useArchiveCustomSearch();
   // Blocks a second submit before React re-renders the disabled button.
   const submitting = useRef(false);
 
@@ -559,19 +732,34 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   }
   const [savedSearchName, setSavedSearchName] = useState("");
   const [enableSavedSearch, setEnableSavedSearch] = useState(false);
-
-  const requestedId = searchParams.get("preset");
-  const enabledPresets = presets.filter((preset) => preset.availability.enabled);
+  const [editor, setEditor] = useState<
+    | { kind: "new" }
+    | { kind: "theme"; theme: SearchType }
+    | { kind: "edit"; search: CustomSearch }
+    | { kind: "duplicate"; seed: CustomSearchSeed }
+    | null
+  >(null);
+  const choices = searchChoices(themes, customSearches);
+  const legacyPreset = searchParams.get("preset");
+  const legacyChoice = legacyPreset === "rural.credito_contratos"
+    ? choices.find((choice) => choice.name === "Crédito e contratos rurais")
+    : legacyPreset?.startsWith("recuperacao_judicial.")
+      ? choices.find((choice) => choice.name === "Recuperação judicial")
+      : undefined;
+  const requestedKey = searchParams.get("definition") ?? legacyChoice?.key;
   const selected =
-    enabledPresets.find((preset) => preset.id === requestedId) ?? enabledPresets[0] ?? null;
-  const availability = useTribunalAvailability(selected?.id);
-  const [tribunalSelection, setTribunalSelection] = useState<{ presetId: string; tribunals: string[] } | null>(null);
+    choices.find((choice) => choice.key === requestedKey)
+    ?? choices.find((choice) => choice.availability?.enabled !== false)
+    ?? null;
+  const selectedKey = selected?.key ?? "";
+  const availability = useTribunalAvailability(selected?.reference.id);
+  const [tribunalSelection, setTribunalSelection] = useState<{ definitionKey: string; tribunals: string[] } | null>(null);
   const availableTribunals = availability.data?.tribunals
     .filter((item) => item.enabled)
     .map((item) => item.tribunal) ?? [];
   const groupSelectionEnabled = availability.data?.selection_enabled === true;
   const selectedTribunals = groupSelectionEnabled && selected
-    ? (tribunalSelection?.presetId === selected.id
+    ? (tribunalSelection?.definitionKey === selected.key
         ? tribunalSelection.tribunals
         : availableTribunals
       ).filter((tribunal) => availableTribunals.includes(tribunal))
@@ -579,10 +767,35 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const availabilityFailed = availability.isError;
   const sourceBlocked = !environment.source_enabled;
 
-  function selectPreset(id: string) {
+  function selectChoice(choice: SearchChoice) {
     const next = new URLSearchParams(searchParams);
-    next.set("preset", id);
+    next.delete("preset");
+    next.set("definition", choice.key);
     setSearchParams(next, { replace: true });
+  }
+
+  function archiveSearch(search: CustomSearch) {
+    archiveCustomSearch.mutate(search.id, {
+      onSuccess: () => {
+        if (selected?.reference.kind === "custom_search" && selected.reference.id === search.id) {
+          const next = new URLSearchParams(searchParams);
+          next.delete("definition");
+          setSearchParams(next, { replace: true });
+        }
+      },
+    });
+  }
+
+  function selectCreatedSearch(search: CustomSearch) {
+    const reference: SearchDefinitionReference = {
+      kind: "custom_search",
+      id: search.id,
+      version: search.version,
+    };
+    const choice = searchChoices(themes, [search]).find(
+      (item) => definitionKey(item.reference) === definitionKey(reference),
+    );
+    if (choice) selectChoice(choice);
   }
 
   async function submit(event: SubmitEvent<HTMLFormElement>) {
@@ -617,7 +830,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
     submitting.current = true;
     try {
       const criteria = {
-          preset_id: selected.id,
+          search_definition: selected.reference,
           hit_budget: budget,
           page_size: parsedPageSize,
           ...(useDefaultWindow ? {} : { filed_from: filedFrom, filed_through: filedThrough }),
@@ -670,7 +883,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
     try {
       await createSavedSearch.mutateAsync({
         name: savedSearchName.trim(),
-        preset_id: selected.id,
+        search_definition: selected.reference,
         window_mode: useDefaultWindow ? "rolling_12_months" : "fixed",
         filters: {
           tribunals: selectedTribunals,
@@ -689,7 +902,18 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const pending = createJobGroup.isPending;
 
   return (
-    <form onSubmit={submit} className="grid items-start gap-6 pb-24 xl:pb-0 xl:grid-cols-[minmax(0,1fr)_320px]" aria-describedby="collection-form-help">
+    <div className="space-y-5">
+      {editor ? (
+        <CustomSearchEditor
+          key={editor.kind === "edit" ? editor.search.id : editor.kind}
+          search={editor.kind === "edit" ? editor.search : undefined}
+          theme={editor.kind === "theme" ? editor.theme : undefined}
+          seed={editor.kind === "duplicate" ? editor.seed : undefined}
+          onSaved={selectCreatedSearch}
+          onClose={() => setEditor(null)}
+        />
+      ) : null}
+      <form onSubmit={submit} className="grid items-start gap-6 pb-24 xl:pb-0 xl:grid-cols-[minmax(0,1fr)_320px]" aria-describedby="collection-form-help">
       <div className="flex min-w-0 flex-col gap-5">
       <p id="collection-form-help" className="text-sm text-muted-foreground">
         Selecione o tema, o período e o escopo de tribunais. Cada tribunal terá progresso e
@@ -712,25 +936,48 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         </Alert>
       ) : null}
 
-      <fieldset className="space-y-3">
-        <legend className="mb-2 text-sm font-semibold">Preset temático</legend>
-        {presets.map((preset) => (
-          <PresetOption
-            key={preset.id}
-            preset={preset}
-            checked={selected?.id === preset.id}
-            groupName="radar-presets"
-            onSelect={() => selectPreset(preset.id)}
-          />
-        ))}
-      </fieldset>
+      <section className="space-y-3" aria-label="Tema da busca">
+        <h2 className="text-sm font-semibold">Tema da busca</h2>
+        {archiveCustomSearch.isError ? (
+          <Alert variant="destructive" role="alert">
+            <AlertTitle>A busca não foi arquivada</AlertTitle>
+            <AlertDescription>{describeError(archiveCustomSearch.error)}</AlertDescription>
+          </Alert>
+        ) : null}
+        <SearchDefinitionSelector
+          themes={themes}
+          customSearches={customSearches}
+          selectedKey={selectedKey}
+          groupName="radar-search-definitions"
+          onSelect={selectChoice}
+          onDuplicateTheme={(theme) => setEditor({ kind: "theme", theme })}
+          onEditCustom={(search) => setEditor({ kind: "edit", search })}
+          onDuplicateCustom={(search) =>
+            setEditor({
+              kind: "duplicate",
+              seed: {
+                name: `${search.name} (cópia)`,
+                description: search.description,
+                classes: search.criteria.classes.map((item) => item.code),
+                subjects: search.criteria.subjects.map((item) => item.code),
+                combination: search.criteria.dimension_combination,
+              },
+            })
+          }
+          onArchiveCustom={archiveSearch}
+          archivePending={archiveCustomSearch.isPending}
+        />
+        <Button type="button" variant="outline" onClick={() => setEditor({ kind: "new" })}>
+          Criar busca personalizada
+        </Button>
+      </section>
 
       {groupSelectionEnabled && availability.data ? (
         <div id="tribunal-selection">
           <TribunalSelector
             items={availability.data.tribunals}
             selected={selectedTribunals}
-            onChange={(tribunals) => selected && setTribunalSelection({ presetId: selected.id, tribunals })}
+            onChange={(tribunals) => selected && setTribunalSelection({ definitionKey: selected.key, tribunals })}
           />
         </div>
       ) : availability.isPending ? (
@@ -838,7 +1085,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         <div>
           <h2 className="font-semibold">Salvar estes critérios</h2>
           <p className="text-sm text-muted-foreground">
-            A busca mantém a versão do preset e os filtros desta coleta.
+            A busca mantém este tema e os filtros escolhidos para as próximas execuções.
           </p>
         </div>
         <div className="space-y-1.5 sm:max-w-md">
@@ -900,7 +1147,8 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         </Card>
         <Card><CardHeader><CardTitle>Coletas recentes</CardTitle></CardHeader><CardContent><RecentJobs /></CardContent></Card>
       </aside>
-    </form>
+      </form>
+    </div>
   );
 }
 
@@ -945,7 +1193,8 @@ function RecentJobs() {
 
 export function RadarPage() {
   usePageTitle("Radar");
-  const presets = usePresets();
+  const themes = useSearchTypes();
+  const customSearches = useCustomSearches();
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") === "saved" ? "saved" : "new";
   return <>
@@ -953,9 +1202,24 @@ export function RadarPage() {
     <Tabs value={tab} onValueChange={value => { const next = new URLSearchParams(params); next.set("tab", value); setParams(next, { preventScrollReset: true }); }}>
       <TabsList aria-label="Radar"><TabsTrigger value="new">Nova coleta</TabsTrigger><TabsTrigger value="saved">Buscas salvas</TabsTrigger></TabsList>
       <TabsContent value="new" forceMount>
-        {presets.isPending ? <LoadingState label="Carregando presets…" variant="detail" /> : presets.data ? <><StaleNotice query={presets} /><CollectionForm presets={presets.data.items} /></> : <ErrorState title="Não foi possível carregar os presets" error={presets.error} onRetry={() => void presets.refetch()} retrying={presets.isFetching} />}
+        {themes.isPending || customSearches.isPending ? (
+          <LoadingState label="Carregando temas e buscas salvas…" variant="detail" />
+        ) : themes.data && customSearches.data ? (
+          <>
+            <StaleNotice query={themes} />
+            <StaleNotice query={customSearches} />
+            <CollectionForm themes={themes.data.items} customSearches={customSearches.data} />
+          </>
+        ) : (
+          <ErrorState
+            title="Não foi possível carregar temas e buscas personalizadas"
+            error={themes.error ?? customSearches.error}
+            onRetry={() => { void themes.refetch(); void customSearches.refetch(); }}
+            retrying={themes.isFetching || customSearches.isFetching}
+          />
+        )}
       </TabsContent>
-      <TabsContent value="saved"><Card><CardContent><SavedSearchesPanel presets={presets.data?.items ?? []} /></CardContent></Card></TabsContent>
+      <TabsContent value="saved"><Card><CardContent><SavedSearchesPanel themes={themes.data?.items ?? []} customSearches={customSearches.data ?? []} /></CardContent></Card></TabsContent>
     </Tabs>
   </>;
 }

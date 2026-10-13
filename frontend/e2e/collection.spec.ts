@@ -28,7 +28,7 @@ test("AC1/AC4: inicia, acompanha e abre o processo sem envio duplicado", async (
   await evidence(page, "01-radar");
 
   const jobId = await startCollection(page, { doubleClick: true });
-  expect(requests.count("POST", /^\/api\/v1\/jobs$/)).toBe(1);
+  expect(requests.count("POST", /^\/api\/v1\/job-groups$/)).toBe(1);
 
   await expectJobStatus(page, "Concluído");
   await expect(page.getByTestId("polling-status")).toContainText("Atualização automática encerrada");
@@ -40,13 +40,13 @@ test("AC1/AC4: inicia, acompanha e abre o processo sem envio duplicado", async (
   const readsAtTerminal = requests.count("GET", JOB_DETAIL);
   await page.waitForTimeout(7_000);
   expect(requests.count("GET", JOB_DETAIL)).toBe(readsAtTerminal);
-  expect(requests.count("POST", /^\/api\/v1\/jobs/)).toBe(1);
+  expect(requests.count("POST", /^\/api\/v1\/job-groups/)).toBe(1);
 
   await page.getByRole("link", { name: "Ver processos desta coleta" }).click();
   await expect(page).toHaveURL(/\/processes\?collection_id=/);
   await page.getByRole("button", { name: /Mais filtros/ }).click();
   const collectionFilter = page.getByRole("combobox", { name: "Coleta" });
-  await expect(collectionFilter).toHaveValue(/rural\.credito_contratos · Concluída/);
+  await expect(collectionFilter).toHaveValue(/Crédito e contratos rurais · Concluída/);
   await expect(collectionFilter).not.toHaveValue(/[0-9a-f]{8}-[0-9a-f-]{27}/i);
   const rows = page.getByRole("table").getByRole("row");
   await expect(rows).toHaveCount(2);
@@ -93,7 +93,7 @@ test("cancelamento interrompe o polling e retomada volta a acompanhar", async ({
   expect(requests.count("GET", detail)).toBeGreaterThanOrEqual(readsAfterResume + 2);
   expect(requests.count("POST", /\/cancel$/)).toBe(1);
   expect(requests.count("POST", /\/resume$/)).toBe(1);
-  expect(requests.count("POST", /^\/api\/v1\/jobs$/)).toBe(1);
+  expect(requests.count("POST", /^\/api\/v1\/job-groups$/)).toBe(1);
 
   startWorker();
   await expectJobStatus(page, "Concluído");

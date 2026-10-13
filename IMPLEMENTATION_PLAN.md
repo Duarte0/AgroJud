@@ -6,6 +6,8 @@ Status: M0–M9 concluídos conforme suas evidências. SPEC-021 concluiu o redes
 
 SPEC-026 concluiu o gate pré-lease pelo limitador compartilhado, páginas de 10 a 10.000 e paginação contínua com search_after. O limite automático de 2.000 foi removido para novas execuções; hit_budget agora é opcional e ilimitado por padrão, com cota compartilhada de até 120 requests/minuto. Benchmark local selecionou 5.000 como default pela maior vazão média; probe real limitada validou duas páginas TJGO de 10.000. AC1–AC10 e as validações locais passaram. Execuções ativas e snapshots antigos permanecem intocados.
 
+SPEC-027 concluiu em 13/10/2026 a migration compatível, os três temas oficiais e buscas personalizadas com critérios TPU estruturados, histórico imutável e arquivamento. AC1–AC11 passaram localmente: 411 testes backend, 72 frontend e 26 Playwright, além de Ruff, mypy, typecheck, build, OpenAPI e graphify. Nenhuma chamada DataJud foi feita; o gate real da combinação de execuções relacionadas ao agro não foi alterado.
+
 ## 1. Estado atual e orientação
 
 Estado inspecionado durante o planejamento, antes da criação deste documento:
@@ -572,6 +574,7 @@ A decomposição e os status gerais estão em [specs/README.md](specs/README.md)
 | [SPEC-024](specs/SPEC-024-validacao-multitribunal-datajud.md) | S6 / validação externa | Ferramenta e matriz para validar S1/S2 por tribunal e S5 por preset aplicável nos 26 TJs, TJDFT e seis TRFs | SPEC-002, SPEC-003, SPEC-010 |
 | [SPEC-025](specs/SPEC-025-suporte-multitribunal.md) | Pós-M9 / suporte multitribunal | Seleção de um, vários ou todos os 33 endpoints allowlisted; chave existente; jobs, resultados e checkpoints independentes, sem gate de matriz | SPEC-002, SPEC-004–SPEC-019 |
 | [SPEC-026](specs/SPEC-026-eficiencia-coleta-multitribunal.md) | Pós-M9 / eficiência multitribunal | Páginas de 10 a 10.000, search_after além de uma página, sem teto total automático, rate limit global de 120/min e default de 5.000 selecionado por benchmark; probe externa limitada validou 10.000 no TJGO | SPEC-007, SPEC-008, SPEC-009, SPEC-011, SPEC-012, SPEC-017, SPEC-025 |
+| [SPEC-027](specs/SPEC-027-temas-e-buscas-personalizadas.md) | Pós-M9 / temas e buscas estruturadas | Três temas oficiais; buscas personalizadas com catálogo TPU, revisões imutáveis, arquivamento e compatibilidade com snapshots antigos | SPEC-010, SPEC-011, SPEC-012, SPEC-017, SPEC-025, SPEC-026 |
 
 ### SPEC-026 — eficiência de coleta em grande volume
 
@@ -581,7 +584,15 @@ A decomposição e os status gerais estão em [specs/README.md](specs/README.md)
 - Benchmark local em PostgreSQL isolado comparou três repetições de payloads sintéticos de 25.001 hits nos tamanhos 1.000/5.000/10.000 sob limite de memória de 2 GiB. Vazões médias: 8.496, 8.555 e 7.837 hits/min; 5.000 foi selecionado. A probe somente leitura TJGO/preset `execucoes.amplas` retornou 10.000 + 2.681 hits em duas páginas via search_after (HTTP 200), sem alegar disponibilidade nacional.
 - A execução não reescreveu jobs ativos, snapshots, checkpoints ou resultados por tribunal. A suíte backend PostgreSQL isolada passou com 396 testes; Ruff check/format e mypy passaram. Frontend: 69 testes, lint, typecheck, build e OpenAPI check passaram. `graphify update .` concluiu. Evidências em `docs/evidence/SPEC-026-benchmark-2026-10-13.json` e `docs/evidence/SPEC-026-datajud-probe-2026-10-13.json`; escopo e limites externos estão registrados na SPEC.
 
-Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → (024 + 025) → 026. SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017; SPEC-025 referencia a evidência SPEC-024, mas não depende dela para runtime.
+### SPEC-027 — temas oficiais e buscas personalizadas
+
+Estado: DONE localmente em 13/10/2026 (AC1–AC11). Substitui na decisão principal do Radar o vocabulário técnico de preset por **Tema da busca**, com Crédito e contratos rurais, Recuperação judicial e Execuções relacionadas ao agro. Mantém `rural.credito_contratos`, `execucoes.amplas`, `recuperacao_judicial.por_classe` e `recuperacao_judicial.por_assunto` para histórico, sem reescrever jobs, snapshots ou buscas salvas. A SPEC cobre também criação, duplicação, revisão append-only e arquivamento de buscas próprias; não cria um framework de query livre.
+
+O compilador só aceita valores ativos e explicitamente aprovados no catálogo TPU `1.2.0`; códigos de classe/assunto são estruturados e os filtros resultantes continuam allowlisted. Recuperação judicial usa uma query com classe 129 OU assunto 13277. A busca de execução relacionada ao agro exige classe de execução E assunto rural ativo validado. Tribunais continuam membros independentes de um único tema selecionado. Códigos e estratégias explicam resultados a partir do snapshot e dos campos estruturados originais.
+
+Uma migration mínima adiciona identidade e versões imutáveis de buscas personalizadas; buscas salvas e jobs existentes permanecem compatíveis através dos snapshots e IDs atuais. Backend PostgreSQL isolado: 411 testes; frontend: 72 testes, lint, typecheck, build e OpenAPI; Chromium Playwright: 26/26; Ruff, mypy, compileall e graphify passaram. O gate real do tema de execuções permanece sujeito à evidência S5 vigente; nenhuma probe real foi executada nesta SPEC. Comandos, critérios e limites estão na [SPEC-027](specs/SPEC-027-temas-e-buscas-personalizadas.md).
+
+Ordem recomendada: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019 → 020 → 021 → 022 → 023 → (024 + 025) → 026 → 027. SPEC-010 pode ser antecipada após 002; SPEC-018 e SPEC-019 são independentes após 017; SPEC-025 referencia a evidência SPEC-024, mas não depende dela para runtime.
 
 SPEC-024 valida localmente os 33 endpoints TJ/TJDFT/TRF em lotes explícitos de até cinco e oferece `agrojud-datajud-multitribunal-matrix merge/review` para agregar tentativas e registrar decisões auditáveis. A evidência externa disponível continua parcial: cinco tribunais aprovados em S1/S2, 16 pares S5 validados, quatro inconclusivos e 28 tribunais não executados. Esses resultados documentam observações e não são requisito nem bloqueio de runtime. SPEC-025 implementa seleção de qualquer sigla da allowlist, com Todos selecionado por padrão, e uso da mesma chave DataJud em cada endpoint. Testes e validações locais passaram; não houve probe nem coleta real multitribunal, portanto não se afirma disponibilidade externa nacional.
 

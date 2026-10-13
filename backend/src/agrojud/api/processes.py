@@ -32,6 +32,7 @@ from agrojud.api.schemas import (
 )
 from agrojud.db.models import (
     Collection,
+    CollectionObservation,
     CollectionResult,
     Job,
     MovementOccurrence,
@@ -40,6 +41,7 @@ from agrojud.db.models import (
     Process,
     ProcessTriage,
     Representation,
+    RepresentationVersion,
 )
 from agrojud.services.triage import state_from_record
 
@@ -291,6 +293,7 @@ def _load_representation_views(
     if not representations:
         return []
     latest_collections = _latest_collection_map(session, representations)
+    discovery_reasons = _discovery_reasons_map(session, representations)
     diagnostics, _ = _movement_context(session, representations)
     return [
         ProcessRepresentationResponse(
@@ -315,10 +318,128 @@ def _load_representation_views(
             ),
             last_observed_at=representation.last_observed_at,
             latest_collection=latest_collections.get(representation.id),
+            discovery_reasons=discovery_reasons.get(representation.id, []),
             movement_diagnostic=diagnostics[representation.id],
         )
         for representation in representations
     ]
+
+
+def _discovery_reasons_map(
+    session: Session,
+    representations: Sequence[Representation],
+) -> dict[UUID, list[str]]:
+    """Explain observed discovery hits using each immutable query and raw hit payload."""
+
+    representation_ids = [representation.id for representation in representations]
+    if not representation_ids:
+        return {}
+    rows = session.execute(
+        select(
+            CollectionResult.representation_id,
+            Collection.resolved_criteria,
+            RepresentationVersion.raw_payload,
+        )
+        .join(Collection, Collection.id == CollectionResult.collection_id)
+        .join(
+            CollectionObservation,
+            CollectionObservation.id == CollectionResult.first_observation_id,
+        )
+        .join(
+            RepresentationVersion,
+            RepresentationVersion.id == CollectionObservation.version_id,
+        )
+        .where(CollectionResult.representation_id.in_(representation_ids))
+        .order_by(CollectionResult.included_at.desc(), CollectionResult.id.desc())
+    ).all()
+    reasons: dict[UUID, set[str]] = defaultdict(set)
+    for representation_id, criteria, raw_payload in rows:
+        representation_id = cast(UUID, representation_id)
+        snapshot = criteria.get("catalog_snapshot") if isinstance(criteria, dict) else None
+        if not isinstance(snapshot, dict) and isinstance(criteria, dict):
+            query = criteria.get("query")
+            snapshot = query.get("catalog_snapshot") if isinstance(query, dict) else None
+        if not isinstance(snapshot, dict):
+            continue
+        explanations = snapshot.get("inclusion_explanations")
+        if not isinstance(explanations, list):
+            continue
+        expected: dict[str, dict[int, str]] = {"class": {}, "subject": {}}
+        for explanation in explanations:
+            if not isinstance(explanation, dict):
+                continue
+            dimension = explanation.get("dimension")
+            code = _structured_code(explanation.get("code"))
+            name = explanation.get("name")
+            if dimension in expected and code is not None and isinstance(name, str):
+                expected[dimension][code] = name
+        if not expected["class"] and not expected["subject"]:
+            continue
+        observed = _observed_search_codes(raw_payload)
+        matches = [
+            (dimension, code, expected[dimension][code])
+            for dimension in ("class", "subject")
+            for code in sorted(expected[dimension])
+            if code in observed[dimension]
+        ]
+        if matches:
+            reasons[representation_id].add(_format_discovery_reason(matches))
+        else:
+            criteria_names = [
+                f"{_dimension_label(dimension)} {code} — {name}"
+                for dimension in ("class", "subject")
+                for code, name in sorted(expected[dimension].items())
+            ]
+            reasons[representation_id].add(
+                "Critério consultado: "
+                + "; ".join(criteria_names)
+                + " (a captura não preserva código estruturado correspondente)"
+            )
+    return {key: sorted(values) for key, values in reasons.items()}
+
+
+def _observed_search_codes(raw_payload: object) -> dict[str, set[int]]:
+    if not isinstance(raw_payload, dict):
+        return {"class": set(), "subject": set()}
+    raw_class = raw_payload.get("classe")
+    classes = {_structured_code(raw_class.get("codigo"))} if isinstance(raw_class, dict) else set()
+    raw_subjects = raw_payload.get("assuntos")
+    subjects = (
+        {
+            _structured_code(subject.get("codigo"))
+            for subject in raw_subjects
+            if isinstance(subject, dict)
+        }
+        if isinstance(raw_subjects, list)
+        else set()
+    )
+    return {
+        "class": {code for code in classes if code is not None},
+        "subject": {code for code in subjects if code is not None},
+    }
+
+
+def _structured_code(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int) and value > 0:
+        return value
+    if isinstance(value, str) and value.isdigit() and int(value) > 0:
+        return int(value)
+    return None
+
+
+def _format_discovery_reason(matches: list[tuple[str, int, str]]) -> str:
+    if len(matches) == 1:
+        dimension, code, name = matches[0]
+        return f"{_dimension_label(dimension)} {code} — {name}"
+    return " + ".join(
+        f"{_dimension_label(dimension)} {code} — {name}" for dimension, code, name in matches
+    )
+
+
+def _dimension_label(dimension: str) -> str:
+    return "Classe" if dimension == "class" else "Assunto"
 
 
 def _latest_collection_map(

@@ -20,6 +20,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response as StarletteResponse
 
+from agrojud.api.custom_searches import router as custom_searches_router
 from agrojud.api.errors import (
     error_payload,
     http_exception_response,
@@ -41,6 +42,7 @@ from agrojud.api.watchlist import router as watchlist_router
 from agrojud.config import Settings, get_settings
 from agrojud.db.engine import make_engine
 from agrojud.db.migrations_runner import make_alembic_config
+from agrojud.services.custom_searches import CustomSearchService
 from agrojud.services.execution_groups import ExecutionGroupService
 from agrojud.services.exports import ExportLimitExceeded
 from agrojud.services.jobs import (
@@ -93,6 +95,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         app.state.session_factory, app.state.jobs
     )
     app.state.saved_searches = SavedSearchService(app.state.session_factory, app.state.jobs)
+    app.state.custom_searches = CustomSearchService()
 
     app.add_middleware(
         CORSMiddleware,
@@ -275,6 +278,7 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.include_router(watchlist_router)
     app.include_router(saved_searches_router)
     app.include_router(metadata_router)
+    app.include_router(custom_searches_router)
 
     return app
 

@@ -25,6 +25,8 @@ type EvidenceName = Literal["tpu_status", "query_status", "sample_status"]
 type FilterDimension = Literal["class", "subject", "movement"]
 type PresetEnvironment = Literal["demo", "real"]
 type CatalogItemKind = Literal["preset", "candidate_signal"]
+type CatalogExposure = Literal["official_theme", "legacy", "internal", "custom"]
+type DimensionCombination = Literal["AND", "OR"]
 
 _EVIDENCE_NAMES: tuple[EvidenceName, ...] = (
     "tpu_status",
@@ -61,6 +63,7 @@ class TPUCodeEvidence:
     tjgo_second_grade: bool
     search_term: str
     source_id: str
+    selectable_for_custom: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +85,8 @@ class CatalogItem:
     required_for_real: tuple[EvidenceName, ...]
     demo_available: bool
     runtime_implemented: bool
+    exposure: CatalogExposure
+    dimension_combination: DimensionCombination
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,6 +162,7 @@ class CompiledPreset:
             "environment": self.environment,
             "preset_id": self.item.id,
             "preset_version": self.item.version,
+            "definition_kind": self.item.exposure,
             "family": self.item.family,
             "name": self.item.name,
             "justification": self.item.justification,
@@ -169,7 +175,10 @@ class CompiledPreset:
                 "subject_codes": list(self.query.subject_codes),
                 "movement_codes": list(self.query.movement_codes),
             },
-            "combinations": {"within_dimension": "OR", "between_dimensions": "AND"},
+            "combinations": {
+                "within_dimension": "OR",
+                "between_dimensions": self.item.dimension_combination,
+            },
             "include_descendants": self.item.include_descendants,
             "inclusion_explanations": list(self.explanations),
             "window_template": copy_json(dict(self.window_template)),
@@ -246,9 +255,19 @@ def validate_catalog_document(value: object) -> ThematicCatalog:
             tjgo_second_grade=_boolean(entry.get("tjgo_second_grade"), f"{path}.tjgo_second_grade"),
             search_term=_text(entry.get("search_term"), f"{path}.search_term"),
             source_id=_text(entry.get("source_id"), f"{path}.source_id"),
+            selectable_for_custom=_boolean(
+                entry.get("selectable_for_custom", False), f"{path}.selectable_for_custom"
+            ),
         )
         if evidence.source_id not in source_ids:
             raise ValueError(f"{path}.source_id não referencia uma fonte cadastrada.")
+        if evidence.selectable_for_custom and (
+            evidence.situation != "A"
+            or not (evidence.tjgo_first_grade or evidence.tjgo_second_grade)
+        ):
+            raise ValueError(
+                f"{path} marca como selecionável um código inativo ou inaplicável ao TJGO."
+            )
         key = (dimension, code)
         if key in code_evidence:
             raise ValueError(f"Evidência TPU duplicada para {dimension}:{code}.")
@@ -328,6 +347,36 @@ def list_presets() -> tuple[CatalogItem, ...]:
     """List versioned collection presets without implying real availability."""
 
     return tuple(item for item in load_catalog().items if item.kind == "preset")
+
+
+def list_official_themes() -> tuple[CatalogItem, ...]:
+    """Return only versioned themes intended for the primary product selection."""
+
+    return tuple(item for item in list_presets() if item.exposure == "official_theme")
+
+
+def list_custom_search_codes(
+    dimension: Literal["class", "subject"],
+    *,
+    query: str = "",
+) -> tuple[TPUCodeEvidence, ...]:
+    """Return known, active TPU codes explicitly approved for new custom searches."""
+
+    needle = query.strip().casefold()
+    return tuple(
+        sorted(
+            (
+                code
+                for code in load_catalog().codes.values()
+                if code.dimension == dimension
+                and code.selectable_for_custom
+                and code.situation == "A"
+                and (code.tjgo_first_grade or code.tjgo_second_grade)
+                and (not needle or needle in str(code.code) or needle in code.name.casefold())
+            ),
+            key=lambda code: (code.code, code.name),
+        )
+    )
 
 
 def list_candidate_signals() -> tuple[CatalogItem, ...]:
@@ -413,6 +462,7 @@ def compile_preset(
         class_codes=item.filters["class"],
         subject_codes=item.filters["subject"],
         movement_codes=item.filters["movement"],
+        dimension_combination=item.dimension_combination,
         preset_id=item.id,
         preset_version=item.version,
     )
@@ -488,7 +538,11 @@ def _validate_catalog_snapshot(
             "O snapshot não pode expandir descendentes sem evidência TPU explícita.",
         )
     combinations = _object(snapshot.get("combinations"), "catalog_snapshot.combinations")
-    if combinations != {"within_dimension": "OR", "between_dimensions": "AND"}:
+    if (
+        combinations.get("within_dimension") != "OR"
+        or combinations.get("between_dimensions", "AND") not in ("AND", "OR")
+        or set(combinations) - {"within_dimension", "between_dimensions"}
+    ):
         raise SourceError(
             SourceErrorCode.CONTRACT,
             "As combinações OR/AND do snapshot do catálogo são inválidas.",
@@ -497,6 +551,7 @@ def _validate_catalog_snapshot(
     explanations = _array(
         snapshot.get("inclusion_explanations"), "catalog_snapshot.inclusion_explanations"
     )
+
     for index, raw_explanation in enumerate(explanations):
         explanation = _object(raw_explanation, f"inclusion_explanations[{index}]")
         if explanation.get("dimension") not in ("class", "subject", "movement"):
@@ -556,6 +611,7 @@ def _validate_catalog_snapshot(
             }
             or filed_from != query.filed_from
             or filed_to != query.filed_to
+            or combinations.get("between_dimensions", "AND") != query.dimension_combination
         ):
             raise SourceError(
                 SourceErrorCode.VALIDATION,
@@ -566,6 +622,138 @@ def _validate_catalog_snapshot(
     if not isinstance(copied, dict):  # pragma: no cover - _object has already checked this
         raise SourceError(SourceErrorCode.CONTRACT, "O snapshot do catálogo precisa ser objeto.")
     return copied
+
+
+def compile_custom_search(
+    *,
+    custom_search_id: str,
+    version: int,
+    name: str,
+    description: str | None,
+    class_codes: tuple[int, ...] | list[int],
+    subject_codes: tuple[int, ...] | list[int],
+    dimension_combination: DimensionCombination,
+    environment: PresetEnvironment,
+    tribunal: str = "TJGO",
+    reference_time: datetime | None = None,
+    filed_from: date | None = None,
+    filed_through_inclusive: date | None = None,
+) -> CompiledPreset:
+    """Compile a persisted user definition from catalog-approved TPU codes."""
+
+    if environment not in ("demo", "real") or isinstance(version, bool) or version < 1:
+        raise SourceError(SourceErrorCode.VALIDATION, "A versão ou o ambiente da busca é inválido.")
+    if dimension_combination not in ("AND", "OR"):
+        raise SourceError(SourceErrorCode.VALIDATION, "A combinação AND/OR da busca é inválida.")
+    raw_classes = tuple(class_codes)
+    raw_subjects = tuple(subject_codes)
+    if any(
+        isinstance(code, bool) or not isinstance(code, int) or code < 1
+        for code in (*raw_classes, *raw_subjects)
+    ):
+        raise SourceError(SourceErrorCode.VALIDATION, "A seleção contém código TPU inválido.")
+    normalized_classes = tuple(sorted(set(raw_classes)))
+    normalized_subjects = tuple(sorted(set(raw_subjects)))
+    if not normalized_classes and not normalized_subjects:
+        raise SourceError(SourceErrorCode.VALIDATION, "Selecione ao menos uma classe ou assunto.")
+
+    catalog = load_catalog()
+    selectable_dimensions: tuple[tuple[FilterDimension, tuple[int, ...]], ...] = (
+        ("class", normalized_classes),
+        ("subject", normalized_subjects),
+    )
+    for dimension, codes in selectable_dimensions:
+        for code in codes:
+            evidence = catalog.codes.get((dimension, code))
+            if (
+                evidence is None
+                or not evidence.selectable_for_custom
+                or evidence.situation != "A"
+                or not (evidence.tjgo_first_grade or evidence.tjgo_second_grade)
+            ):
+                raise SourceError(
+                    SourceErrorCode.VALIDATION,
+                    f"O código {dimension}:{code} não está disponível para novas buscas.",
+                    validation_code="TPU_CODE_NOT_SELECTABLE",
+                )
+
+    filters: dict[FilterDimension, tuple[int, ...]] = {
+        "class": normalized_classes,
+        "subject": normalized_subjects,
+        "movement": (),
+    }
+    evidence_ids = tuple(
+        f"{dimension}:{code}"
+        for dimension, codes in (("class", normalized_classes), ("subject", normalized_subjects))
+        for code in codes
+    )
+    evidence_by_name: Mapping[EvidenceName, Evidence] = {
+        "tpu_status": Evidence(
+            "validated",
+            "Códigos ativos e selecionáveis no catálogo AgroJud versionado.",
+            evidence_ids,
+        ),
+        "query_status": Evidence(
+            "inconclusive",
+            "Consulta compilada localmente; não representa probe S5 desta definição.",
+        ),
+        "sample_status": Evidence(
+            "inconclusive", "Busca personalizada não possui amostra S5 própria."
+        ),
+    }
+    item = CatalogItem(
+        kind="preset",
+        id=f"custom:{_text(custom_search_id, 'custom_search_id')}",
+        version=str(version),
+        family="custom",
+        name=_text(name, "name"),
+        purpose=description.strip()
+        if description and description.strip()
+        else "Busca personalizada.",
+        justification=(
+            "Definição estruturada salva pelo usuário; os critérios efetivos ficam neste snapshot."
+        ),
+        filters=filters,
+        include_descendants=False,
+        rural_link_status="unconfirmed",
+        capture_explanation=(
+            "A explicação lista os códigos estruturados que localizaram o processo."
+        ),
+        evidence=evidence_by_name,
+        required_for_real=("tpu_status",),
+        demo_available=True,
+        runtime_implemented=True,
+        exposure="custom",
+        dimension_combination=dimension_combination,
+    )
+    resolved_from, resolved_to, template = _resolve_window(
+        reference_time=reference_time,
+        filed_from=filed_from,
+        filed_through_inclusive=filed_through_inclusive,
+    )
+    explanations = _inclusion_explanations(item, catalog.codes)
+    query = SourceQuery(
+        tribunal=tribunal,
+        filed_from=resolved_from,
+        filed_to=resolved_to,
+        class_codes=normalized_classes,
+        subject_codes=normalized_subjects,
+        dimension_combination=dimension_combination,
+        preset_id=item.id,
+        preset_version=item.version,
+    )
+    return CompiledPreset(
+        catalog_version=catalog.catalog_version,
+        tpu_version=catalog.tpu_version,
+        evidence_report=catalog.evidence_report,
+        environment=environment,
+        item=item,
+        query=query,
+        window_template=template,
+        resolved_from=resolved_from,
+        resolved_to_exclusive=resolved_to,
+        explanations=explanations,
+    )
 
 
 def _parse_item(
@@ -605,8 +793,16 @@ def _parse_item(
             f"{path} tenta expandir descendentes sem lista explícita e evidência TPU individual."
         )
     combinations = _object(raw.get("combinations"), f"{path}.combinations")
-    if combinations != {"within_dimension": "OR", "between_dimensions": "AND"}:
+    combination = combinations.get("between_dimensions", "AND")
+    exposure = raw.get("exposure", "legacy" if kind == "preset" else "internal")
+    if (
+        combinations.get("within_dimension") != "OR"
+        or combination not in ("AND", "OR")
+        or set(combinations) - {"within_dimension", "between_dimensions"}
+    ):
         raise ValueError(f"{path} altera a combinação OR/AND estabelecida pela SPEC-010.")
+    if exposure not in ("official_theme", "legacy", "internal"):
+        raise ValueError(f"{path}.exposure inválido.")
 
     evidence_raw = _object(raw.get("tpu_status"), f"{path}.tpu_status")
     evidence_by_name: dict[EvidenceName, Evidence] = {
@@ -655,6 +851,8 @@ def _parse_item(
         required_for_real=tuple(required),
         demo_available=_boolean(raw.get("demo_available"), f"{path}.demo_available"),
         runtime_implemented=_boolean(raw.get("runtime_implemented"), f"{path}.runtime_implemented"),
+        exposure=cast(CatalogExposure, exposure),
+        dimension_combination=cast(DimensionCombination, combination),
     )
 
 
@@ -688,7 +886,10 @@ def _inclusion_explanations(
                     "dimension": dimension,
                     "code": code,
                     "name": evidence.name,
-                    "condition": "OR within this filter; AND with other non-empty dimensions",
+                    "condition": (
+                        "OR within this filter; "
+                        f"{item.dimension_combination} with other non-empty dimensions"
+                    ),
                 }
             )
     return tuple(explanations)

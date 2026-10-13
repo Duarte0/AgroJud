@@ -2,10 +2,11 @@ import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { JobDetailPage } from "@/pages/job-detail-page";
+import { NewsPage } from "@/pages/news-page";
 import { ProcessDetailPage } from "@/pages/process-detail-page";
 import { ProcessesPage } from "@/pages/processes-page";
 import { RadarPage } from "@/pages/radar-page";
-import { buildJob, buildPreset, buildProcess } from "@/test/factories";
+import { buildJob, buildProcess, buildSearchType } from "@/test/factories";
 import { apiError, json, mockApi, renderRoute } from "@/test/render";
 
 afterEach(() => {
@@ -26,6 +27,7 @@ function filterOptions(request: Request): Response {
   const values: Record<string, { value: string; label: string; detail?: string; process_count: number }[]> = {
     process_number: [{ value: "0112556-70.2014.8.09.0181", label: "0112556-70.2014.8.09.0181", process_count: 1 }],
     class: [{ value: "execucao_canonica", label: "Execução rural", process_count: 3 }],
+    preset_id: [{ value: "tema.credito_contratos_rurais", label: "Crédito e contratos rurais", process_count: 1 }],
     tribunal: [{ value: "TJGO", label: "TJGO", process_count: 1 }],
     collection_id: [{
       value: "22222222-2222-4222-8222-222222222222",
@@ -42,6 +44,37 @@ function filterOptions(request: Request): Response {
 }
 
 describe("ProcessesPage", () => {
+  it("shows a theme name in the applied filter instead of its internal ID", async () => {
+    mockApi({
+      "GET /api/v1/processes": () => json(page([])),
+      "GET /api/v1/process-filter-options": filterOptions,
+    });
+    renderRoute(<ProcessesPage />, {
+      path: "/processes",
+      url: "/processes?preset_id=tema.credito_contratos_rurais",
+    });
+
+    const filter = await screen.findByLabelText("Remover filtro Tema da busca");
+    await waitFor(() => expect(filter).toHaveTextContent("Tema da busca: Crédito e contratos rurais"));
+    expect(filter).not.toHaveTextContent("tema.credito_contratos_rurais");
+    await waitFor(() => expect(screen.getByLabelText("Tema da busca")).toHaveValue("Crédito e contratos rurais"));
+  });
+
+  it("shows the theme name in filters carried into News", async () => {
+    mockApi({
+      "GET /api/v1/news": () => json(page([])),
+      "GET /api/v1/process-filter-options": filterOptions,
+    });
+    renderRoute(<NewsPage />, {
+      path: "/news",
+      url: "/news?preset_id=tema.credito_contratos_rurais",
+    });
+
+    const filter = await screen.findByLabelText("Remover filtro Tema da busca");
+    await waitFor(() => expect(filter).toHaveTextContent("Tema da busca: Crédito e contratos rurais"));
+    expect(filter).not.toHaveTextContent("tema.credito_contratos_rurais");
+  });
+
   it("shows a read failure with retry instead of an empty list", async () => {
     let fail = true;
     const api = mockApi({
@@ -246,28 +279,43 @@ describe("ProcessesPage", () => {
 describe("RadarPage", () => {
   it("sends a single POST on double click and opens the confirmed job", async () => {
     let resolvePost: (response: Response) => void = () => undefined;
+    const credit = buildSearchType();
+    const recovery = buildSearchType({
+      id: "tema.recuperacao_judicial",
+      name: "Recuperação judicial",
+      description: "Classe ou assunto de recuperação judicial.",
+      criteria: { classes: [129], subjects: [13277], movements: [] },
+      combinations: { within_dimension: "OR", between_dimensions: "OR" },
+    });
+    const executions = buildSearchType({
+      id: "tema.execucoes_relacionadas_ao_agro",
+      name: "Execuções relacionadas ao agro",
+      description: "Classe de execução combinada com assunto rural.",
+      criteria: {
+        classes: [159, 12154, 1116, 155, 156, 12078, 12079],
+        subjects: [4964, 4976, 10501],
+        movements: [],
+      },
+      availability: {
+        environment: "demo",
+        enabled: false,
+        label: "indisponível neste ambiente",
+        reasons: ["A consulta combinada aguarda evidência S5 suficiente."],
+      },
+    });
     const api = mockApi({
-      "GET /api/v1/presets": () =>
-        json({
-          environment: "demo",
-          items: [
-            buildPreset(),
-            buildPreset({
-              id: "sinal.penhora",
-              name: "Candidato a sinal de penhora",
-              availability: {
-                environment: "demo",
-                enabled: false,
-                label: "demonstrativo sintético",
-                reasons: ["Este item não é um preset disponível na demonstração sintética."],
-              },
-            }),
-          ],
-        }),
+      "GET /api/v1/search-types": () => json({ environment: "demo", items: [credit, recovery, executions] }),
+      "GET /api/v1/custom-searches": () => json([]),
+      "GET /api/v1/tpu-codes": (request) => {
+        const dimension = new URL(request.url).searchParams.get("dimension");
+        return json(dimension === "class"
+          ? [{ dimension: "class", code: 129, name: "Recuperação Judicial", tjgo_first_grade: true, tjgo_second_grade: false }]
+          : [{ dimension: "subject", code: 10501, name: "Crédito Rural", tjgo_first_grade: true, tjgo_second_grade: true }]);
+      },
       "GET /api/v1/jobs": () => json(page([])),
       "GET /api/v1/tribunal-availability": () => json({
         selection_enabled: true,
-        preset_id: "rural.credito_contratos",
+        preset_id: credit.id,
         matrix_sha256: null,
         allowlist_version: "2026-10-11",
         catalog_version: null,
@@ -288,11 +336,13 @@ describe("RadarPage", () => {
     });
     renderRoute(<RadarPage />, { path: "/radar", url: "/radar" });
 
-    const disabled = await screen.findByRole("radio", { name: "Candidato a sinal de penhora" });
+    expect(await screen.findByRole("heading", { name: "Tema da busca" })).toBeInTheDocument();
+    const disabled = await screen.findByRole("radio", { name: "Execuções relacionadas ao agro" });
     expect(disabled).toBeDisabled();
-    expect(
-      screen.getByText("Este item não é um preset disponível na demonstração sintética."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("A consulta combinada aguarda evidência S5 suficiente.")).toBeInTheDocument();
+    expect(screen.getByText("Temas do sistema")).toBeInTheDocument();
+    expect(screen.getByText("Minhas buscas")).toBeInTheDocument();
+    expect(screen.queryByText("rural.credito_contratos")).not.toBeInTheDocument();
 
     const submit = screen.getByRole("button", { name: "Iniciar coleta" });
     const pageSize = await screen.findByLabelText("Registros por página");
@@ -332,13 +382,23 @@ describe("RadarPage", () => {
       criteria: Record<string, unknown>;
       tribunals: string[];
     };
-    expect(body.criteria).toMatchObject({ preset_id: "rural.credito_contratos", hit_budget: null, page_size: 10_000 });
+    expect(body.criteria).toMatchObject({
+      search_definition: {
+        kind: "official_theme",
+        id: "tema.credito_contratos_rurais",
+        version: "1.0.0",
+      },
+      hit_budget: null,
+      page_size: 10_000,
+    });
     expect(body.tribunals).toEqual(["TJGO"]);
   });
 
   it("disables submission when the environment source is unavailable", async () => {
     mockApi({
-      "GET /api/v1/presets": () => json({ environment: "real", items: [buildPreset()] }),
+      "GET /api/v1/search-types": () => json({ environment: "real", items: [buildSearchType({ availability: { environment: "real", enabled: true, label: "disponível", reasons: [] } })] }),
+      "GET /api/v1/custom-searches": () => json([]),
+      "GET /api/v1/tpu-codes": () => json([]),
       "GET /api/v1/jobs": () => json(page([])),
     });
     renderRoute(<RadarPage />, {
@@ -489,6 +549,7 @@ describe("ProcessDetailPage", () => {
               source_updated_at_timezone_ambiguous: false,
               last_observed_at: "2026-10-09T13:00:00Z",
               latest_collection: null,
+              discovery_reasons: ["Assunto 10501 — Crédito Rural"],
               movement_diagnostic: diagnostic,
             },
           ]),
@@ -530,6 +591,8 @@ describe("ProcessDetailPage", () => {
     expect(screen.getByText("Há capas com lista de movimentos incompleta")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("tab", { name: "Capas por origem" }));
     const representation = await screen.findByTestId("representation");
+    expect(representation).toHaveTextContent("Encontrado por");
+    expect(representation).toHaveTextContent("Assunto 10501 — Crédito Rural");
     expect(representation).toHaveTextContent("Procedimento Comum (7)");
     expect(representation).toHaveTextContent("original: 2025-01-15T09:00:00");
   });

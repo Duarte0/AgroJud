@@ -72,3 +72,7 @@ Cron configurável pelo usuário, múltiplos horários, scheduler distribuído e
 - Os critérios AC1–AC5 estão cobertos pelos testes nomeados acima; o fluxo de salvar/ativar também foi verificado no navegador. A validação usa fonte sintética e não aprova filtros nem respostas reais do DataJud/TJGO. S1/S2/S5 permanecem gates externos; SPEC-018/019 continuam fora desta entrega.
 - A extensão AC6 foi validada com 23 cenários Playwright, 60 testes frontend, lint, typecheck, build e 10 testes backend de buscas salvas. Os novos cenários cobrem edição, cancelamento, validação de datas e falha simulada do `PATCH`. Não houve alteração do OpenAPI nem migration; a validação usa a stack E2E sintética e não altera os gates de fonte real.
 
+## Compatibilidade aditiva — SPEC-027 (13/10/2026)
+
+Buscas salvas antigas continuam usando `preset_id`/`preset_version` e o snapshot congelado que já possuíam; não há rename de ID nem migration de dados históricos. Novas revisões podem enviar uma referência tipada a tema oficial ou busca personalizada e continuam persistindo os campos compatíveis com o modelo atual. O snapshot salvo contém a definição, códigos, operadores e versão que foram usados. Uma busca personalizada arquivada deixa de aparecer para novas seleções, mas uma busca salva que já a referencia permanece legível e pode executar sua versão congelada. Os contratos e a UI revisados estão na [SPEC-027](SPEC-027-temas-e-buscas-personalizadas.md).
+

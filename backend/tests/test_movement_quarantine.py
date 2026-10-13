@@ -72,6 +72,8 @@ EXPECTED_TABLES = {
     "source_rate_limits",
     "saved_searches",
     "saved_search_versions",
+    "custom_searches",
+    "custom_search_versions",
     "schedule_dispatches",
     "execution_groups",
     "execution_group_members",

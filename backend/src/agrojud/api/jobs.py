@@ -13,6 +13,7 @@ from agrojud.api.errors import ERROR_RESPONSES
 from agrojud.api.schemas import (
     ContinueJobRequest,
     CreateJobRequest,
+    DiscoveryCriteria,
     DiscoveryJobRequest,
     JobAttemptResponse,
     JobCheckpointResponse,
@@ -30,8 +31,8 @@ from agrojud.db.models import ExecutionGroupMember, Job
 from agrojud.services.collection import build_collection_request
 from agrojud.services.jobs import InvalidJobTransitionError, JobInspection, JobService
 from agrojud.services.watchlist import lock_process_watch
-from agrojud.sources.catalog import compile_preset
-from agrojud.sources.contracts import SourceError, build_query_by_case_number
+from agrojud.sources.catalog import CompiledPreset, compile_preset
+from agrojud.sources.contracts import SourceError, SourceErrorCode, build_query_by_case_number
 from agrojud.sources.factory import real_source_unavailable_reason
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
@@ -58,11 +59,11 @@ def create_job(
 
     process_number: str | None = None
     if isinstance(body, DiscoveryJobRequest):
-        compiled = compile_preset(
-            body.criteria.preset_id,
-            environment=mode,
-            filed_from=body.criteria.filed_from,
-            filed_through_inclusive=body.criteria.filed_through,
+        compiled = _compile_discovery_criteria(
+            request,
+            body.criteria,
+            mode=mode,
+            tribunal="TJGO",
         )
         enqueue_request = build_collection_request(
             mode=mode,
@@ -257,6 +258,40 @@ def _relink_execution_group_members(
 
 class SourceCapabilityUnavailable(RuntimeError):
     """A source operation is intentionally gated by its external evidence."""
+
+
+def _compile_discovery_criteria(
+    request: Request,
+    criteria: DiscoveryCriteria,
+    *,
+    mode: Literal["demo", "real"],
+    tribunal: str,
+) -> CompiledPreset:
+    if criteria.search_definition is not None:
+        reference = criteria.search_definition
+        with request.app.state.session_factory() as session:
+            return cast(
+                CompiledPreset,
+                request.app.state.custom_searches.compile_reference(
+                    session,
+                    kind=reference.kind,
+                    definition_id=reference.id,
+                    version=reference.version,
+                    mode=mode,
+                    tribunal=tribunal,
+                    filed_from=criteria.filed_from,
+                    filed_through_inclusive=criteria.filed_through,
+                ),
+            )
+    if criteria.preset_id is None:
+        raise SourceError(SourceErrorCode.VALIDATION, "A definição da busca está ausente.")
+    return compile_preset(
+        criteria.preset_id,
+        environment=mode,
+        tribunal=tribunal,
+        filed_from=criteria.filed_from,
+        filed_through_inclusive=criteria.filed_through,
+    )
 
 
 def _source_for_environment(

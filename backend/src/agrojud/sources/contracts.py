@@ -95,6 +95,7 @@ class SourceQuery:
     class_codes: tuple[int, ...] = ()
     subject_codes: tuple[int, ...] = ()
     movement_codes: tuple[int, ...] = ()
+    dimension_combination: Literal["AND", "OR"] = "AND"
     court_unit_code: int | None = None
     preset_id: str | None = None
     preset_version: str | None = None
@@ -118,6 +119,12 @@ class SourceQuery:
         object.__setattr__(
             self, "movement_codes", _normalize_codes(self.movement_codes, "movimento")
         )
+        if self.dimension_combination not in ("AND", "OR"):
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "A combinação entre classes e assuntos deve ser AND ou OR.",
+                field_path="dimension_combination",
+            )
 
         if self.court_unit_code is not None:
             _validate_positive_code(self.court_unit_code, "órgão julgador")
@@ -328,10 +335,17 @@ def build_datajud_payload(
                 }
             }
         )
-    if query.class_codes:
-        filters.append({"terms": {"classe.codigo": list(query.class_codes)}})
-    if query.subject_codes:
-        filters.append({"terms": {"assuntos.codigo": list(query.subject_codes)}})
+    class_filter: dict[str, object] = {"terms": {"classe.codigo": list(query.class_codes)}}
+    subject_filter: dict[str, object] = {"terms": {"assuntos.codigo": list(query.subject_codes)}}
+    if query.dimension_combination == "OR" and query.class_codes and query.subject_codes:
+        filters.append(
+            {"bool": {"should": [class_filter, subject_filter], "minimum_should_match": 1}}
+        )
+    else:
+        if query.class_codes:
+            filters.append(class_filter)
+        if query.subject_codes:
+            filters.append(subject_filter)
     if query.movement_codes:
         filters.append({"terms": {"movimentos.codigo": list(query.movement_codes)}})
     if query.court_unit_code is not None:

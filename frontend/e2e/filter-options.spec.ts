@@ -15,7 +15,7 @@ test("filtros de processo sugerem valores canônicos e ocultam o UUID da coleta"
   await page.getByRole("link", { name: "Ver processos desta coleta" }).click();
   await expect(page).toHaveURL(/\/processes\?collection_id=/);
 
-  const subject = page.getByLabel("Assunto");
+  const subject = page.getByLabel("Assunto", { exact: true });
   await subject.fill("assunto");
   await page.getByRole("option", { name: /Assunto TPU 10501/ }).waitFor();
   await evidence(page, "spec022-autocomplete-assunto");
@@ -27,7 +27,7 @@ test("filtros de processo sugerem valores canônicos e ocultam o UUID da coleta"
 
   await page.getByRole("button", { name: /Mais filtros/ }).click();
   const collection = page.getByRole("combobox", { name: "Coleta" });
-  await expect(collection).toHaveValue(/\d{2}\/\d{2}\/\d{4}.*rural\.credito_contratos · Concluída/);
+  await expect(collection).toHaveValue(/\d{2}\/\d{2}\/\d{4}.*Crédito e contratos rurais · Concluída/);
   await expect(collection).not.toHaveValue(/[0-9a-f]{8}-[0-9a-f-]{27}/i);
 
   const classFilter = page.getByLabel("Classe");
@@ -45,7 +45,7 @@ test("filtros de processo sugerem valores canônicos e ocultam o UUID da coleta"
   expect(collectionId).toMatch(/[0-9a-f-]{36}/i);
   await page.goto(`/?collection_id=${collectionId}`);
   await expect(page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
-  await expect(page.getByText(/\d{2}\/\d{2}\/\d{4}.*rural\.credito_contratos · Concluída/)).toBeVisible();
+  await expect(page.getByText(/\d{2}\/\d{2}\/\d{4}.*Crédito e contratos rurais · Concluída/)).toBeVisible();
   await expect(page.locator("main")).not.toContainText(collectionId!);
   expect(runtimeErrors).toEqual([]);
   await evidence(page, "spec022-sugestoes-filtros-processos");

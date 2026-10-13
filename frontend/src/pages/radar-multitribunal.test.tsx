@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { RadarPage } from "@/pages/radar-page";
-import { buildPreset } from "@/test/factories";
+import { buildSearchType } from "@/test/factories";
 import { json, mockApi, renderRoute } from "@/test/render";
 
 const TRIBUNALS = [
@@ -14,15 +14,17 @@ const TRIBUNALS = [
 const groupId = "66666666-6666-4666-8666-666666666666";
 
 function setup(onSubmit: (body: Record<string, unknown>) => void) {
-  const preset = buildPreset({
+  const theme = buildSearchType({
     availability: { environment: "real", enabled: true, label: "disponível", reasons: [] },
   });
   mockApi({
-    "GET /api/v1/presets": () => json({ environment: "real", items: [preset] }),
+    "GET /api/v1/search-types": () => json({ environment: "real", items: [theme] }),
+    "GET /api/v1/custom-searches": () => json([]),
+    "GET /api/v1/tpu-codes": () => json([]),
     "GET /api/v1/jobs": () => json({ items: [], page: 1, page_size: 5, total: 0 }),
     "GET /api/v1/tribunal-availability": () => json({
       selection_enabled: true,
-      preset_id: preset.id,
+      preset_id: theme.id,
       matrix_sha256: null,
       allowlist_version: "2026-10-11",
       catalog_version: null,
@@ -66,7 +68,7 @@ function setup(onSubmit: (body: Record<string, unknown>) => void) {
       source_disabled_reason: null,
     },
   });
-  return preset;
+  return theme;
 }
 
 afterEach(() => {
@@ -76,7 +78,7 @@ afterEach(() => {
 describe("Radar multitribunal", () => {
   it("starts with all 33 tribunals selected and submits a national group", async () => {
     let submitted: Record<string, unknown> | null = null;
-    const preset = setup((body) => { submitted = body; });
+    const theme = setup((body) => { submitted = body; });
     const selector = await screen.findByRole("group", { name: "Tribunais para esta execução" });
     const checkboxes = within(selector).getAllByRole("checkbox");
 
@@ -88,7 +90,13 @@ describe("Radar multitribunal", () => {
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent(`/job-groups/${groupId}`));
     expect(submitted).toMatchObject({
       kind: "discovery",
-      criteria: { preset_id: preset.id },
+      criteria: {
+        search_definition: {
+          kind: "official_theme",
+          id: theme.id,
+          version: theme.version,
+        },
+      },
       tribunals: TRIBUNALS,
     });
   });

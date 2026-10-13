@@ -69,7 +69,7 @@ export function attemptOutcomeLabel(outcome: string | null): string {
 }
 
 const JOB_KIND_LABELS: Record<JobKind, string> = {
-  discovery: "Descoberta por preset",
+  discovery: "Descoberta por tema",
   refresh_number: "Atualização por número",
 };
 

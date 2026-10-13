@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
 
 import { describeError } from "@/api/client";
-import { useNewsList, useUpdateNewsStatus } from "@/api/queries";
+import { useNewsList, useProcessFilterOptions, useUpdateNewsStatus } from "@/api/queries";
 import type { NewsCategory, NewsListQuery, NewsStatus, ProcessNews } from "@/api/types";
 import { AppliedFilters } from "@/components/applied-filters";
 import { PageHeader } from "@/components/page-header";
@@ -194,6 +194,18 @@ export function NewsPage() {
   const status = queryStatus(searchParams.get("status"));
   const category = queryCategory(searchParams.get("category"));
   const processFilters = processFiltersFromUrl(searchParams);
+  const themeOptions = useProcessFilterOptions(
+    "preset_id",
+    "",
+    processFilters.preset_id ?? undefined,
+    Boolean(processFilters.preset_id),
+  );
+  const selectedTheme = themeOptions.data?.items.find(
+    option => option.value === processFilters.preset_id,
+  );
+  const themeLabel = selectedTheme?.label ?? (processFilters.preset_id
+    ? themeOptions.isPending ? "Carregando tema…" : "Tema não localizado"
+    : undefined);
 
   const query: NewsListQuery = {
     page,
@@ -262,7 +274,11 @@ export function NewsPage() {
           </div>
         </CardContent>
       </Card>
-      <AppliedFilters values={Object.fromEntries(Object.entries(processFilters).map(([key, value]) => [key, String(value)]))} onRemove={key => setFilter(key, "")} />
+      <AppliedFilters
+        values={Object.fromEntries(Object.entries(processFilters).map(([key, value]) => [key, String(value)]))}
+        labels={{ preset_id: themeLabel ?? "Tema da busca" }}
+        onRemove={key => setFilter(key, "")}
+      />
       <Card>
         <CardContent className="space-y-4 pt-6">
           {news.isPending ? (

@@ -153,6 +153,7 @@ def source_query_snapshot(query: SourceQuery) -> dict[str, JSONValue]:
         "class_codes": list(query.class_codes),
         "subject_codes": list(query.subject_codes),
         "movement_codes": list(query.movement_codes),
+        "dimension_combination": query.dimension_combination,
         "court_unit_code": query.court_unit_code,
         "preset_id": query.preset_id,
         "preset_version": query.preset_version,
@@ -181,6 +182,7 @@ def source_query_from_snapshot(
         "class_codes",
         "subject_codes",
         "movement_codes",
+        "dimension_combination",
         "court_unit_code",
         "preset_id",
         "preset_version",
@@ -202,6 +204,9 @@ def source_query_from_snapshot(
         class_codes=_code_list(resolved_query.get("class_codes", []), "class_codes"),
         subject_codes=_code_list(resolved_query.get("subject_codes", []), "subject_codes"),
         movement_codes=_code_list(resolved_query.get("movement_codes", []), "movement_codes"),
+        dimension_combination=_combination_field(
+            resolved_query.get("dimension_combination", "AND"), "dimension_combination"
+        ),
         court_unit_code=_optional_positive_int(
             resolved_query.get("court_unit_code"), "court_unit_code"
         ),
@@ -892,6 +897,12 @@ def _code_list(value: object, name: str) -> tuple[int, ...]:
     if any(isinstance(item, bool) or not isinstance(item, int) for item in value):
         raise SourceError(SourceErrorCode.CONTRACT, f"A lista {name} do snapshot é inválida.")
     return tuple(value)
+
+
+def _combination_field(value: object, name: str) -> Literal["AND", "OR"]:
+    if value not in ("AND", "OR"):
+        raise SourceError(SourceErrorCode.CONTRACT, f"O campo {name} do snapshot é inválido.")
+    return value
 
 
 def _string_field(value: object, name: str) -> str:

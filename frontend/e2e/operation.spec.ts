@@ -8,6 +8,7 @@ import {
   demoDatabaseVersion,
   expectJobStatus,
   measurementMachine,
+  openFirstGroupExecution,
   restartApi,
   setProcessNumber,
   startCollection,
@@ -89,7 +90,7 @@ test("jornada sintética integrada: reinício, coleta, revisão, acompanhamento,
   await page.getByRole("button", { name: "Acompanhar processo" }).click();
   await expect(page.getByText("Acompanhamento ativo")).toBeVisible();
   await page.getByRole("button", { name: "Atualizar processo" }).click();
-  await page.waitForURL(/\/jobs\/[0-9a-f-]{36}$/);
+  await openFirstGroupExecution(page);
   await expectJobStatus(page, "Concluído");
 
   await page.goto("/watchlist");

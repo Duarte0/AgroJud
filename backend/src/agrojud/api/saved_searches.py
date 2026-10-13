@@ -21,6 +21,7 @@ from agrojud.api.schemas import (
     SavedSearchFilters,
     SavedSearchPatchRequest,
     SavedSearchResponse,
+    SearchDefinitionReference,
 )
 from agrojud.db.models import SavedSearch, SavedSearchVersion, ScheduleDispatch
 from agrojud.services.execution_groups import execution_group_idempotency_key
@@ -45,12 +46,23 @@ router = APIRouter(prefix="/api/v1/saved-searches", tags=["saved-searches"])
 )
 def create_saved_search(body: SavedSearchCreateRequest, request: Request) -> SavedSearchResponse:
     mode, source = _source_for_environment(request.app.state.settings)
+    preset_id, preset_version = _reference_fields(body.search_definition, body.preset_id)
     try:
         with request.app.state.session_factory() as session, session.begin():
+            if body.search_definition is not None:
+                _validate_reference(
+                    request,
+                    session,
+                    body.search_definition,
+                    mode=mode,
+                    filed_from=body.filters.filed_from,
+                    filed_through=body.filters.filed_through,
+                )
             search, revision = request.app.state.saved_searches.create(
                 session,
                 name=body.name,
-                preset_id=body.preset_id,
+                preset_id=preset_id,
+                preset_version=preset_version,
                 window_mode=body.window_mode,
                 filters=body.filters.model_dump(),
                 enabled=body.enabled,
@@ -107,13 +119,38 @@ def patch_saved_search(
 ) -> SavedSearchResponse:
     mode, source = _source_for_environment(request.app.state.settings)
     fields = body.model_fields_set
+    preset_id: str | None = None
+    preset_version: str | None = None
+    if "search_definition" in fields and body.search_definition is not None:
+        preset_id, preset_version = _reference_fields(body.search_definition, None)
+    elif "preset_id" in fields:
+        preset_id = body.preset_id
     try:
         with request.app.state.session_factory() as session, session.begin():
+            if body.search_definition is not None:
+                current_search = session.get(SavedSearch, search_id)
+                if current_search is None:
+                    raise SavedSearchNotFoundError("A busca salva não existe.")
+                current_revision = request.app.state.saved_searches.current_revision(
+                    session, current_search
+                )
+                filters_for_revision = body.filters or SavedSearchFilters.model_validate(
+                    current_revision.filters
+                )
+                _validate_reference(
+                    request,
+                    session,
+                    body.search_definition,
+                    mode=mode,
+                    filed_from=filters_for_revision.filed_from,
+                    filed_through=filters_for_revision.filed_through,
+                )
             search, revision = request.app.state.saved_searches.patch(
                 session,
                 search_id,
                 name=body.name if "name" in fields else None,
-                preset_id=body.preset_id if "preset_id" in fields else None,
+                preset_id=preset_id,
+                preset_version=preset_version,
                 window_mode=body.window_mode if "window_mode" in fields else None,
                 filters=body.filters.model_dump() if body.filters is not None else None,
                 enabled=body.enabled if "enabled" in fields else None,
@@ -243,6 +280,12 @@ def _search_response(
         version=revision.version,
         preset_id=revision.preset_id,
         preset_version=revision.preset_version,
+        search_definition=_search_definition_reference(revision),
+        definition_name=(
+            revision.catalog_snapshot.get("name")
+            if isinstance(revision.catalog_snapshot.get("name"), str)
+            else None
+        ),
         window_mode=cast(Any, revision.window_mode),
         filters=SavedSearchFilters.model_validate(revision.filters),
         enabled=search.enabled,
@@ -254,6 +297,61 @@ def _search_response(
         last_dispatch=schedule_dispatch_response(dispatch),
         created_at=search.created_at,
         updated_at=search.updated_at,
+    )
+
+
+def _reference_fields(
+    reference: SearchDefinitionReference | None,
+    legacy_preset_id: str | None,
+) -> tuple[str, str | None]:
+    if reference is None:
+        if legacy_preset_id is None:
+            raise SourceError(SourceErrorCode.VALIDATION, "A definição da busca está ausente.")
+        return legacy_preset_id, None
+    if reference.kind == "official_theme":
+        return reference.id, str(reference.version)
+    return f"custom:{reference.id}", str(reference.version)
+
+
+def _search_definition_reference(
+    revision: SavedSearchVersion,
+) -> SearchDefinitionReference | None:
+    if revision.preset_id.startswith("custom:"):
+        try:
+            version = int(revision.preset_version)
+        except ValueError:  # pragma: no cover - custom revisions are validated on write
+            return None
+        return SearchDefinitionReference(
+            kind="custom_search",
+            id=revision.preset_id.removeprefix("custom:"),
+            version=version,
+        )
+    if revision.catalog_snapshot.get("definition_kind") == "official_theme":
+        return SearchDefinitionReference(
+            kind="official_theme",
+            id=revision.preset_id,
+            version=revision.preset_version,
+        )
+    return None
+
+
+def _validate_reference(
+    request: Request,
+    session: Session,
+    reference: SearchDefinitionReference,
+    *,
+    mode: str,
+    filed_from: Any,
+    filed_through: Any,
+) -> None:
+    request.app.state.custom_searches.compile_reference(
+        session,
+        kind=reference.kind,
+        definition_id=reference.id,
+        version=reference.version,
+        mode=cast(Any, mode),
+        filed_from=filed_from,
+        filed_through_inclusive=filed_through,
     )
 
 

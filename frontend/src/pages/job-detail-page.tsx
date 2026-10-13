@@ -42,12 +42,6 @@ import { NotFoundPage } from "@/pages/not-found-page";
 
 type LocationState = { created?: boolean; reused?: boolean } | null;
 
-function text(value: unknown): string {
-  if (value === null || value === undefined || value === "") return NOT_INFORMED;
-  if (typeof value === "string" || typeof value === "number") return String(value);
-  return JSON.stringify(value);
-}
-
 function StatusExplanation({ job }: { job: JobDetail }) {
   const reason = reasonLabel(job.reason);
   const lastError = [...job.attempts].reverse().find((attempt) => attempt.error_summary);
@@ -231,11 +225,8 @@ function CriteriaCard({ job }: { job: JobDetail }) {
             { term: "Tipo", value: jobKindLabel(job.kind) },
             { term: "Tribunal / fonte", value: `${job.tribunal} · ${job.source}` },
             {
-              term: "Preset",
-              value:
-                typeof criteria.preset_id === "string"
-                  ? `${criteria.preset_id} · versão ${text(criteria.preset_version)}`
-                  : NOT_INFORMED,
+              term: "Tema da busca",
+              value: typeof snapshot?.name === "string" ? snapshot.name : "Definição histórica",
             },
             {
               term: "Ajuizamento",
@@ -243,10 +234,6 @@ function CriteriaCard({ job }: { job: JobDetail }) {
                 typeof criteria.filed_from === "string" || typeof criteria.filed_to === "string"
                   ? `de ${formatCalendarDate(criteria.filed_from as string | null)} até antes de ${formatCalendarDate(criteria.filed_to as string | null)}`
                   : NOT_INFORMED,
-            },
-            {
-              term: "Catálogo",
-              value: snapshot ? `versão ${text(snapshot.catalog_version)}` : NOT_INFORMED,
             },
             {
               term: "Número processual",

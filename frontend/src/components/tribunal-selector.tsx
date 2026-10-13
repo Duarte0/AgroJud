@@ -65,11 +65,7 @@ export function TribunalSelector({
       <div className="grid gap-2 sm:grid-cols-2">
         {items.map((item) => {
           const reasonId = `tribunal-reason-${item.tribunal.toLowerCase()}`;
-          const stateLabel = item.s1_s2_state === "NOT_REQUIRED"
-            ? "allowlist DataJud"
-            : item.preset_state
-            ? `S1/S2 ${item.s1_s2_state} · S5 ${item.preset_state}`
-            : `S1/S2 ${item.s1_s2_state}`;
+          const stateLabel = item.enabled ? "Disponível" : "Indisponível";
           return (
             <label
               key={item.tribunal}

@@ -34,12 +34,12 @@ test("visão geral local abre a lista pelo indicador", async ({ page }) => {
   await expect(themeLink).toHaveAttribute("href", /\/processes\?subject_code=/);
   await themeLink.click();
   await expect(page).toHaveURL(/\/processes\?subject_code=/);
-  const exactThemeName = await page.getByLabel("Nome exato do tema").inputValue();
+  const exactThemeName = await page.getByLabel("Nome exato do assunto").inputValue();
   expect(exactThemeName).not.toBe("");
 
   await page.getByRole("link", { name: "Ver indicadores deste recorte" }).click();
   await expect(page).toHaveURL(/\/\?subject_code=/);
-  await expect(page.getByText("Código exato do tema")).toBeVisible();
+  await expect(page.getByText("Código do assunto", { exact: true })).toBeVisible();
   await expect(page.getByRole("definition").filter({ hasText: exactThemeName })).toBeVisible();
   await evidence(page, "spec018-visao-geral");
 });

@@ -252,7 +252,7 @@ def test_enqueued_collection_persists_the_compiled_catalog_snapshot(
     query_snapshot = saved["query"]
     catalog_snapshot = query_snapshot["catalog_snapshot"]
 
-    assert catalog_snapshot["catalog_version"] == "1.1.0"
+    assert catalog_snapshot["catalog_version"] == "1.2.0"
     assert catalog_snapshot["preset_id"] == "rural.credito_contratos"
     assert catalog_snapshot["preset_version"] == "1.0.0"
     assert catalog_snapshot["justification"] == compiled.item.justification

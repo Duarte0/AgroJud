@@ -363,3 +363,13 @@ Fontes consultadas durante o planejamento em 08/10/2026:
 6. [DataJud Wiki — Pesquisa por número processual](https://datajud-wiki.cnj.jus.br/api-publica/exemplos/exemplo1/).
 
 Permanecem pendências técnicas de implementação: comportamento real do TJGO, desempate aceito na paginação, evidência de reconciliação em amostras reais e catálogo TPU versionado. Nenhum endpoint real foi validado como parte da redação deste PRD. Indisponibilidade dessas verificações deve ser registrada como limitação, sem transformar hipótese em requisito comprovado.
+
+## Atualização de produto — SPEC-027
+
+No Radar, a escolha principal é **Tema da busca**. Os temas oficiais são **Crédito e contratos rurais**, **Recuperação judicial** e **Execuções relacionadas ao agro**. A definição de cada tema é versionada pelo sistema e não pode ser editada diretamente; a pessoa pode usá-la, visualizar critérios ou duplicá-la para personalizar. A seção **Minhas buscas** reúne definições próprias que podem ser criadas do zero, editadas em novas versões e arquivadas.
+
+Classes e assuntos de buscas personalizadas vêm do catálogo TPU ativo e aprovado pelo AgroJud. Combinações aceitas são estruturadas e compiladas pelo backend; a interface não aceita query Elasticsearch/JSON. Tribunal e período continuam parâmetros da busca/coleta. A jornada multitribunal é um tema escolhido para cada conjunto de tribunais selecionado, com execução independente por tribunal.
+
+Recuperação judicial é uma única busca lógica por classe 129 **ou** assunto 13277. A classe e o assunto são detalhes de critérios e explicação, não opções separadas. Execuções relacionadas ao agro exigem simultaneamente classe de execução catalogada e assunto rural válido; uma classe genérica não confirma vínculo rural. Recuperação judicial, crédito ou execução encontrados pelo tema não confirmam por si só vínculo rural: a interpretação continua dependendo das evidências estruturadas e/ou triagem humana.
+
+Definições novas preservam um snapshot versionado nos jobs, buscas salvas e coletas. IDs e snapshots históricos continuam legíveis sem renomeação; edição não altera revisões passadas e arquivamento impede novas seleções sem apagar histórico. A implementação passou o aceite local da SPEC-027; isso não inclui probe DataJud nem amplia os gates reais por tribunal. Os códigos e limites efetivos estão na [SPEC-027](specs/SPEC-027-temas-e-buscas-personalizadas.md).

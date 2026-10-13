@@ -22,6 +22,7 @@ from agrojud.db.engine import make_engine
 from agrojud.db.migrations_runner import upgrade_database
 from agrojud.db.models import (
     Base,
+    Job,
     Process,
     Representation,
     RepresentationSubject,
@@ -162,7 +163,7 @@ def test_http_collection_flow_is_read_only_and_hides_source_cursor(
     assert number_options.json()["items"][0]["value"] == "00000010020268090001"
     selected_collection = collection_options.json()["items"][0]
     assert selected_collection["value"] == body["collection_id"]
-    assert PRESET_ID in selected_collection["label"]
+    assert "Crédito e contratos rurais" in selected_collection["label"]
     assert "Concluída" in selected_collection["label"]
     assert body["collection_id"] not in selected_collection["label"]
 
@@ -178,6 +179,8 @@ def test_http_collection_flow_is_read_only_and_hides_source_cursor(
     assert representation["movement_diagnostic"]["available"] is True
     assert representation["movement_diagnostic"]["is_complete"] is True
     assert representation["latest_collection"]["collection_id"] == body["collection_id"]
+    assert "Assunto 4964 — Cédula de Crédito Rural" in representation["discovery_reasons"][0]
+    assert "Assunto 10501 — Crédito Rural" in representation["discovery_reasons"][0]
 
     movements = api_client.get(f"/api/v1/processes/{process_id}/movements")
     assert movements.status_code == 200
@@ -232,8 +235,270 @@ def test_equivalent_jobs_are_reused_and_errors_have_one_shape(api_client: TestCl
     assert openapi.status_code == 200
     paths = openapi.json()["paths"]
     assert "/api/v1/jobs" in paths
+    assert "/api/v1/search-types" in paths
+    assert "/api/v1/tpu-codes" in paths
+    assert "/api/v1/custom-searches" in paths
     assert "/api/v1/processes/{process_id}/movements" in paths
     assert "ErrorResponse" in openapi.json()["components"]["schemas"]
+
+
+def test_official_themes_and_tpu_picker_expose_only_current_approved_codes(
+    api_client: TestClient,
+) -> None:
+    themes = api_client.get("/api/v1/search-types")
+    assert themes.status_code == 200
+    items = {item["id"]: item for item in themes.json()["items"]}
+    assert {item["name"] for item in items.values()} == {
+        "Crédito e contratos rurais",
+        "Recuperação judicial",
+        "Execuções relacionadas ao agro",
+    }
+    assert items["tema.recuperacao_judicial"]["criteria"] == {
+        "classes": [129],
+        "subjects": [13277],
+        "movements": [],
+    }
+    assert items["tema.recuperacao_judicial"]["combinations"]["between_dimensions"] == "OR"
+    assert (
+        items["tema.execucoes_relacionadas_ao_agro"]["combinations"]["between_dimensions"] == "AND"
+    )
+
+    active_subjects = api_client.get("/api/v1/tpu-codes", params={"dimension": "subject"})
+    active_classes = api_client.get("/api/v1/tpu-codes", params={"dimension": "class"})
+    assert {item["code"] for item in active_subjects.json()} == {4964, 4976, 10501, 13277}
+    assert {item["code"] for item in active_classes.json()} == {
+        129,
+        159,
+        155,
+        156,
+        1116,
+        12078,
+        12079,
+        12154,
+    }
+    assert active_subjects.json()[0]["name"]
+    assert api_client.get("/api/v1/tpu-codes", params={"dimension": "unknown"}).status_code == 422
+
+
+def test_custom_search_create_duplicate_version_archive_and_pinned_saved_history(
+    api_app: FastAPI,
+    api_client: TestClient,
+) -> None:
+    created = api_client.post(
+        "/api/v1/custom-searches",
+        json={
+            "name": "Recuperação com evidência",
+            "description": "Versão inicial",
+            "class_codes": [129],
+            "subject_codes": [13277],
+            "dimension_combination": "OR",
+        },
+    )
+    assert created.status_code == 201, created.text
+    original = created.json()
+    search_id = original["id"]
+    assert original["version"] == 1
+
+    saved = api_client.post(
+        "/api/v1/saved-searches",
+        json={
+            "name": "Busca que preserva a versão",
+            "search_definition": {
+                "kind": "custom_search",
+                "id": search_id,
+                "version": 1,
+            },
+            "window_mode": "fixed",
+            "filters": {
+                "tribunals": ["TJGO"],
+                "filed_from": "2025-01-01",
+                "filed_through": "2025-02-01",
+                "page_size": 100,
+                "hit_budget": 100,
+            },
+            "enabled": False,
+        },
+    )
+    assert saved.status_code == 201, saved.text
+    assert saved.json()["search_definition"] == {
+        "kind": "custom_search",
+        "id": search_id,
+        "version": 1,
+    }
+    assert saved.json()["definition_name"] == "Recuperação com evidência"
+
+    duplicated = api_client.post(
+        "/api/v1/custom-searches",
+        json={"copy_from_theme": "tema.credito_contratos_rurais"},
+    )
+    assert duplicated.status_code == 201, duplicated.text
+    assert duplicated.json()["criteria"]["subjects"] == [
+        {"code": 4964, "name": "Cédula de Crédito Rural"},
+        {"code": 4976, "name": "Nota de Crédito Rural"},
+        {"code": 10501, "name": "Crédito Rural"},
+    ]
+
+    for invalid_codes in ([108], [4993], [4968], [999999]):
+        invalid = api_client.post(
+            "/api/v1/custom-searches",
+            json={"name": "Inválida", "subject_codes": invalid_codes},
+        )
+        assert invalid.status_code == 422
+    for invalid_classes in ([108], [10501], [999999]):
+        invalid = api_client.post(
+            "/api/v1/custom-searches",
+            json={"name": "Inválida", "class_codes": invalid_classes},
+        )
+        assert invalid.status_code == 422
+
+    changed = api_client.patch(
+        f"/api/v1/custom-searches/{search_id}",
+        json={"name": "Recuperação revisada", "dimension_combination": "AND"},
+    )
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["version"] == 2
+    assert changed.json()["criteria"]["dimension_combination"] == "AND"
+    versions = api_client.get(f"/api/v1/custom-searches/{search_id}/versions")
+    assert versions.status_code == 200
+    assert [item["version"] for item in versions.json()] == [2, 1]
+    assert versions.json()[1]["name"] == "Recuperação com evidência"
+    assert versions.json()[1]["criteria"]["dimension_combination"] == "OR"
+
+    archived = api_client.post(f"/api/v1/custom-searches/{search_id}/archive")
+    assert archived.status_code == 200
+    active_searches = api_client.get("/api/v1/custom-searches").json()
+    archived_searches = api_client.get(
+        "/api/v1/custom-searches", params={"include_archived": "true"}
+    ).json()
+    assert all(item["id"] != search_id for item in active_searches)
+    assert next(item for item in archived_searches if item["id"] == search_id)["archived_at"]
+    assert (
+        api_client.patch(
+            f"/api/v1/custom-searches/{search_id}", json={"name": "Não permitido"}
+        ).status_code
+        == 409
+    )
+
+    preserved_saved = next(
+        item
+        for item in api_client.get("/api/v1/saved-searches").json()
+        if item["id"] == saved.json()["id"]
+    )
+    assert preserved_saved["search_definition"]["version"] == 1
+    assert preserved_saved["definition_name"] == "Recuperação com evidência"
+    run = api_client.post(f"/api/v1/saved-searches/{saved.json()['id']}/run")
+    assert run.status_code == 202, run.text
+    assert run.json()["member_count"] == 1
+    group = api_client.get(f"/api/v1/job-groups/{run.json()['id']}")
+    assert group.status_code == 200
+    assert group.json()["request_snapshot"]["saved_search_version"] == 1
+    with Session(api_app.state.database_engine) as session:
+        child_job_id = UUID(group.json()["members"][0]["job_id"])
+        stored_job = session.scalar(select(Job).where(Job.id == child_job_id))
+        assert stored_job is not None
+        assert stored_job.parameters_snapshot["query"]["catalog_snapshot"]["name"] == (
+            "Recuperação com evidência"
+        )
+        assert stored_job.parameters_snapshot["query"]["catalog_snapshot"]["preset_version"] == "1"
+
+
+@pytest.mark.parametrize(
+    "tribunals",
+    [["TJGO"], ["TJGO", "TJSP", "TRF1"]],
+)
+def test_official_theme_creates_one_independent_job_per_selected_tribunal(
+    api_client: TestClient,
+    tribunals: list[str],
+) -> None:
+    response = api_client.post(
+        "/api/v1/job-groups",
+        json={
+            "kind": "discovery",
+            "criteria": {
+                "search_definition": {
+                    "kind": "official_theme",
+                    "id": "tema.recuperacao_judicial",
+                    "version": "1.0.0",
+                }
+            },
+            "tribunals": tribunals,
+        },
+    )
+    assert response.status_code == 202, response.text
+    group = response.json()
+    assert group["member_count"] == len(tribunals)
+    assert [member["tribunal"] for member in group["members"]] == tribunals
+    assert group["request_snapshot"]["criteria"]["search_definition"]["id"] == (
+        "tema.recuperacao_judicial"
+    )
+
+
+def test_legacy_recovery_strategies_deduplicate_cnj_and_keep_discovery_reasons(
+    api_app: FastAPI,
+    api_client: TestClient,
+) -> None:
+    worker = LeasedWorker(
+        api_app.state.jobs,
+        worker_id="api-spec027-recovery-worker",
+        handlers={"discovery": build_collection_job_handler(api_app.state.settings)},
+        heartbeat_interval=1,
+    )
+    discovery_requests = [
+        {"kind": "discovery", "criteria": {"preset_id": "recuperacao_judicial.por_classe"}},
+        {"kind": "discovery", "criteria": {"preset_id": "recuperacao_judicial.por_assunto"}},
+        {
+            "kind": "discovery",
+            "criteria": {
+                "search_definition": {
+                    "kind": "official_theme",
+                    "id": "tema.recuperacao_judicial",
+                    "version": "1.0.0",
+                }
+            },
+        },
+    ]
+    for request_body in discovery_requests:
+        created = api_client.post(
+            "/api/v1/jobs",
+            json=request_body,
+        )
+        assert created.status_code == 202, created.text
+        assert worker.run_once()
+
+    number = "0000001-00.2026.8.09.0001"
+    processes = api_client.get("/api/v1/processes", params={"process_number": number})
+    assert processes.status_code == 200
+    assert processes.json()["total"] == 1
+    process = processes.json()["items"][0]
+    assert process["numero_cnj"] == "00000010020268090001"
+    assert process["representation_count"] == 3
+
+    representations = api_client.get(
+        f"/api/v1/processes/{process['id']}/representations", params={"page_size": 10}
+    )
+    assert representations.status_code == 200
+    reasons = [
+        reason
+        for representation in representations.json()["items"]
+        for reason in representation["discovery_reasons"]
+    ]
+    assert any("Classe 108 — " in reason for reason in reasons)
+    assert any("Assunto 4993 — " in reason for reason in reasons)
+    assert any(
+        "Classe 129 — Recuperação Judicial + Assunto 13277 — Recuperação Judicial" in reason
+        for reason in reasons
+    )
+    theme_options = api_client.get(
+        "/api/v1/process-filter-options",
+        params={"field": "preset_id", "q": "Recuperação judicial"},
+    )
+    assert theme_options.status_code == 200
+    assert {
+        "value": "tema.recuperacao_judicial",
+        "label": "Recuperação judicial",
+        "detail": None,
+        "process_count": 1,
+    } in theme_options.json()["items"]
 
 
 def test_concurrent_equivalent_job_creations_share_one_persisted_job(api_app: FastAPI) -> None:
@@ -441,10 +706,25 @@ def test_real_source_is_enabled_with_key_and_presets_follow_s5_evidence(
 
         presets = client.get("/api/v1/presets")
         assert presets.status_code == 200
-        items = presets.json()["items"]
-        assert items
-        assert all(item["availability"]["enabled"] for item in items)
-        assert all(item["availability"]["label"] == "habilitado no real" for item in items)
+        legacy_items = presets.json()["items"]
+        assert {item["id"] for item in legacy_items} >= {
+            "rural.credito_contratos",
+            "execucoes.amplas",
+            "recuperacao_judicial.por_classe",
+            "recuperacao_judicial.por_assunto",
+        }
+
+        search_types = client.get("/api/v1/search-types")
+        assert search_types.status_code == 200
+        themes = {item["id"]: item for item in search_types.json()["items"]}
+        assert set(themes) == {
+            "tema.credito_contratos_rurais",
+            "tema.recuperacao_judicial",
+            "tema.execucoes_relacionadas_ao_agro",
+        }
+        assert themes["tema.credito_contratos_rurais"]["availability"]["enabled"]
+        assert themes["tema.recuperacao_judicial"]["availability"]["enabled"]
+        assert not themes["tema.execucoes_relacionadas_ao_agro"]["availability"]["enabled"]
 
         accepted = client.post("/api/v1/jobs", json=DEFAULT_JOB_REQUEST)
         assert accepted.status_code == 202, accepted.text
