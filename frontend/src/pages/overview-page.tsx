@@ -149,17 +149,21 @@ function ruralLinkLabel(value: NonNullable<OverviewFilters["rural_link"]>): stri
   return RURAL_LINK_LABELS[value];
 }
 
-function resolvedFilterLabels(filters: OverviewFilters, collectionLabel?: string): Array<[string, string]> {
+function resolvedFilterLabels(
+  filters: OverviewFilters,
+  collectionLabel?: string,
+  themeLabel?: string,
+): Array<[string, string]> {
   const labels: Array<[string, string | null | undefined]> = [
     ["Número CNJ", filters.process_number],
     ["Tribunal", filters.tribunals?.join(", ") ?? null],
     ["Assunto", filters.subject],
-    ["Código exato do tema", filters.subject_code],
-    ["Nome exato do tema", filters.subject_name_exact],
+    ["Código do assunto", filters.subject_code],
+    ["Nome exato do assunto", filters.subject_name_exact],
     ["Classe", filters["class"]],
     ["Órgão julgador", filters.court_unit],
     ["Coleta", filters.collection_id ? collectionLabel ?? "Coleta não localizada" : null],
-    ["Preset", filters.preset_id],
+    ["Tema da busca", filters.preset_id ? themeLabel ?? "Tema não localizado" : null],
     ["Triagem", filters.decision ? decisionLabel(filters.decision) : null],
     ["Vínculo rural", filters.rural_link ? ruralLinkLabel(filters.rural_link) : null],
     [
@@ -389,6 +393,16 @@ export function OverviewPage() {
   const collectionLabel = selectedCollection?.label ?? (query.collection_id
     ? collectionOptions.isPending ? "Carregando coleta…" : "Coleta não localizada"
     : undefined);
+  const themeOptions = useProcessFilterOptions(
+    "preset_id",
+    "",
+    query.preset_id ?? undefined,
+    Boolean(query.preset_id),
+  );
+  const selectedTheme = themeOptions.data?.items.find(option => option.value === query.preset_id);
+  const themeLabel = selectedTheme?.label ?? (query.preset_id
+    ? themeOptions.isPending ? "Carregando tema…" : "Tema não localizado"
+    : undefined);
 
   return (
     <div className="space-y-6">
@@ -421,7 +435,7 @@ export function OverviewPage() {
               <div>
                 <CardTitle>Recorte dos indicadores</CardTitle>
                 <CardDescription>
-                  {resolvedFilterLabels(overview.data.filters, collectionLabel).length
+                  {resolvedFilterLabels(overview.data.filters, collectionLabel, themeLabel).length
                     ? "Os indicadores abaixo usam estes filtros resolvidos pela API."
                     : "Todos os processos conhecidos na base local."}
                 </CardDescription>
@@ -434,9 +448,9 @@ export function OverviewPage() {
               </Link>
             </CardHeader>
             <CardContent className="space-y-4">
-              {resolvedFilterLabels(overview.data.filters, collectionLabel).length ? (
+              {resolvedFilterLabels(overview.data.filters, collectionLabel, themeLabel).length ? (
                 <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-                  {resolvedFilterLabels(overview.data.filters, collectionLabel).map(([label, value]) => (
+                  {resolvedFilterLabels(overview.data.filters, collectionLabel, themeLabel).map(([label, value]) => (
                     <div key={label}>
                       <dt className="text-xs text-muted-foreground">{label}</dt>
                       <dd className="break-all">{value}</dd>

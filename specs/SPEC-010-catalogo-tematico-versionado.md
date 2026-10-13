@@ -72,3 +72,9 @@ Resultado consolidado em [`catalogo-tematico-datajud-2026-10-10.json`](../docs/e
 
 Conclusão local: DONE em 09/10/2026 após os critérios e testes acima passarem. A investigação TPU consta no relatório externo por família. A validade taxonômica dos códigos está VALIDATED para os códigos incluídos; filtros DataJud e exemplos estruturados do TJGO permanecem INCONCLUSIVE na SPEC-003. Nenhum preset ou sinal foi habilitado no real, e S5 continua pendente. A conclusão desta ferramenta não promove o milestone M1 nem valida a fonte real.
 
+## Atualização de contrato — SPEC-027 (13/10/2026)
+
+O estado de `1.0.0`/`1.1.0` acima é histórico. O catálogo de código agora está em `1.2.0`; a nova exposição de produto é registrada em [SPEC-027](SPEC-027-temas-e-buscas-personalizadas.md). Ele preserva as quatro definições antigas e adiciona três temas oficiais versionados: Crédito e contratos rurais (`10501`, `4964`, `4976`), Recuperação judicial (classe `129` OU assunto `13277`) e Execuções relacionadas ao agro (classes de execução catalogadas E assuntos rurais ativos aprovados). Os códigos `108` e `4993` permanecem disponíveis apenas para interpretação histórica; `4968` não foi reintroduzido. A seleção de códigos para buscas personalizadas usa a flag explícita `selectable_for_custom` e situação TPU ativa.
+
+O tema de recuperação judicial compila uma query única com a união `bool.should`, preservando a busca por classe e assunto sem criar dois jobs lógicos. A consulta combinada local é coberta por testes e ainda não representa uma probe externa adicional. O tema de execuções relacionadas ao agro exige ambas as dimensões; sua evidência S5 permanece inconclusiva e o tema não é habilitado no modo real até que o gate vigente seja satisfeito. `execucoes.amplas` é compatibilidade histórica/interna e não é opção principal do Radar. Nenhum desses estados confirma vínculo rural por si só.
+

@@ -627,7 +627,7 @@ def test_migration_backfills_active_watch_baselines_without_losing_process(
 
         with engine.begin() as connection:
             upgrade_database(connection)
-            assert MigrationContext.configure(connection).get_current_revision() == "20261012_0011"
+            assert MigrationContext.configure(connection).get_current_revision() == "20261013_0012"
 
         with Session(engine) as session:
             assert session.get(Process, process_id) is not None

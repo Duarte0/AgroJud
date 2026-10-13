@@ -28,6 +28,7 @@ from agrojud.db.models import (
     Representation,
     RepresentationSubject,
 )
+from agrojud.sources.catalog import list_presets
 
 router = APIRouter(tags=["processes"])
 
@@ -98,9 +99,15 @@ def _text_options(
     predicates = [value.is_not(None), func.btrim(value) != ""]
     match_predicates = []
     if normalized_query:
-        match_predicates.append(
-            _normalized_text(value).like(_like_pattern(normalized_query), escape="\\")
-        )
+        pattern = _like_pattern(normalized_query)
+        match_predicates.append(_normalized_text(value).like(pattern, escape="\\"))
+        if field == "preset_id":
+            names = [(value == item.id, item.name) for item in list_presets()]
+            label = case(
+                *names,
+                else_=case((value.like("custom:%"), "Busca personalizada"), else_="Tema histórico"),
+            )
+            match_predicates.append(_normalized_text(label).like(pattern, escape="\\"))
     if selected_value:
         match_predicates.append(value == selected_value)
     if match_predicates:
@@ -192,7 +199,8 @@ def _collection_options(
     selected_value: str | None,
     limit: int,
 ) -> list[ProcessFilterOptionResponse]:
-    preset_id = Collection.resolved_criteria["query"]["preset_id"].astext
+    theme_name = Collection.resolved_criteria["query"]["catalog_snapshot"]["name"].astext
+    display_theme = func.coalesce(theme_name, "Definição histórica")
     display_date = func.to_char(
         func.timezone("America/Sao_Paulo", Collection.created_at), "DD/MM/YYYY HH24:MI"
     )
@@ -211,7 +219,7 @@ def _collection_options(
         select(
             Collection.id.label("value"),
             Collection.created_at.label("created_at"),
-            preset_id.label("preset_id"),
+            display_theme.label("theme_name"),
             display_status.label("status"),
             process_count.label("process_count"),
         )
@@ -221,16 +229,14 @@ def _collection_options(
         .join(Process, Process.id == Representation.process_id)
         .outerjoin(Job, Job.collection_id == Collection.id)
         .where(Collection.mode == environment)
-        .group_by(Collection.id, Collection.created_at, preset_id, Job.status)
+        .group_by(Collection.id, Collection.created_at, display_theme, Job.status)
     )
     predicates = []
     if normalized_query:
         pattern = _like_pattern(normalized_query)
         predicates.append(
             or_(
-                _normalized_text(func.coalesce(preset_id, "Consulta avulsa")).like(
-                    pattern, escape="\\"
-                ),
+                _normalized_text(display_theme).like(pattern, escape="\\"),
                 _normalized_text(display_status).like(pattern, escape="\\"),
                 _normalized_text(display_date).like(pattern, escape="\\"),
             )
@@ -251,13 +257,12 @@ def _collection_options(
 
     results = []
     for row in rows:
-        preset = row.preset_id or "Consulta avulsa"
         local_created_at = row.created_at.astimezone(_LOCAL_ZONE)
         date_label = local_created_at.strftime("%d/%m/%Y %H:%M")
         results.append(
             ProcessFilterOptionResponse(
                 value=str(row.value),
-                label=f"{date_label} · {preset} · {row.status}",
+                label=f"{date_label} · {row.theme_name} · {row.status}",
                 detail=_process_count_detail(row.process_count),
                 process_count=row.process_count,
             )
@@ -268,6 +273,11 @@ def _collection_options(
 def _option_label(field: ProcessFilterField, value: str) -> str:
     if field == "process_number" and len(value) == 20 and value.isdigit():
         return f"{value[:7]}-{value[7:9]}.{value[9:13]}.{value[13]}.{value[14:16]}.{value[16:20]}"
+    if field == "preset_id":
+        item = next((item for item in list_presets() if item.id == value), None)
+        if item is not None:
+            return item.name
+        return "Busca personalizada" if value.startswith("custom:") else "Tema histórico"
     return value
 
 

@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from agrojud.sources.contracts import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MIN_PAGE_SIZE
+
 JobStatus = Literal[
     "queued", "running", "retry_wait", "completed", "partial", "failed", "cancelled"
 ]
@@ -54,15 +56,34 @@ class ProcessFilterOptionsResponse(APIModel):
     items: list[ProcessFilterOptionResponse]
 
 
+class SearchDefinitionReference(APIModel):
+    kind: Literal["official_theme", "custom_search"]
+    id: str = Field(min_length=1, max_length=120)
+    version: str | int
+
+    @model_validator(mode="after")
+    def validate_version_type(self) -> SearchDefinitionReference:
+        if self.kind == "official_theme" and not isinstance(self.version, str):
+            raise ValueError("Tema oficial exige uma versão de catálogo textual.")
+        if self.kind == "custom_search" and (
+            isinstance(self.version, bool) or not isinstance(self.version, int) or self.version < 1
+        ):
+            raise ValueError("Busca personalizada exige uma versão inteira positiva.")
+        return self
+
+
 class DiscoveryCriteria(APIModel):
-    preset_id: str = Field(min_length=1, max_length=120)
+    preset_id: str | None = Field(default=None, min_length=1, max_length=120)
+    search_definition: SearchDefinitionReference | None = None
     filed_from: date | None = None
     filed_through: date | None = None
-    page_size: int = Field(default=100, ge=1, le=100)
-    hit_budget: int = Field(default=2_000, ge=1, le=2_000)
+    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=MIN_PAGE_SIZE, le=MAX_PAGE_SIZE)
+    hit_budget: int | None = Field(default=None, ge=1)
 
     @model_validator(mode="after")
     def validate_date_interval(self) -> DiscoveryCriteria:
+        if (self.preset_id is None) == (self.search_definition is None):
+            raise ValueError("Informe exatamente preset_id legado ou search_definition.")
         if (self.filed_from is None) != (self.filed_through is None):
             raise ValueError("Informe filed_from e filed_through juntos.")
         if (
@@ -78,8 +99,8 @@ class SavedSearchFilters(APIModel):
     tribunals: list[str] = Field(default_factory=lambda: ["TJGO"], min_length=1, max_length=33)
     filed_from: date | None = None
     filed_through: date | None = None
-    page_size: int = Field(default=100, ge=1, le=100)
-    hit_budget: int = Field(default=2_000, ge=1, le=2_000)
+    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=MIN_PAGE_SIZE, le=MAX_PAGE_SIZE)
+    hit_budget: int | None = Field(default=None, ge=1)
 
     @model_validator(mode="after")
     def validate_dates(self) -> SavedSearchFilters:
@@ -96,13 +117,16 @@ class SavedSearchFilters(APIModel):
 
 class SavedSearchCreateRequest(APIModel):
     name: str = Field(min_length=1, max_length=160)
-    preset_id: str = Field(min_length=1, max_length=120)
+    preset_id: str | None = Field(default=None, min_length=1, max_length=120)
+    search_definition: SearchDefinitionReference | None = None
     window_mode: Literal["fixed", "rolling_12_months"]
     filters: SavedSearchFilters
     enabled: bool = True
 
     @model_validator(mode="after")
     def validate_window(self) -> SavedSearchCreateRequest:
+        if (self.preset_id is None) == (self.search_definition is None):
+            raise ValueError("Informe exatamente preset_id legado ou search_definition.")
         has_dates = self.filters.filed_from is not None
         if (self.window_mode == "fixed") != has_dates:
             raise ValueError("Janela fixa exige datas; rolling_12_months não aceita datas fixas.")
@@ -112,15 +136,25 @@ class SavedSearchCreateRequest(APIModel):
 class SavedSearchPatchRequest(APIModel):
     name: str | None = Field(default=None, min_length=1, max_length=160)
     preset_id: str | None = Field(default=None, min_length=1, max_length=120)
+    search_definition: SearchDefinitionReference | None = None
     window_mode: Literal["fixed", "rolling_12_months"] | None = None
     filters: SavedSearchFilters | None = None
     enabled: bool | None = None
 
     @model_validator(mode="after")
     def reject_null_changes(self) -> SavedSearchPatchRequest:
-        for field in ("name", "preset_id", "window_mode", "filters", "enabled"):
+        for field in (
+            "name",
+            "preset_id",
+            "search_definition",
+            "window_mode",
+            "filters",
+            "enabled",
+        ):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f"{field} não pode ser nulo quando informado.")
+        if "preset_id" in self.model_fields_set and "search_definition" in self.model_fields_set:
+            raise ValueError("Informe preset_id legado ou search_definition, não ambos.")
         return self
 
 
@@ -147,6 +181,8 @@ class SavedSearchResponse(APIModel):
     version: int = Field(ge=1)
     preset_id: str
     preset_version: str
+    search_definition: SearchDefinitionReference | None = None
+    definition_name: str | None = None
     window_mode: Literal["fixed", "rolling_12_months"]
     filters: SavedSearchFilters
     enabled: bool
@@ -159,8 +195,12 @@ class SavedSearchResponse(APIModel):
 
 class RefreshNumberCriteria(APIModel):
     process_number: str = Field(min_length=1, max_length=30)
-    page_size: int = Field(default=100, ge=1, le=100)
-    hit_budget: int = Field(default=2_000, ge=1, le=2_000)
+    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=MIN_PAGE_SIZE, le=MAX_PAGE_SIZE)
+    hit_budget: int | None = Field(default=None, ge=1)
+
+
+class ContinueJobRequest(APIModel):
+    hit_budget: int | None = Field(default=None, ge=1)
 
 
 class DiscoveryJobRequest(APIModel):
@@ -674,6 +714,7 @@ class ProcessRepresentationResponse(APIModel):
     source_updated_at_timezone_ambiguous: bool
     last_observed_at: datetime | None
     latest_collection: LatestCollectionResponse | None
+    discovery_reasons: list[str]
     movement_diagnostic: MovementDiagnosticResponse
 
 
@@ -731,6 +772,111 @@ class PresetResponse(APIModel):
 class PresetsResponse(APIModel):
     environment: Literal["demo", "real"]
     items: list[PresetResponse]
+
+
+class SearchTypeResponse(APIModel):
+    id: str
+    version: str
+    name: str
+    description: str
+    criteria: SearchTypeCriteriaResponse
+    combinations: SearchTypeCombinationsResponse
+    capture_explanation: str
+    availability: PresetAvailabilityResponse
+
+
+class SearchTypeCriteriaResponse(APIModel):
+    classes: list[int]
+    subjects: list[int]
+    movements: list[int]
+
+
+class SearchTypeCombinationsResponse(APIModel):
+    within_dimension: Literal["OR"]
+    between_dimensions: Literal["AND", "OR"]
+
+
+class SearchTypesResponse(APIModel):
+    environment: Literal["demo", "real"]
+    items: list[SearchTypeResponse]
+
+
+class TPUCodeResponse(APIModel):
+    dimension: Literal["class", "subject"]
+    code: int
+    name: str
+    tjgo_first_grade: bool
+    tjgo_second_grade: bool
+
+
+class CustomSearchCreateRequest(APIModel):
+    name: str = Field(default="", max_length=160)
+    description: str | None = Field(default=None, max_length=2000)
+    class_codes: list[int] = Field(default_factory=list, max_length=100)
+    subject_codes: list[int] = Field(default_factory=list, max_length=100)
+    dimension_combination: Literal["AND", "OR"] = "AND"
+    copy_from_theme: str | None = Field(default=None, min_length=1, max_length=120)
+
+    @model_validator(mode="after")
+    def validate_name_source(self) -> CustomSearchCreateRequest:
+        if not self.name.strip() and self.copy_from_theme is None:
+            raise ValueError("Informe um nome para a busca personalizada.")
+        if self.copy_from_theme is None and not (self.class_codes or self.subject_codes):
+            raise ValueError("Selecione ao menos uma classe ou assunto.")
+        return self
+
+
+class CustomSearchPatchRequest(APIModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    description: str | None = Field(default=None, max_length=2000)
+    class_codes: list[int] | None = Field(default=None, max_length=100)
+    subject_codes: list[int] | None = Field(default=None, max_length=100)
+    dimension_combination: Literal["AND", "OR"] | None = None
+
+    @model_validator(mode="after")
+    def require_change(self) -> CustomSearchPatchRequest:
+        if not self.model_fields_set:
+            raise ValueError("Informe ao menos um campo para criar uma nova versão.")
+        for field in ("name", "class_codes", "subject_codes", "dimension_combination"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} não pode ser nulo quando informado.")
+        return self
+
+
+class TPUCodeSelectionResponse(APIModel):
+    code: int
+    name: str
+
+
+class CustomSearchCriteriaResponse(APIModel):
+    classes: list[TPUCodeSelectionResponse]
+    subjects: list[TPUCodeSelectionResponse]
+    dimension_combination: Literal["AND", "OR"]
+
+
+class CustomSearchResponse(APIModel):
+    id: UUID
+    version: int = Field(ge=1)
+    name: str
+    description: str | None
+    criteria: CustomSearchCriteriaResponse
+    archived_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class CustomSearchVersionResponse(APIModel):
+    id: UUID
+    version: int = Field(ge=1)
+    name: str
+    description: str | None
+    criteria: CustomSearchCriteriaResponse
+    created_at: datetime
+
+
+class CustomSearchArchiveResponse(APIModel):
+    id: UUID
+    archived_at: datetime
 
 
 class EnvironmentResponse(APIModel):

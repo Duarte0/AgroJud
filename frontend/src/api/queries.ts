@@ -10,6 +10,8 @@ import { api, request, shouldRetryRead } from "@/api/client";
 import type {
   CreateJobRequest,
   CreateJobGroupRequest,
+  CustomSearchCreate,
+  CustomSearchPatch,
   EnvironmentName,
   ExecutionGroup,
   JobCommand,
@@ -46,6 +48,10 @@ export function createQueryClient(): QueryClient {
 export const queryKeys = {
   environment: ["environment"] as const,
   presets: (env: EnvironmentName) => [env, "presets"] as const,
+  searchTypes: (env: EnvironmentName) => [env, "search-types"] as const,
+  customSearches: (env: EnvironmentName) => [env, "custom-searches"] as const,
+  tpuCodes: (env: EnvironmentName, dimension: "class" | "subject", query: string) =>
+    [env, "tpu-codes", dimension, query] as const,
   savedSearches: (env: EnvironmentName) => [env, "saved-searches"] as const,
   signalRules: (env: EnvironmentName) => [env, "signal-rules"] as const,
   jobs: (env: EnvironmentName) => [env, "jobs"] as const,
@@ -94,6 +100,84 @@ export function usePresets() {
     queryKey: queryKeys.presets(environment),
     queryFn: ({ signal }) => request(() => api.GET("/api/v1/presets", { signal })),
     staleTime: 60_000,
+  });
+}
+
+export function useSearchTypes() {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.searchTypes(environment),
+    queryFn: ({ signal }) => request(() => api.GET("/api/v1/search-types", { signal })),
+    staleTime: 60_000,
+  });
+}
+
+export function useCustomSearches() {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.customSearches(environment),
+    queryFn: ({ signal }) => request(() => api.GET("/api/v1/custom-searches", { signal })),
+  });
+}
+
+export function useTpuCodes(dimension: "class" | "subject", query = "") {
+  const { environment } = useCurrentEnvironment();
+  return useQuery({
+    queryKey: queryKeys.tpuCodes(environment, dimension, query),
+    queryFn: ({ signal }) =>
+      request(() =>
+        api.GET("/api/v1/tpu-codes", {
+          params: { query: { dimension, q: query } },
+          signal,
+        }),
+      ),
+    staleTime: 300_000,
+  });
+}
+
+export function useCreateCustomSearch() {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CustomSearchCreate) =>
+      request(() => api.POST("/api/v1/custom-searches", { body })),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.customSearches(environment) });
+    },
+  });
+}
+
+export function usePatchCustomSearch() {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: CustomSearchPatch }) =>
+      request(() =>
+        api.PATCH("/api/v1/custom-searches/{search_id}", {
+          params: { path: { search_id: id } },
+          body,
+        }),
+      ),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.customSearches(environment) });
+      await client.invalidateQueries({ queryKey: queryKeys.savedSearches(environment) });
+    },
+  });
+}
+
+export function useArchiveCustomSearch() {
+  const { environment } = useCurrentEnvironment();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      request(() =>
+        api.POST("/api/v1/custom-searches/{search_id}/archive", {
+          params: { path: { search_id: id } },
+        }),
+      ),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.customSearches(environment) });
+    },
   });
 }
 

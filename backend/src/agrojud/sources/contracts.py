@@ -17,6 +17,10 @@ type JSONScalar = str | int | float | bool | None
 type JSONValue = JSONScalar | list[JSONValue] | dict[str, JSONValue]
 type Cursor = tuple[JSONScalar, ...]
 
+MIN_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 10_000
+DEFAULT_PAGE_SIZE = 5_000
+
 
 class SourceErrorCode(StrEnum):
     """Stable categories for local and remote source failures."""
@@ -91,6 +95,7 @@ class SourceQuery:
     class_codes: tuple[int, ...] = ()
     subject_codes: tuple[int, ...] = ()
     movement_codes: tuple[int, ...] = ()
+    dimension_combination: Literal["AND", "OR"] = "AND"
     court_unit_code: int | None = None
     preset_id: str | None = None
     preset_version: str | None = None
@@ -114,6 +119,12 @@ class SourceQuery:
         object.__setattr__(
             self, "movement_codes", _normalize_codes(self.movement_codes, "movimento")
         )
+        if self.dimension_combination not in ("AND", "OR"):
+            raise SourceError(
+                SourceErrorCode.VALIDATION,
+                "A combinação entre classes e assuntos deve ser AND ou OR.",
+                field_path="dimension_combination",
+            )
 
         if self.court_unit_code is not None:
             _validate_positive_code(self.court_unit_code, "órgão julgador")
@@ -232,7 +243,7 @@ class SourceAdapter(Protocol):
         self,
         process_number: str,
         cursor: Cursor | None = None,
-        page_size: int = 100,
+        page_size: int = DEFAULT_PAGE_SIZE,
     ) -> SourcePage:
         """Fetch one page for an exact, locally validated CNJ number."""
 
@@ -263,10 +274,14 @@ def validate_fetch_arguments(
 
     if not isinstance(query, SourceQuery):
         raise SourceError(SourceErrorCode.VALIDATION, "A consulta de fonte é inválida.")
-    if isinstance(page_size, bool) or not isinstance(page_size, int) or not 1 <= page_size <= 100:
+    if (
+        isinstance(page_size, bool)
+        or not isinstance(page_size, int)
+        or not MIN_PAGE_SIZE <= page_size <= MAX_PAGE_SIZE
+    ):
         raise SourceError(
             SourceErrorCode.VALIDATION,
-            "O tamanho da página deve estar entre 1 e 100.",
+            f"O tamanho da página deve estar entre {MIN_PAGE_SIZE} e {MAX_PAGE_SIZE}.",
         )
     if cursor is None:
         return None
@@ -320,10 +335,17 @@ def build_datajud_payload(
                 }
             }
         )
-    if query.class_codes:
-        filters.append({"terms": {"classe.codigo": list(query.class_codes)}})
-    if query.subject_codes:
-        filters.append({"terms": {"assuntos.codigo": list(query.subject_codes)}})
+    class_filter: dict[str, object] = {"terms": {"classe.codigo": list(query.class_codes)}}
+    subject_filter: dict[str, object] = {"terms": {"assuntos.codigo": list(query.subject_codes)}}
+    if query.dimension_combination == "OR" and query.class_codes and query.subject_codes:
+        filters.append(
+            {"bool": {"should": [class_filter, subject_filter], "minimum_should_match": 1}}
+        )
+    else:
+        if query.class_codes:
+            filters.append(class_filter)
+        if query.subject_codes:
+            filters.append(subject_filter)
     if query.movement_codes:
         filters.append({"terms": {"movimentos.codigo": list(query.movement_codes)}})
     if query.court_unit_code is not None:

@@ -112,6 +112,8 @@ def test_ready_is_200_at_alembic_head_with_domain_tables(scratch_database_url: U
             "source_rate_limits",
             "saved_searches",
             "saved_search_versions",
+            "custom_searches",
+            "custom_search_versions",
             "schedule_dispatches",
             "execution_groups",
             "execution_group_members",

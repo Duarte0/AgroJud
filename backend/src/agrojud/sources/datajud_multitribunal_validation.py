@@ -118,6 +118,7 @@ class DataJudProbeResponse:
 
     page: SourcePage
     status_code: int
+    response_bytes: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -233,7 +234,11 @@ class DataJudMultiTribunalClient:
                 "A resposta do DataJud não corresponde à ordenação solicitada.",
                 status_code=response.status_code,
             )
-        return DataJudProbeResponse(page=page, status_code=response.status_code)
+        return DataJudProbeResponse(
+            page=page,
+            status_code=response.status_code,
+            response_bytes=len(response.content),
+        )
 
     def close(self) -> None:
         """Close the HTTPX client owned by this probe."""

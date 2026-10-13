@@ -307,15 +307,20 @@ export async function startCollection(
   await page.getByLabel(/Usar a janela padrão/).uncheck();
   await page.getByLabel("Ajuizados a partir de").fill(window.from);
   await page.getByLabel("Ajuizados até (inclusive)").fill(window.through);
-  await page.getByLabel("Limite de registros desta execução").fill(String(hitBudget));
+  await page.getByLabel("Limite cumulativo por tribunal").fill(String(hitBudget));
   await page.getByRole("button", { name: /Limpar seleção/ }).click();
   await page.getByRole("checkbox", { name: /TJGO/ }).check();
   const submit = page.getByRole("button", { name: "Iniciar coleta" });
   if (doubleClick) await submit.dblclick();
   else await submit.click();
-  await page.waitForURL(/\/job-groups\/[0-9a-f-]{36}$/);
-  await page.getByRole("link", { name: "Abrir execução" }).first().click();
-  await page.waitForURL(/\/jobs\/[0-9a-f-]{36}$/);
+  return openFirstGroupExecution(page);
+}
+
+export async function openFirstGroupExecution(page: Page): Promise<string> {
+  const executionLink = page.getByRole("link", { name: "Abrir execução" }).first();
+  await expect(executionLink).toBeVisible();
+  await executionLink.click();
+  await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
   return page.url().split("/").pop()!;
 }
 

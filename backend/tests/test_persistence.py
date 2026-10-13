@@ -3,6 +3,7 @@
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from typing import cast
+from uuid import uuid4
 
 import pytest
 from alembic import command
@@ -71,6 +72,8 @@ EXPECTED_TABLES = {
     "source_rate_limits",
     "saved_searches",
     "saved_search_versions",
+    "custom_searches",
+    "custom_search_versions",
     "schedule_dispatches",
 }
 
@@ -163,6 +166,30 @@ def test_migration_applies_to_a_fresh_empty_database(scratch_database_url: URL) 
             assert inspect(connection).get_table_names() == []
             upgrade_database(connection)
             assert set(inspect(connection).get_table_names()) == EXPECTED_TABLES
+    finally:
+        engine.dispose()
+
+
+def test_custom_search_migration_upgrades_previous_revision_without_losing_rows(
+    scratch_database_url: URL,
+) -> None:
+    engine = make_engine(scratch_database_url.render_as_string(hide_password=False))
+    process_id = uuid4()
+    try:
+        with engine.begin() as connection:
+            command.upgrade(make_alembic_config(connection), "20261012_0011")
+            tables_before = set(inspect(connection).get_table_names())
+        with Session(engine) as session, session.begin():
+            session.add(Process(id=process_id, numero_cnj="00000010020268090001"))
+        with engine.begin() as connection:
+            upgrade_database(connection)
+            tables_after = set(inspect(connection).get_table_names())
+        assert tables_before <= tables_after
+        assert {"custom_searches", "custom_search_versions"} <= tables_after
+        with Session(engine) as session:
+            preserved = session.get(Process, process_id)
+        assert preserved is not None
+        assert preserved.numero_cnj == "00000010020268090001"
     finally:
         engine.dispose()
 

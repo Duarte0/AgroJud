@@ -1,8 +1,8 @@
 import { X } from "lucide-react";
 
 const LABELS: Record<string, string> = {
-  process_number: "CNJ", subject: "Assunto", subject_code: "Código do tema", subject_name_exact: "Tema exato",
-  class: "Classe", court_unit: "Órgão", preset_id: "Preset", collection_id: "Coleta", signal_category: "Sinal", tribunal: "Tribunal",
+  process_number: "CNJ", subject: "Assunto", subject_code: "Código do assunto", subject_name_exact: "Assunto exato",
+  class: "Classe", court_unit: "Órgão", preset_id: "Tema da busca", collection_id: "Coleta", signal_category: "Sinal", tribunal: "Tribunal",
   decision: "Triagem", rural_link: "Vínculo rural", followed: "Acompanhado", pending_news: "Novidades pendentes",
 };
 const VALUES: Record<string, string> = { pending: "Pendente", relevant: "Relevante", discarded: "Descartado", confirmed: "Confirmado manualmente", unconfirmed: "Não confirmado", true: "Sim", false: "Não" };

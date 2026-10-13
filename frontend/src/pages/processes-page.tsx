@@ -53,11 +53,11 @@ const RURAL_LINKS = ["unconfirmed", "confirmed"] as const satisfies readonly Rur
 const FILTER_FIELDS = [
   { key: "process_number", label: "Número CNJ", placeholder: "0000000-00.0000.0.00.0000" },
   { key: "subject", label: "Assunto", placeholder: "Nome ou código" },
-  { key: "subject_code", label: "Código exato do tema", placeholder: "ex.: 4968" },
-  { key: "subject_name_exact", label: "Nome exato do tema", placeholder: "Nome cadastrado" },
+  { key: "subject_code", label: "Código do assunto", placeholder: "Digite o código TPU" },
+  { key: "subject_name_exact", label: "Nome exato do assunto", placeholder: "Nome cadastrado" },
   { key: "class", label: "Classe", placeholder: "Nome ou código" },
   { key: "court_unit", label: "Órgão julgador", placeholder: "Nome ou código" },
-  { key: "preset_id", label: "Preset", placeholder: "ex.: rural.credito_contratos" },
+  { key: "preset_id", label: "Tema da busca", placeholder: "Buscar pelo nome do tema" },
   { key: "collection_id", label: "Coleta", placeholder: "Digite a data, o tema ou o status" },
   { key: "signal_category", label: "Categoria de sinal vigente", placeholder: "ex.: penhora" },
 ] as const;
@@ -90,9 +90,10 @@ function readFilters(params: URLSearchParams): FilterValues {
   };
 }
 
-function FilterForm({ initial, collectionLabel, onApply, onClear }: {
+function FilterForm({ initial, collectionLabel, themeLabel, onApply, onClear }: {
   initial: FilterValues;
   collectionLabel: string | undefined;
+  themeLabel: string | undefined;
   onApply: (values: FilterValues) => void;
   onClear: () => void;
 }) {
@@ -110,6 +111,8 @@ function FilterForm({ initial, collectionLabel, onApply, onClear }: {
   function textField(field: (typeof FILTER_FIELDS)[number]) {
     const value = field.key === "collection_id"
       ? drafts.collection_id || (values.collection_id ? collectionLabel ?? "Carregando coleta…" : "")
+      : field.key === "preset_id" && drafts.preset_id === initial.preset_id && values.preset_id === initial.preset_id
+        ? themeLabel ?? (initial.preset_id ? "Tema não localizado" : "")
       : drafts[field.key];
     return <div key={field.key} className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={`filter-${field.key}`}>{field.label}</Label>
@@ -281,11 +284,21 @@ export function ProcessesPage() {
     filters.collection_id,
     Boolean(filters.collection_id),
   );
+  const themeOptions = useProcessFilterOptions(
+    "preset_id",
+    "",
+    filters.preset_id,
+    Boolean(filters.preset_id),
+  );
   const selectedCollection = collectionOptions.data?.items.find(
     option => option.value === filters.collection_id,
   );
   const collectionLabel = selectedCollection?.label ?? (filters.collection_id
     ? collectionOptions.isPending ? "Carregando coleta…" : "Coleta não localizada"
+    : undefined);
+  const selectedTheme = themeOptions.data?.items.find(option => option.value === filters.preset_id);
+  const themeLabel = selectedTheme?.label ?? (filters.preset_id
+    ? themeOptions.isPending ? "Carregando tema…" : "Tema não localizado"
     : undefined);
   const query: ProcessListQuery = { page, page_size: PAGE_SIZE };
   for (const field of FILTER_FIELDS) {
@@ -339,10 +352,18 @@ export function ProcessesPage() {
             key={searchParams.toString()}
             initial={filters}
             collectionLabel={collectionLabel}
+            themeLabel={themeLabel}
             onApply={(values) => setSearchParams(withFilters(searchParams, values))}
             onClear={() => setSearchParams(new URLSearchParams())}
           />
-          <AppliedFilters values={filters} labels={{ collection_id: collectionLabel ?? "Coleta não localizada" }} onRemove={key => setSearchParams(withFilters(searchParams, { [key]: "" }))} />
+          <AppliedFilters
+            values={filters}
+            labels={{
+              collection_id: collectionLabel ?? "Coleta não localizada",
+              preset_id: themeLabel ?? "Tema da busca",
+            }}
+            onRemove={key => setSearchParams(withFilters(searchParams, { [key]: "" }))}
+          />
           </CardContent>
       </Card>
       <Card className="mt-5">

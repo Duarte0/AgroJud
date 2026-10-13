@@ -136,6 +136,31 @@ describe("OverviewPage", () => {
     );
   });
 
+  it("renders an internal search reference as the selected theme name", async () => {
+    mockApi({
+      "GET /api/v1/overview": () => json(overview({
+        filters: { ...overview().filters, preset_id: "tema.credito_contratos_rurais" },
+      })),
+      "GET /api/v1/process-filter-options": () => json({
+        field: "preset_id",
+        items: [{
+          value: "tema.credito_contratos_rurais",
+          label: "Crédito e contratos rurais",
+          detail: null,
+          process_count: 1,
+        }],
+      }),
+    });
+    renderRoute(<OverviewPage />, {
+      path: "/",
+      url: "/?preset_id=tema.credito_contratos_rurais",
+    });
+
+    expect(await screen.findByText("Tema da busca")).toBeInTheDocument();
+    expect(await screen.findByText("Crédito e contratos rurais")).toBeInTheDocument();
+    expect(screen.queryByText("tema.credito_contratos_rurais")).not.toBeInTheDocument();
+  });
+
   it("drills down a theme with exact subject code and name filters", async () => {
     mockApi({
       "GET /api/v1/overview": () =>

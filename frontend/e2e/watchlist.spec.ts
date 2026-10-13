@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { expectJobStatus, startCollection, startWorker } from "./support";
+import { expectJobStatus, openFirstGroupExecution, startCollection, startWorker } from "./support";
 
 test.describe.configure({ mode: "serial" });
 
@@ -22,7 +22,7 @@ test("acompanha, atualiza por número e remove sem cancelar o resultado", async 
   await expect(page.getByTestId("watch-history-entry")).toHaveCount(1);
 
   await page.getByRole("button", { name: "Atualizar processo" }).click();
-  await page.waitForURL(/\/jobs\/[0-9a-f-]{36}$/);
+  await openFirstGroupExecution(page);
   await expectJobStatus(page, "Concluído");
 
   await page.goto("/watchlist");

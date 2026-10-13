@@ -12,7 +12,7 @@ from agrojud.sources import (
     build_query_by_case_number,
     normalize_source_cover,
 )
-from agrojud.sources.contracts import parse_source_page
+from agrojud.sources.contracts import parse_source_page, validate_fetch_arguments
 
 
 def raw_hit(
@@ -67,6 +67,23 @@ def test_query_by_cnj_accepts_formatted_number_and_removes_punctuation() -> None
 
     assert query.process_number == "00000010020248090001"
     assert query.tribunal == "TJGO"
+
+
+@pytest.mark.parametrize("page_size", [10, 10_000])
+def test_datajud_page_size_accepts_documented_boundaries(page_size: int) -> None:
+    query = SourceQuery(class_codes=(1116,))
+
+    assert validate_fetch_arguments(query, None, page_size) is None
+
+
+@pytest.mark.parametrize("page_size", [9, 10_001, True])
+def test_datajud_page_size_rejects_out_of_range_values(page_size: object) -> None:
+    query = SourceQuery(class_codes=(1116,))
+
+    with pytest.raises(SourceError) as captured:
+        validate_fetch_arguments(query, None, page_size)  # type: ignore[arg-type]
+
+    assert captured.value.code is SourceErrorCode.VALIDATION
 
 
 @pytest.mark.parametrize(

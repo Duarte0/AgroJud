@@ -93,24 +93,19 @@ test("seleciona tribunais da allowlist e mostra resultado parcial por membro", a
       });
       return;
     }
-    if (path === "/api/v1/presets") {
+    if (path === "/api/v1/search-types") {
       await route.fulfill({
         json: {
           environment: "real",
           items: [
             {
-              id: "rural.credito_contratos",
+              id: "tema.credito_contratos_rurais",
               version: "1.0.0",
-              family: "rural_credit",
-              name: "Crédito rural e contratos",
-              purpose: "Encontrar processos de crédito rural.",
-              justification: "Preset sintético de teste.",
-              filters: { class_codes: [], subject_codes: [] },
-              include_descendants: false,
-              rural_link_status: "direct",
+              name: "Crédito e contratos rurais",
+              description: "Busca assuntos de crédito rural aprovados no catálogo.",
+              criteria: { classes: [], subjects: [4964, 4976, 10501], movements: [] },
+              combinations: { within_dimension: "OR", between_dimensions: "AND" },
               capture_explanation: "Classificação por critérios públicos do preset.",
-              evidence: {},
-              required_for_real: [],
               availability: { environment: "real", enabled: true, reasons: [], label: "validado" },
             },
           ],
@@ -118,11 +113,19 @@ test("seleciona tribunais da allowlist e mostra resultado parcial por membro", a
       });
       return;
     }
+    if (path === "/api/v1/custom-searches") {
+      await route.fulfill({ json: [] });
+      return;
+    }
+    if (path === "/api/v1/tpu-codes") {
+      await route.fulfill({ json: [] });
+      return;
+    }
     if (path === "/api/v1/tribunal-availability") {
       await route.fulfill({
         json: {
           selection_enabled: true,
-          preset_id: "rural.credito_contratos",
+          preset_id: "tema.credito_contratos_rurais",
           matrix_sha256: null,
           allowlist_version: "2026-10-11",
           catalog_version: null,
@@ -184,7 +187,13 @@ test("seleciona tribunais da allowlist e mostra resultado parcial por membro", a
     .toBe(true);
   expect(submitted).toMatchObject({
     kind: "discovery",
-    criteria: { preset_id: "rural.credito_contratos" },
+    criteria: {
+      search_definition: {
+        kind: "official_theme",
+        id: "tema.credito_contratos_rurais",
+        version: "1.0.0",
+      },
+    },
     tribunals: ["TJGO", "TJMT"],
   });
 });

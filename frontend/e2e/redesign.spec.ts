@@ -113,10 +113,10 @@ test("redesign mantém navegação móvel, foco e dados extensos sem overflow", 
 
 test("radar mantém critérios ao alternar buscas e apresenta erro junto ao campo", async ({ page }) => {
   await page.goto("/radar");
-  await page.getByLabel("Limite de registros desta execução").fill("37");
+  await page.getByLabel("Limite cumulativo por tribunal").fill("37");
   await page.getByRole("tab", {name: "Buscas salvas"}).click();
   await page.getByRole("tab", {name: "Nova coleta"}).click();
-  await expect(page.getByLabel("Limite de registros desta execução")).toHaveValue("37");
+  await expect(page.getByLabel("Limite cumulativo por tribunal")).toHaveValue("37");
   await page.locator("summary").filter({hasText: "Salvar busca"}).click();
   await page.getByRole("button", {name: "Salvar busca", exact: true}).click();
   await expect(page.getByLabel("Nome da busca salva")).toBeFocused();

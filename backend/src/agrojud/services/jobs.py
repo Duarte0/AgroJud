@@ -10,7 +10,7 @@ from threading import Event
 from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, or_, select, text, update
+from sqlalchemy import and_, func, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
@@ -396,10 +396,31 @@ class JobService:
                     ),
                     (Job.status == "running") & (Job.lease_expires_at <= now_expression),
                 )
+                cooldown_active = (
+                    select(1)
+                    .where(
+                        SourceRateLimit.source == Job.source,
+                        or_(
+                            SourceRateLimit.next_request_at > now_expression,
+                            and_(
+                                SourceRateLimit.cooldown_until.is_not(None),
+                                SourceRateLimit.cooldown_until > now_expression,
+                            ),
+                        ),
+                    )
+                    .exists()
+                )
+                datajud_ready = or_(Job.source != "datajud", ~cooldown_active)
+                cancelled_expired_lease = and_(
+                    Job.status == "running",
+                    Job.lease_expires_at <= now_expression,
+                    Job.cancel_requested.is_(True),
+                )
+                source_eligible = or_(datajud_ready, cancelled_expired_lease)
                 job: Job | None = None
                 claimed_category: str | None = None
                 for category in categories:
-                    statement = select(Job).where(eligible)
+                    statement = select(Job).where(eligible, source_eligible)
                     if job_types is not None:
                         statement = statement.where(Job.job_type.in_(job_types))
                     if category == "refresh":
@@ -590,12 +611,12 @@ class JobService:
         possession_token: UUID,
         *,
         expected_revision: int,
-        budget_limit: int,
+        budget_limit: int | None,
         ownership_lost: Event | None = None,
     ) -> int:
         """Durably count a page request before calling the external source."""
 
-        if expected_revision < 0 or budget_limit < 1:
+        if expected_revision < 0 or (budget_limit is not None and budget_limit < 1):
             raise ValueError("A revisão e o orçamento da coleta são inválidos.")
         with self.owned_transaction(
             job_id,
@@ -612,14 +633,19 @@ class JobService:
             job = self._lock_job(session, job_id, lock=False)
             if job.page_attempt_count >= MAX_HTTP_ATTEMPTS_PER_PAGE:
                 raise PageRetryExhaustedError("A página consumiu as cinco tentativas HTTP.")
-            now = self._database_now(session)
             if job.source == "synthetic":
+                now = self._database_now(session)
                 source_limit = session.get(SourceRateLimit, job.source)
                 if source_limit is not None and source_limit.cooldown_until is not None:
                     if source_limit.cooldown_until > now:
                         raise RequestDeferredError(source_limit.cooldown_until)
             else:
-                source_limit = self._get_source_rate_limit(session, job.source, now, lock=True)
+                source_limit = self._get_source_rate_limit(
+                    session, job.source, self._database_now(session), lock=True
+                )
+                # Read the clock after taking the shared row lock so lock contention
+                # cannot shorten the minimum interval between actual request starts.
+                now = self._database_now(session)
                 allowed_at = max(
                     source_limit.next_request_at,
                     source_limit.cooldown_until or now,
@@ -681,9 +707,11 @@ class JobService:
                     "A gravação da página consumiu as cinco tentativas SQL."
                 )
             job.persistence_attempt_count += 1
+            saved_budget = (job.coverage or {}).get("budget_limit")
+            budget_limit = self._optional_budget(saved_budget)
             coverage = self._collection_progress(
                 job.coverage,
-                budget_limit=max(1, self._counter(job.coverage or {}, "budget_limit")),
+                budget_limit=budget_limit,
             )
             coverage["current_page_persistence_attempts"] = job.persistence_attempt_count
             coverage["current_page"] = checkpoint.next_page
@@ -708,14 +736,14 @@ class JobService:
         possession_token: UUID,
         *,
         expected_revision: int,
-        budget_limit: int,
+        budget_limit: int | None,
         source: Literal["datajud", "synthetic"],
         page: SourcePage,
         ownership_lost: Event | None = None,
     ) -> PageCommitResult:
         """Persist page data, cumulative counters, and its checkpoint atomically."""
 
-        if expected_revision < 0 or budget_limit < 1:
+        if expected_revision < 0 or (budget_limit is not None and budget_limit < 1):
             raise ValueError("A revisão e o orçamento da coleta são inválidos.")
         with self.owned_transaction(
             job_id,
@@ -1003,8 +1031,8 @@ class JobService:
                 raise
             return active_id
 
-    def continue_job(self, job_id: UUID, *, additional_budget: int = 2_000) -> UUID:
-        """Extend a partial/limit collection while preserving its checkpoint."""
+    def continue_job(self, job_id: UUID, *, hit_budget: int | None = None) -> UUID:
+        """Continue a partial collection with a new cumulative limit or no limit."""
 
         try:
             with self.sessions() as session, session.begin():
@@ -1028,10 +1056,10 @@ class JobService:
                     cursor=checkpoint.cursor,
                     checkpoint_revision=checkpoint.revision,
                     coverage=job.coverage,
-                    additional_budget=additional_budget,
+                    new_budget=hit_budget,
                 )
                 now = self._database_now(session)
-                previous_budget = int((job.coverage or {}).get("budget_limit", 0))
+                previous_budget = (job.coverage or {}).get("budget_limit")
                 job.status = "queued"
                 job.reason = None
                 job.finished_at = None
@@ -1048,7 +1076,7 @@ class JobService:
                     "continued",
                     {
                         "previous_budget": previous_budget,
-                        "new_budget": plan.coverage["budget_limit"],
+                        "hit_budget": plan.coverage["budget_limit"],
                         "checkpoint_revision": checkpoint.revision,
                         "continuation": plan.coverage["continuations"],
                         "next_attempt_at": job.next_attempt_at.isoformat(),
@@ -1315,7 +1343,7 @@ class JobService:
         cls,
         value: dict[str, Any] | None,
         *,
-        budget_limit: int,
+        budget_limit: int | None,
     ) -> dict[str, Any]:
         if value is None:
             coverage: dict[str, Any] = {}
@@ -1324,15 +1352,18 @@ class JobService:
         else:
             raise RuntimeError("A cobertura persistida da coleta não é um objeto.")
 
-        saved_budget = coverage.get("budget_limit")
-        if saved_budget is not None:
-            if (
-                isinstance(saved_budget, bool)
-                or not isinstance(saved_budget, int)
-                or saved_budget < 1
-            ):
-                raise RuntimeError("O orçamento persistido da coleta é inválido.")
-            budget_limit = max(budget_limit, saved_budget)
+        if "budget_limit" in coverage:
+            saved_budget = coverage["budget_limit"]
+            if saved_budget is None:
+                budget_limit = None
+            else:
+                if (
+                    isinstance(saved_budget, bool)
+                    or not isinstance(saved_budget, int)
+                    or saved_budget < 1
+                ):
+                    raise RuntimeError("O orçamento persistido da coleta é inválido.")
+                budget_limit = max(budget_limit or 0, saved_budget)
         coverage["budget_limit"] = budget_limit
         for name in (
             "pages_confirmed",
@@ -1363,6 +1394,14 @@ class JobService:
         if isinstance(value, bool) or not isinstance(value, int) or value < 0:
             raise RuntimeError(f"O contador persistido {name} da coleta é inválido.")
         return int(value)
+
+    @staticmethod
+    def _optional_budget(value: object) -> int | None:
+        if value is None:
+            return None
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise RuntimeError("O limite cumulativo persistido da coleta é inválido.")
+        return value
 
     @staticmethod
     def _validate_worker_id(worker_id: str) -> str:

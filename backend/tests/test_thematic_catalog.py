@@ -42,7 +42,7 @@ def raw_catalog() -> dict[str, Any]:
 def test_catalog_records_all_families_and_validates_every_included_tpu_code() -> None:
     catalog = load_catalog()
 
-    assert catalog.catalog_version == "1.1.0"
+    assert catalog.catalog_version == "1.2.0"
     assert catalog.tpu_version == "06/10/2026"
     assert {family.id for family in catalog.families} == {
         "rural_explicit",
@@ -51,6 +51,7 @@ def test_catalog_records_all_families_and_validates_every_included_tpu_code() ->
         "signal_penhora",
         "signal_leilao",
         "signal_recovery_judicial",
+        "temas_oficiais",
     }
     assert all(
         family.investigation_state == "investigated" or family.pending_reason
@@ -63,7 +64,7 @@ def test_catalog_records_all_families_and_validates_every_included_tpu_code() ->
                 evidence = catalog.codes[(dimension, code)]
                 assert evidence.situation == "A"
                 assert evidence.tjgo_first_grade or evidence.tjgo_second_grade
-    assert len(list_presets()) == 4
+    assert len(list_presets()) == 7
     assert len(list_candidate_signals()) == 3
 
 
@@ -87,11 +88,16 @@ def test_real_presets_follow_s5_evidence_and_demo_is_labeled_synthetic() -> None
     for item in list_presets():
         real = get_item_availability(item.id, "real")
         demo = get_item_availability(item.id, "demo")
-        assert real.enabled
-        assert real.label == "habilitado no real"
-        for name in ("query_status", "sample_status"):
-            assert item.evidence[name].state == "validated"
-            assert "s5:catalogo-tematico-datajud-2026-10-10" in item.evidence[name].evidence_ids
+        if item.id == "tema.execucoes_relacionadas_ao_agro":
+            assert not real.enabled
+            assert item.evidence["query_status"].state == "inconclusive"
+            assert item.evidence["sample_status"].state == "inconclusive"
+        else:
+            assert real.enabled
+            assert real.label == "habilitado no real"
+            for name in ("query_status", "sample_status"):
+                assert item.evidence[name].state == "validated"
+                assert "s5:catalogo-tematico-datajud-2026-10-10" in item.evidence[name].evidence_ids
         assert demo.enabled
         assert demo.label == "demonstrativo sintético"
         assert any("não valida o TJGO" in reason for reason in demo.reasons)
@@ -237,7 +243,7 @@ def test_saved_collection_freezes_catalog_version_justification_and_codes(
         catalog_snapshot=compiled.snapshot(),
     )
     saved = request.resolved_query["catalog_snapshot"]
-    assert saved["catalog_version"] == "1.1.0"  # type: ignore[index]
+    assert saved["catalog_version"] == "1.2.0"  # type: ignore[index]
     assert saved["evidence_report"] == "docs/evidence/catalogo-tematico-tpu-2026-10-09.json"  # type: ignore[index]
     assert saved["preset_version"] == "1.0.0"  # type: ignore[index]
     assert saved["justification"] == compiled.item.justification  # type: ignore[index]
