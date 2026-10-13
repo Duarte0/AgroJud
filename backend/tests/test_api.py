@@ -10,12 +10,13 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.engine import URL, Engine
 from sqlalchemy.orm import Session
 
 from agrojud.api.app import create_app
+from agrojud.api.schemas import DiscoveryCriteria, RefreshNumberCriteria, SavedSearchFilters
 from agrojud.config import Settings
 from agrojud.db.engine import make_engine
 from agrojud.db.migrations_runner import upgrade_database
@@ -27,12 +28,36 @@ from agrojud.db.models import (
 )
 from agrojud.services.collection import build_collection_job_handler
 from agrojud.services.job_worker import LeasedWorker
+from agrojud.sources.contracts import DEFAULT_PAGE_SIZE
 
 PRESET_ID = "rural.credito_contratos"
 DEFAULT_JOB_REQUEST = {
     "kind": "discovery",
     "criteria": {"preset_id": PRESET_ID},
 }
+
+
+@pytest.mark.parametrize(
+    "criteria_type", [DiscoveryCriteria, RefreshNumberCriteria, SavedSearchFilters]
+)
+def test_collection_interfaces_share_page_bounds_and_unlimited_budget_default(
+    criteria_type: type[DiscoveryCriteria] | type[RefreshNumberCriteria] | type[SavedSearchFilters],
+) -> None:
+    base: dict[str, object] = {}
+    if criteria_type is DiscoveryCriteria:
+        base["preset_id"] = PRESET_ID
+    elif criteria_type is RefreshNumberCriteria:
+        base["process_number"] = "00000010020248090001"
+    for page_size in (10, 10_000):
+        parsed = criteria_type.model_validate({**base, "page_size": page_size})
+        assert parsed.page_size == page_size
+        assert parsed.hit_budget is None
+    for page_size in (9, 10_001):
+        with pytest.raises(ValidationError):
+            criteria_type.model_validate({**base, "page_size": page_size})
+    defaults = criteria_type.model_validate(base)
+    assert defaults.page_size == DEFAULT_PAGE_SIZE
+    assert defaults.hit_budget is None
 
 
 @pytest.fixture
@@ -260,8 +285,33 @@ def test_continue_is_available_over_http_after_a_confirmed_budget_limit(
     assert worker.run_once()
     completed = api_client.get(f"/api/v1/jobs/{job_id}").json()
     assert completed["status"] == "completed"
-    assert completed["coverage"]["budget_limit"] == 2_001
+    assert completed["coverage"]["budget_limit"] is None
     assert completed["coverage"]["continuations"] == 1
+
+
+def test_continue_accepts_a_new_cumulative_budget_over_http(
+    api_app: FastAPI,
+    api_client: TestClient,
+) -> None:
+    created = api_client.post(
+        "/api/v1/jobs",
+        json={"kind": "discovery", "criteria": {"preset_id": PRESET_ID, "hit_budget": 1}},
+    )
+    assert created.status_code == 202
+    job_id = UUID(created.json()["job_id"])
+    worker = LeasedWorker(
+        api_app.state.jobs,
+        worker_id="api-continue-budget-worker",
+        handlers={"discovery": build_collection_job_handler(api_app.state.settings)},
+        heartbeat_interval=1,
+    )
+    assert worker.run_once()
+
+    continued = api_client.post(f"/api/v1/jobs/{job_id}/continue", json={"hit_budget": 100})
+
+    assert continued.status_code == 202
+    assert continued.json()["status"] == "queued"
+    assert api_app.state.jobs.inspect(job_id).events[-1].details["hit_budget"] == 100
 
 
 def test_restart_scan_is_enqueued_over_http_only_for_an_invalid_cursor(

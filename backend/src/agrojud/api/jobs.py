@@ -11,6 +11,7 @@ from sqlalchemy.sql.elements import ColumnElement
 
 from agrojud.api.errors import ERROR_RESPONSES
 from agrojud.api.schemas import (
+    ContinueJobRequest,
     CreateJobRequest,
     DiscoveryJobRequest,
     JobAttemptResponse,
@@ -197,12 +198,17 @@ def resume_job(job_id: UUID, request: Request, response: Response) -> JobCommand
     responses=ERROR_RESPONSES,
     summary="Continua uma coleta parcial que atingiu o orçamento",
 )
-def continue_job(job_id: UUID, request: Request, response: Response) -> JobCommandResponse:
+def continue_job(
+    job_id: UUID,
+    request: Request,
+    response: Response,
+    body: ContinueJobRequest | None = None,
+) -> JobCommandResponse:
     jobs: JobService = request.app.state.jobs
     before = jobs.inspect(job_id)
     _require_collection_job(before)
     try:
-        continued_id = jobs.continue_job(job_id)
+        continued_id = jobs.continue_job(job_id, hit_budget=body.hit_budget if body else None)
     except SourceError as error:
         if error.code.value == "VALIDATION":
             raise InvalidJobTransitionError(str(error)) from error

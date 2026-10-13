@@ -42,8 +42,8 @@ Uma demonstração completa deve permitir iniciar uma coleta, acompanhar seu pro
 | Parâmetro | Default |
 | --- | --- |
 | Janela inicial de descoberta | Últimos 12 meses de ajuizamento, editável |
-| Tamanho de página remota | 100 registros |
-| Limite por execução de descoberta | 2.000 registros de origem; ao atingir o limite, marcar parcial e permitir continuação |
+| Tamanho de página remota | Faixa de 10 a 10.000 registros; padrão de 5.000 selecionado pelo benchmark local; 10.000 permanece como máximo validado em probe TJGO limitada |
+| Limite por execução de descoberta | Sem teto automático; limite cumulativo opcional pelo operador; ao atingi-lo, marcar parcial e permitir continuação |
 | Concorrência inicial | Um worker, uma requisição remota por vez |
 | Acompanhamento | Uma lista chamada “Acompanhados” |
 | Exportação | CSV |

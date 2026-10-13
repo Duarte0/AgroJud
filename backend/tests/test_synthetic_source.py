@@ -45,23 +45,24 @@ def page_fixture(*hits: dict[str, object]) -> SyntheticPageFixture:
 def test_fixture_pages_preserve_opaque_cursor_and_repeat_deterministically() -> None:
     fixture = SyntheticQueryFixture(
         pages=(
-            page_fixture(hit(1, "opaque::cursor::one"), hit(2, "opaque::cursor::two")),
+            page_fixture(hit(1, "opaque::cursor::one")),
+            page_fixture(hit(2, "opaque::cursor::two")),
             page_fixture(hit(3, "opaque::cursor::three")),
         )
     )
     adapter = SyntheticSourceAdapter({QUERY: fixture})
 
-    first = adapter.fetch_page(QUERY, None, 1)
-    repeated = adapter.fetch_page(QUERY, None, 1)
-    second = adapter.fetch_page(QUERY, first.cursor_final, 1)
-    third = adapter.fetch_page(QUERY, second.cursor_final, 1)
+    first = adapter.fetch_page(QUERY, None, 10)
+    repeated = adapter.fetch_page(QUERY, None, 10)
+    second = adapter.fetch_page(QUERY, first.cursor_final, 10)
+    third = adapter.fetch_page(QUERY, second.cursor_final, 10)
 
     assert first.hits[0].source_id == repeated.hits[0].source_id
     assert first.cursor_final == ("opaque::cursor::one",)
     assert second.cursor_final == ("opaque::cursor::two",)
     assert third.cursor_final == ("opaque::cursor::three",)
     assert third.responded_at == FIXED_TIME
-    assert adapter.fetch_page(QUERY, third.cursor_final, 1).is_empty
+    assert adapter.fetch_page(QUERY, third.cursor_final, 10).is_empty
 
 
 def test_empty_query_is_a_successful_fixture_not_a_missing_fixture() -> None:

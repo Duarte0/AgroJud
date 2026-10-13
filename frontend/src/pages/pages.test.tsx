@@ -295,6 +295,10 @@ describe("RadarPage", () => {
     ).toBeInTheDocument();
 
     const submit = screen.getByRole("button", { name: "Iniciar coleta" });
+    const pageSize = await screen.findByLabelText("Registros por página");
+    expect(pageSize).toHaveValue(5000);
+    await userEvent.clear(pageSize);
+    await userEvent.type(pageSize, "10000");
     await userEvent.dblClick(submit);
     expect(await screen.findByRole("button", { name: "Enviando…" })).toBeDisabled();
     expect(screen.getByTestId("location")).toHaveTextContent("/radar");
@@ -328,7 +332,7 @@ describe("RadarPage", () => {
       criteria: Record<string, unknown>;
       tribunals: string[];
     };
-    expect(body.criteria).toMatchObject({ preset_id: "rural.credito_contratos", hit_budget: 2000, page_size: 100 });
+    expect(body.criteria).toMatchObject({ preset_id: "rural.credito_contratos", hit_budget: null, page_size: 10_000 });
     expect(body.tribunals).toEqual(["TJGO"]);
   });
 

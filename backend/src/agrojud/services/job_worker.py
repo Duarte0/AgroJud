@@ -82,7 +82,7 @@ class JobExecutionContext:
         lease: JobLease,
         *,
         expected_revision: int,
-        budget_limit: int,
+        budget_limit: int | None,
     ) -> int:
         self.assert_active()
         return self.jobs.record_http_attempt(
@@ -114,7 +114,7 @@ class JobExecutionContext:
         lease: JobLease,
         *,
         expected_revision: int,
-        budget_limit: int,
+        budget_limit: int | None,
         source: Literal["datajud", "synthetic"],
         page: SourcePage,
     ) -> PageCommitResult:

@@ -8,6 +8,7 @@ from datetime import UTC, date, datetime, time
 from hashlib import sha256
 
 from agrojud.sources.contracts import (
+    DEFAULT_PAGE_SIZE,
     Cursor,
     JSONValue,
     SourceError,
@@ -134,7 +135,7 @@ class SyntheticSourceAdapter:
         self,
         process_number: str,
         cursor: Cursor | None = None,
-        page_size: int = 100,
+        page_size: int = DEFAULT_PAGE_SIZE,
     ) -> SourcePage:
         """Fetch one fixture page for an exact, locally validated CNJ number."""
 

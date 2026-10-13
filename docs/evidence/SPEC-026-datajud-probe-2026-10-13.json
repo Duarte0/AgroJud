@@ -1,0 +1,107 @@
+{
+  "criteria": {
+    "continuation_requirement": "segunda página não vazia sob query e sort congelados",
+    "page_size_requirement": 10000,
+    "preset_justification": "A família reúne classes estaduais ativas para execução fiscal, execução de título extrajudicial e cumprimento de sentença, incluindo variantes contra a Fazenda Pública. A amplitude procura execuções em geral e não implica relação com o agronegócio."
+  },
+  "duration_ms": 85831,
+  "endpoint": "https://api-publica.datajud.cnj.jus.br/api_publica_tjgo/_search",
+  "filed_from": "2026-05-01",
+  "filed_to_exclusive": "2026-06-01",
+  "kind": "datajud_page_size_probe",
+  "planned_query": {
+    "query": {
+      "bool": {
+        "filter": [
+          {
+            "match": {
+              "tribunal": "TJGO"
+            }
+          },
+          {
+            "range": {
+              "dataAjuizamento": {
+                "gte": "20260501000000",
+                "lt": "20260601000000"
+              }
+            }
+          },
+          {
+            "terms": {
+              "classe.codigo": [
+                155,
+                156,
+                159,
+                1116,
+                12078,
+                12079,
+                12154
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "size": 10000,
+    "sort": [
+      {
+        "@timestamp": {
+          "order": "asc"
+        }
+      },
+      {
+        "id.keyword": {
+          "order": "asc"
+        }
+      }
+    ]
+  },
+  "preset_id": "execucoes.amplas",
+  "preset_version": "1.0.0",
+  "reason_code": null,
+  "report_version": 1,
+  "request_budget": {
+    "automatic_retries": false,
+    "max_requests": 12,
+    "minimum_interval_seconds": 0.5,
+    "page_size": 10000,
+    "requests_made": 2,
+    "writes_to_product_database": false
+  },
+  "requests": [
+    {
+      "cursor_sha256": "c8ccb062a0ac496716038f8a99882ca0ea48da5fc5ca08f9b0e29952d316931f",
+      "duration_ms": 57069,
+      "hit_count": 10000,
+      "http_status": 200,
+      "outcome": "SUCCESS",
+      "page": 1,
+      "page_size": 10000,
+      "response_bytes": 51577493,
+      "total_relation": "gte",
+      "total_value": 10000
+    },
+    {
+      "cursor_sha256": "ed91a2ae1d2aa24ae8569634c1c114a1bb46a337a4f0dc23ef0651112f400303",
+      "duration_ms": 28728,
+      "hit_count": 2681,
+      "http_status": 200,
+      "outcome": "SUCCESS",
+      "page": 2,
+      "page_size": 10000,
+      "response_bytes": 15686569,
+      "total_relation": "gte",
+      "total_value": 10000
+    }
+  ],
+  "sort_fields": [
+    "@timestamp",
+    "id.keyword"
+  ],
+  "started_at": "2026-10-13T05:03:03.902853+00:00",
+  "state": "VALIDATED",
+  "terms_review": {
+    "operator_confirmed_before_probe": true
+  },
+  "tribunal": "TJGO"
+}

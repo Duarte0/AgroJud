@@ -63,9 +63,9 @@ def make_service(engine: Engine, *, lease_seconds: float = 120) -> JobService:
     )
 
 
-def query_for(day: int = 1) -> SourceQuery:
-    start = date(2026, 1, day)
-    return SourceQuery(filed_from=start, filed_to=start + timedelta(days=1))
+def query_for(day: int = 1, tribunal: str = "TJGO") -> SourceQuery:
+    start = date(2026, 1, 1) + timedelta(days=day - 1)
+    return SourceQuery(tribunal=tribunal, filed_from=start, filed_to=start + timedelta(days=1))
 
 
 def request_for(
@@ -73,14 +73,15 @@ def request_for(
     day: int = 1,
     source: str = "synthetic",
     mode: str = "demo",
-    hit_budget: int = 10,
+    hit_budget: int | None = 10,
+    tribunal: str = "TJGO",
 ) -> EnqueueRequest:
     return build_collection_request(
         mode=mode,
         source=source,
         job_type="discovery",
-        query=query_for(day),
-        page_size=2,
+        query=query_for(day, tribunal),
+        page_size=10,
         hit_budget=hit_budget,
     )
 
@@ -407,7 +408,7 @@ def test_continue_limit_extends_budget_without_changing_cursor_or_revision(
     assert limited.coverage is not None
     assert limited.coverage["budget_limit"] == 1
 
-    assert jobs.continue_job(job_id, additional_budget=2) == job_id
+    assert jobs.continue_job(job_id, hit_budget=3) == job_id
     continued = jobs.inspect(job_id)
     assert continued.status == "queued"
     assert continued.checkpoint == limited.checkpoint
@@ -536,6 +537,118 @@ def test_two_consumers_get_spaced_slots_from_one_persistent_source_limiter(
             deferred_lease.possession_token,
             expected_revision=0,
             budget_limit=10,
+        )
+        == 1
+    )
+
+
+def test_claim_skips_cooling_datajud_jobs_without_holding_a_lease(
+    migrated_engine: Engine,
+) -> None:
+    jobs = make_service(migrated_engine)
+    datajud_id = enqueue(jobs, day=30, source="datajud", mode="real", tribunal="TJGO")
+    synthetic_id = enqueue(jobs, day=31, tribunal="TJSP")
+    with Session(migrated_engine) as session, session.begin():
+        now = session.scalar(select(func.clock_timestamp()))
+        assert isinstance(now, datetime)
+        session.add(
+            SourceRateLimit(
+                source="datajud",
+                next_request_at=now + timedelta(seconds=30),
+                cooldown_until=None,
+                updated_at=now,
+            )
+        )
+
+    lease = jobs.claim("cooldown-eligibility-worker", fair=True)
+
+    assert lease is not None and lease.job_id == synthetic_id
+    blocked = jobs.inspect(datajud_id)
+    assert blocked.status == "queued"
+    assert blocked.coverage is None
+    assert blocked.attempts == ()
+    assert jobs.claim("second-datajud-worker", fair=True) is None
+
+    with Session(migrated_engine) as session, session.begin():
+        session.execute(
+            update(SourceRateLimit)
+            .where(SourceRateLimit.source == "datajud")
+            .values(
+                next_request_at=func.clock_timestamp() - text("interval '1 second'"),
+                cooldown_until=func.clock_timestamp() + text("interval '30 seconds'"),
+            )
+        )
+    assert jobs.claim("retry-after-worker", fair=True) is None
+
+    with Session(migrated_engine) as session, session.begin():
+        session.execute(
+            update(SourceRateLimit)
+            .where(SourceRateLimit.source == "datajud")
+            .values(cooldown_until=func.clock_timestamp() - text("interval '1 second'"))
+        )
+    resumed = jobs.claim("datajud-ready-worker", fair=True)
+    assert resumed is not None and resumed.job_id == datajud_id
+
+
+def test_shared_limiter_allows_at_most_120_starts_in_a_rolling_minute(
+    migrated_engine: Engine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first_consumer = make_service(migrated_engine)
+    second_consumer = make_service(migrated_engine)
+    leases = []
+    for index in range(121):
+        enqueue(
+            first_consumer,
+            day=index + 1,
+            source="datajud",
+            mode="real",
+            tribunal="TJGO" if index % 2 == 0 else "TJSP",
+        )
+    logical_clock = {"now": first_consumer.current_database_time()}
+
+    def clock(_session: Session) -> datetime:
+        return logical_clock["now"]
+
+    monkeypatch.setattr(first_consumer, "_database_now", clock)
+    monkeypatch.setattr(second_consumer, "_database_now", clock)
+    for index in range(121):
+        consumer = first_consumer if index % 2 == 0 else second_consumer
+        lease = consumer.claim(f"rolling-window-consumer-{index % 2}")
+        assert lease is not None
+        leases.append((consumer, lease))
+
+    start = logical_clock["now"]
+    for index, (consumer, lease) in enumerate(leases[:120]):
+        logical_clock["now"] = start + timedelta(milliseconds=500 * index)
+        assert (
+            consumer.record_http_attempt(
+                lease.job_id,
+                lease.possession_token,
+                expected_revision=0,
+                budget_limit=None,
+            )
+            == 1
+        )
+
+    logical_clock["now"] = start + timedelta(milliseconds=59_999)
+    consumer, last_lease = leases[120]
+    with pytest.raises(RequestDeferredError) as deferred:
+        consumer.record_http_attempt(
+            last_lease.job_id,
+            last_lease.possession_token,
+            expected_revision=0,
+            budget_limit=None,
+        )
+    assert deferred.value.retry_at == start + timedelta(seconds=60)
+
+    logical_clock["now"] = start + timedelta(seconds=60)
+    assert (
+        consumer.record_http_attempt(
+            last_lease.job_id,
+            last_lease.possession_token,
+            expected_revision=0,
+            budget_limit=None,
         )
         == 1
     )

@@ -10,6 +10,7 @@ import httpx
 
 from agrojud.config import Settings
 from agrojud.sources.contracts import (
+    DEFAULT_PAGE_SIZE,
     SOURCE_ID_TIEBREAKER_SORT,
     Cursor,
     SourceError,
@@ -33,6 +34,7 @@ class DataJudProbeResponse:
 
     page: SourcePage
     status_code: int
+    response_bytes: int
 
 
 class DataJudSourceAdapter:
@@ -173,13 +175,17 @@ class DataJudSourceAdapter:
             )
             self._log_failure(error)
             raise error
-        return DataJudProbeResponse(page=page, status_code=response.status_code)
+        return DataJudProbeResponse(
+            page=page,
+            status_code=response.status_code,
+            response_bytes=len(response.content),
+        )
 
     def fetch_by_case_number(
         self,
         process_number: str,
         cursor: Cursor | None = None,
-        page_size: int = 100,
+        page_size: int = DEFAULT_PAGE_SIZE,
         *,
         tribunal: str = "TJGO",
     ) -> SourcePage:

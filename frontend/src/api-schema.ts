@@ -630,20 +630,22 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ContinueJobRequest */
+        ContinueJobRequest: {
+            /** Hit Budget */
+            hit_budget?: number | null;
+        };
         /** DiscoveryCriteria */
         DiscoveryCriteria: {
             /** Filed From */
             filed_from?: string | null;
             /** Filed Through */
             filed_through?: string | null;
-            /**
-             * Hit Budget
-             * @default 2000
-             */
-            hit_budget: number;
+            /** Hit Budget */
+            hit_budget?: number | null;
             /**
              * Page Size
-             * @default 100
+             * @default 5000
              */
             page_size: number;
             /** Preset Id */
@@ -1802,14 +1804,11 @@ export interface components {
         };
         /** RefreshNumberCriteria */
         RefreshNumberCriteria: {
-            /**
-             * Hit Budget
-             * @default 2000
-             */
-            hit_budget: number;
+            /** Hit Budget */
+            hit_budget?: number | null;
             /**
              * Page Size
-             * @default 100
+             * @default 5000
              */
             page_size: number;
             /** Process Number */
@@ -1887,14 +1886,11 @@ export interface components {
             filed_from?: string | null;
             /** Filed Through */
             filed_through?: string | null;
-            /**
-             * Hit Budget
-             * @default 2000
-             */
-            hit_budget: number;
+            /** Hit Budget */
+            hit_budget?: number | null;
             /**
              * Page Size
-             * @default 100
+             * @default 5000
              */
             page_size: number;
             /** Tribunals */
@@ -2754,7 +2750,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ContinueJobRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             202: {

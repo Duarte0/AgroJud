@@ -111,6 +111,13 @@ def test_legacy_saved_search_filters_read_as_tjgo_without_rewriting_the_snapshot
     assert "tribunals" not in legacy
 
 
+def test_new_saved_search_filters_use_shared_page_default_without_a_hit_limit() -> None:
+    normalized = _normalized_filter_dict({})
+
+    assert normalized["page_size"] == 5_000
+    assert normalized["hit_budget"] is None
+
+
 def test_datajud_adapter_uses_the_same_backend_key_with_each_allowlisted_alias() -> None:
     seen_urls: list[str] = []
     seen_authorization: list[str | None] = []

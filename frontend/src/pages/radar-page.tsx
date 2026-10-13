@@ -30,14 +30,21 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultWindow, DEFAULT_WINDOW_MONTHS } from "@/lib/date-window";
 import { formatDateTime, jobKindLabel, ruralLinkLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const MAX_HIT_BUDGET = 2_000;
-const PAGE_SIZE = 100;
+const MIN_PAGE_SIZE = 10;
+const MAX_PAGE_SIZE = 10_000;
+const DEFAULT_PAGE_SIZE = 5_000;
 
 function formatScheduleTime(value: string): string {
   return formatDateTime(value);
@@ -77,7 +84,10 @@ function SavedSearchEditForm({
   const [filedThrough, setFiledThrough] = useState(
     search.filters.filed_through ?? suggested.through,
   );
-  const [hitBudget, setHitBudget] = useState(String(search.filters.hit_budget));
+  const [hitBudget, setHitBudget] = useState(
+    search.filters.hit_budget === null ? "" : String(search.filters.hit_budget),
+  );
+  const [pageSize, setPageSize] = useState(String(search.filters.page_size));
   const [validation, setValidation] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<string | null>(null);
   const availability = useTribunalAvailability(presetId);
@@ -104,7 +114,8 @@ function SavedSearchEditForm({
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalizedName = name.trim();
-    const budget = Number(hitBudget);
+    const budget = hitBudget.trim() === "" ? null : Number(hitBudget);
+    const parsedPageSize = Number(pageSize);
     if (!normalizedName) {
       failValidation("Informe um nome para a busca salva.", "name");
       return;
@@ -113,10 +124,18 @@ function SavedSearchEditForm({
       failValidation("Selecione ao menos um tribunal para esta busca.", "tribunal-selection");
       return;
     }
-    if (!Number.isInteger(budget) || budget < 1 || budget > MAX_HIT_BUDGET) {
+    if (budget !== null && (!Number.isInteger(budget) || budget < 1)) {
+      failValidation("O limite deve ser um inteiro positivo ou ficar em branco.", "hit-budget");
+      return;
+    }
+    if (
+      !Number.isInteger(parsedPageSize) ||
+      parsedPageSize < MIN_PAGE_SIZE ||
+      parsedPageSize > MAX_PAGE_SIZE
+    ) {
       failValidation(
-        "O limite deve ser um número inteiro entre 1 e " + MAX_HIT_BUDGET + ".",
-        "hit-budget",
+        `O tamanho da página deve estar entre ${MIN_PAGE_SIZE} e ${MAX_PAGE_SIZE}.`,
+        "page-size",
       );
       return;
     }
@@ -141,7 +160,7 @@ function SavedSearchEditForm({
             tribunals: availability.data?.selection_enabled
               ? selectedTribunals
               : search.filters.tribunals ?? ["TJGO"],
-            page_size: search.filters.page_size,
+            page_size: parsedPageSize,
             hit_budget: budget,
             ...(useDefaultWindow ? {} : { filed_from: filedFrom, filed_through: filedThrough }),
           },
@@ -253,25 +272,44 @@ function SavedSearchEditForm({
         </div>
       </fieldset>
 
-      <div className="space-y-1.5 sm:max-w-xs">
-        <Label htmlFor={prefix + "-hit-budget"}>Limite de registros</Label>
-        <Input
-          id={prefix + "-hit-budget"}
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={MAX_HIT_BUDGET}
-          step={1}
-          value={hitBudget}
-          onChange={(event) => setHitBudget(event.target.value)}
-          aria-invalid={invalidField === "hit-budget"}
-          aria-describedby={validation ? prefix + "-validation" : prefix + "-hit-budget-help"}
-          required
-        />
-        <p id={prefix + "-hit-budget-help"} className="text-xs text-muted-foreground">
-          Máximo {MAX_HIT_BUDGET}; páginas de {search.filters.page_size}.
-        </p>
-      </div>
+      <FieldGroup className="grid gap-3 sm:grid-cols-2">
+        <Field data-invalid={invalidField === "page-size"}>
+          <FieldLabel htmlFor={prefix + "-page-size"}>Registros por página</FieldLabel>
+          <Input
+            id={prefix + "-page-size"}
+            type="number"
+            inputMode="numeric"
+            min={MIN_PAGE_SIZE}
+            max={MAX_PAGE_SIZE}
+            step={1}
+            value={pageSize}
+            onChange={(event) => setPageSize(event.target.value)}
+            aria-invalid={invalidField === "page-size"}
+            aria-describedby={validation ? prefix + "-validation" : prefix + "-page-size-help"}
+            required
+          />
+          <FieldDescription id={prefix + "-page-size-help"}>
+            De {MIN_PAGE_SIZE} a {MAX_PAGE_SIZE} por requisição.
+          </FieldDescription>
+        </Field>
+        <Field data-invalid={invalidField === "hit-budget"}>
+          <FieldLabel htmlFor={prefix + "-hit-budget"}>Limite cumulativo de registros</FieldLabel>
+          <Input
+            id={prefix + "-hit-budget"}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            value={hitBudget}
+            onChange={(event) => setHitBudget(event.target.value)}
+            aria-invalid={invalidField === "hit-budget"}
+            aria-describedby={validation ? prefix + "-validation" : prefix + "-hit-budget-help"}
+          />
+          <FieldDescription id={prefix + "-hit-budget-help"}>
+            Opcional por tribunal. Deixe em branco para seguir até a página vazia.
+          </FieldDescription>
+        </Field>
+      </FieldGroup>
 
       {validation ? (
         <p id={prefix + "-validation"} role="alert" className="text-sm font-medium text-destructive">
@@ -511,7 +549,8 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
   const [useDefaultWindow, setUseDefaultWindow] = useState(true);
   const [filedFrom, setFiledFrom] = useState(suggested.from);
   const [filedThrough, setFiledThrough] = useState(suggested.through);
-  const [hitBudget, setHitBudget] = useState(String(MAX_HIT_BUDGET));
+  const [hitBudget, setHitBudget] = useState("");
+  const [pageSize, setPageSize] = useState(String(DEFAULT_PAGE_SIZE));
   const [validation, setValidation] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<string | null>(null);
   function failValidation(message: string, field: string) {
@@ -553,9 +592,21 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
       failValidation("Selecione ao menos um tribunal para esta coleta.", "tribunal-selection");
       return;
     }
-    const budget = Number(hitBudget);
-    if (!Number.isInteger(budget) || budget < 1 || budget > MAX_HIT_BUDGET) {
-      failValidation(`O limite deve ser um número inteiro entre 1 e ${MAX_HIT_BUDGET}.`, "hit-budget");
+    const budget = hitBudget.trim() === "" ? null : Number(hitBudget);
+    const parsedPageSize = Number(pageSize);
+    if (budget !== null && (!Number.isInteger(budget) || budget < 1)) {
+      failValidation("O limite deve ser um inteiro positivo ou ficar em branco.", "hit-budget");
+      return;
+    }
+    if (
+      !Number.isInteger(parsedPageSize) ||
+      parsedPageSize < MIN_PAGE_SIZE ||
+      parsedPageSize > MAX_PAGE_SIZE
+    ) {
+      failValidation(
+        `O tamanho da página deve estar entre ${MIN_PAGE_SIZE} e ${MAX_PAGE_SIZE}.`,
+        "page-size",
+      );
       return;
     }
     if (!useDefaultWindow && (!filedFrom || !filedThrough || filedFrom > filedThrough)) {
@@ -568,7 +619,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
       const criteria = {
           preset_id: selected.id,
           hit_budget: budget,
-          page_size: PAGE_SIZE,
+          page_size: parsedPageSize,
           ...(useDefaultWindow ? {} : { filed_from: filedFrom, filed_through: filedThrough }),
         };
       const group = await createJobGroup.mutateAsync({
@@ -590,13 +641,25 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
       failValidation("Selecione ao menos um tribunal para esta busca.", "tribunal-selection");
       return;
     }
-    const budget = Number(hitBudget);
+    const budget = hitBudget.trim() === "" ? null : Number(hitBudget);
+    const parsedPageSize = Number(pageSize);
     if (!savedSearchName.trim()) {
       failValidation("Informe um nome para a busca salva.", "saved-search-name");
       return;
     }
-    if (!Number.isInteger(budget) || budget < 1 || budget > MAX_HIT_BUDGET) {
-      failValidation(`O limite deve ser um número inteiro entre 1 e ${MAX_HIT_BUDGET}.`, "hit-budget");
+    if (budget !== null && (!Number.isInteger(budget) || budget < 1)) {
+      failValidation("O limite deve ser um inteiro positivo ou ficar em branco.", "hit-budget");
+      return;
+    }
+    if (
+      !Number.isInteger(parsedPageSize) ||
+      parsedPageSize < MIN_PAGE_SIZE ||
+      parsedPageSize > MAX_PAGE_SIZE
+    ) {
+      failValidation(
+        `O tamanho da página deve estar entre ${MIN_PAGE_SIZE} e ${MAX_PAGE_SIZE}.`,
+        "page-size",
+      );
       return;
     }
     if (!useDefaultWindow && (!filedFrom || !filedThrough || filedFrom > filedThrough)) {
@@ -611,7 +674,7 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         window_mode: useDefaultWindow ? "rolling_12_months" : "fixed",
         filters: {
           tribunals: selectedTribunals,
-          page_size: PAGE_SIZE,
+          page_size: parsedPageSize,
           hit_budget: budget,
           ...(useDefaultWindow ? {} : { filed_from: filedFrom, filed_through: filedThrough }),
         },
@@ -716,25 +779,47 @@ function CollectionForm({ presets }: { presets: Preset[] }) {
         </div>
       </fieldset>
 
-      <div className="space-y-1.5 sm:max-w-xs">
-        <Label htmlFor="hit-budget">Limite de registros desta execução</Label>
-        <Input
-          id="hit-budget" name="hit-budget" aria-invalid={invalidField === "hit-budget"}
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={MAX_HIT_BUDGET}
-          step={1}
-          value={hitBudget}
-          onChange={(event) => setHitBudget(event.target.value)}
-          aria-describedby="hit-budget-help collection-validation"
-          required
-        />
-        <p id="hit-budget-help" className="text-xs text-muted-foreground">
-          Máximo {MAX_HIT_BUDGET}; páginas de {PAGE_SIZE}. Ao atingir o limite a coleta fica
-          parcial e pode ser continuada.
-        </p>
-      </div>
+      <FieldGroup className="grid gap-3 sm:grid-cols-2">
+        <Field data-invalid={invalidField === "page-size"}>
+          <FieldLabel htmlFor="page-size">Registros por página</FieldLabel>
+          <Input
+            id="page-size"
+            name="page-size"
+            aria-invalid={invalidField === "page-size"}
+            type="number"
+            inputMode="numeric"
+            min={MIN_PAGE_SIZE}
+            max={MAX_PAGE_SIZE}
+            step={1}
+            value={pageSize}
+            onChange={(event) => setPageSize(event.target.value)}
+            aria-describedby="page-size-help collection-validation"
+            required
+          />
+          <FieldDescription id="page-size-help">
+            De {MIN_PAGE_SIZE} a {MAX_PAGE_SIZE} registros por requisição.
+          </FieldDescription>
+        </Field>
+        <Field data-invalid={invalidField === "hit-budget"}>
+          <FieldLabel htmlFor="hit-budget">Limite cumulativo por tribunal</FieldLabel>
+          <Input
+            id="hit-budget"
+            name="hit-budget"
+            aria-invalid={invalidField === "hit-budget"}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            value={hitBudget}
+            onChange={(event) => setHitBudget(event.target.value)}
+            aria-describedby="hit-budget-help collection-validation"
+          />
+          <FieldDescription id="hit-budget-help">
+            Opcional. Deixe em branco para seguir até a página vazia; ao atingir o limite a coleta
+            fica parcial e pode ser continuada.
+          </FieldDescription>
+        </Field>
+      </FieldGroup>
 
       {validation ? (
         <p id="collection-validation" role="alert" className="text-sm font-medium text-destructive">

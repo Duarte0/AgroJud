@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from agrojud.sources.contracts import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MIN_PAGE_SIZE
+
 JobStatus = Literal[
     "queued", "running", "retry_wait", "completed", "partial", "failed", "cancelled"
 ]
@@ -58,8 +60,8 @@ class DiscoveryCriteria(APIModel):
     preset_id: str = Field(min_length=1, max_length=120)
     filed_from: date | None = None
     filed_through: date | None = None
-    page_size: int = Field(default=100, ge=1, le=100)
-    hit_budget: int = Field(default=2_000, ge=1, le=2_000)
+    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=MIN_PAGE_SIZE, le=MAX_PAGE_SIZE)
+    hit_budget: int | None = Field(default=None, ge=1)
 
     @model_validator(mode="after")
     def validate_date_interval(self) -> DiscoveryCriteria:
@@ -78,8 +80,8 @@ class SavedSearchFilters(APIModel):
     tribunals: list[str] = Field(default_factory=lambda: ["TJGO"], min_length=1, max_length=33)
     filed_from: date | None = None
     filed_through: date | None = None
-    page_size: int = Field(default=100, ge=1, le=100)
-    hit_budget: int = Field(default=2_000, ge=1, le=2_000)
+    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=MIN_PAGE_SIZE, le=MAX_PAGE_SIZE)
+    hit_budget: int | None = Field(default=None, ge=1)
 
     @model_validator(mode="after")
     def validate_dates(self) -> SavedSearchFilters:
@@ -159,8 +161,12 @@ class SavedSearchResponse(APIModel):
 
 class RefreshNumberCriteria(APIModel):
     process_number: str = Field(min_length=1, max_length=30)
-    page_size: int = Field(default=100, ge=1, le=100)
-    hit_budget: int = Field(default=2_000, ge=1, le=2_000)
+    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=MIN_PAGE_SIZE, le=MAX_PAGE_SIZE)
+    hit_budget: int | None = Field(default=None, ge=1)
+
+
+class ContinueJobRequest(APIModel):
+    hit_budget: int | None = Field(default=None, ge=1)
 
 
 class DiscoveryJobRequest(APIModel):

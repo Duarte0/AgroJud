@@ -16,7 +16,7 @@ MAX_HTTP_ATTEMPTS_PER_PAGE = 5
 MAX_PERSISTENCE_ATTEMPTS_PER_PAGE = 5
 MAX_LEASE_RECOVERIES_PER_CYCLE = 5
 MAX_BACKOFF_SECONDS = 60
-MIN_REQUEST_INTERVAL = timedelta(seconds=1)
+MIN_REQUEST_INTERVAL = timedelta(milliseconds=500)
 _DELAY_SECONDS = re.compile(r"^[0-9]+$")
 type RandomValue = Callable[[], float]
 type Clock = Callable[[], datetime]

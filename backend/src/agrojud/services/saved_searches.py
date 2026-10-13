@@ -11,11 +11,15 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from agrojud.db.models import SavedSearch, SavedSearchVersion, ScheduleDispatch
-from agrojud.services.collection import build_collection_request
+from agrojud.services.collection import (
+    LEGACY_DEFAULT_PAGE_SIZE,
+    LEGACY_HIT_BUDGET,
+    build_collection_request,
+)
 from agrojud.services.jobs import EnqueueRequest, EnqueueResult, JobService
 from agrojud.services.schedule_time import next_daily_occurrence
 from agrojud.sources.catalog import compile_preset
-from agrojud.sources.contracts import SourceError, SourceErrorCode
+from agrojud.sources.contracts import DEFAULT_PAGE_SIZE, SourceError, SourceErrorCode
 from agrojud.sources.tribunals import canonicalize_tribunal
 
 type WindowMode = Literal["fixed", "rolling_12_months"]
@@ -230,8 +234,8 @@ def request_for_revision(
         job_type="discovery",
         query=compiled.query,
         catalog_snapshot=catalog_snapshot,
-        page_size=int(filters["page_size"]),
-        hit_budget=int(filters["hit_budget"]),
+        page_size=int(filters.get("page_size", LEGACY_DEFAULT_PAGE_SIZE)),
+        hit_budget=filters.get("hit_budget", LEGACY_HIT_BUDGET),
     )
     return EnqueueRequest(
         mode=request.mode,
@@ -358,8 +362,8 @@ def _normalized_filter_dict(value: dict[str, Any]) -> dict[str, Any]:
         "tribunals": tribunals,
         "filed_from": filed_from,
         "filed_through": filed_through,
-        "page_size": int(value.get("page_size", 100)),
-        "hit_budget": int(value.get("hit_budget", 2_000)),
+        "page_size": int(value.get("page_size", DEFAULT_PAGE_SIZE)),
+        "hit_budget": (int(value["hit_budget"]) if value.get("hit_budget") is not None else None),
     }
 
 

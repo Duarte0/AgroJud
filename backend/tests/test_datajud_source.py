@@ -113,6 +113,41 @@ def test_cursor_must_match_the_query_sort_before_any_request() -> None:
     assert calls == 0
 
 
+def test_datajud_request_enforces_documented_minimum_page_size() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=response_body(hits=[data_hit([1700000000000, SOURCE_ID])]))
+
+    adapter = DataJudSourceAdapter(make_settings(), transport=httpx.MockTransport(handler))
+    try:
+        with pytest.raises(SourceError):
+            adapter.fetch_page(query(), None, 1)
+        page = adapter.fetch_page(query(), None, 10)
+    finally:
+        adapter.close()
+
+    assert len(requests) == 1
+    assert json.loads(requests[0].content)["size"] == 10
+    assert len(page.hits) == 1
+
+
+def test_probe_adapter_reports_exact_response_bytes() -> None:
+    body = response_body(hits=[data_hit([1700000000000, SOURCE_ID])])
+    response_bytes = json.dumps(body).encode("utf-8")
+    adapter = DataJudSourceAdapter(
+        make_settings(),
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, content=response_bytes)),
+    )
+    try:
+        result = adapter.fetch_probe_page(query(), None, 10)
+    finally:
+        adapter.close()
+
+    assert result.response_bytes == len(response_bytes)
+
+
 def test_query_compilation_uses_only_allowlisted_filters_and_half_open_dates() -> None:
     from datetime import date
 
@@ -285,7 +320,7 @@ def test_redirects_are_not_followed_and_validation_happens_before_http() -> None
     adapter = DataJudSourceAdapter(make_settings(), transport=httpx.MockTransport(handler))
     try:
         with pytest.raises(SourceError) as captured:
-            adapter.fetch_page(query(), None, 101)
+            adapter.fetch_page(query(), None, 10_001)
         assert captured.value.code is SourceErrorCode.VALIDATION
         assert calls == 0
 

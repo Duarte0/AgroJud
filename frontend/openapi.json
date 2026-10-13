@@ -1,6 +1,25 @@
 {
   "components": {
     "schemas": {
+      "ContinueJobRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "hit_budget": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit Budget"
+          }
+        },
+        "title": "ContinueJobRequest",
+        "type": "object"
+      },
       "DiscoveryCriteria": {
         "additionalProperties": false,
         "properties": {
@@ -29,16 +48,21 @@
             "title": "Filed Through"
           },
           "hit_budget": {
-            "default": 2000,
-            "maximum": 2000.0,
-            "minimum": 1.0,
-            "title": "Hit Budget",
-            "type": "integer"
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit Budget"
           },
           "page_size": {
-            "default": 100,
-            "maximum": 100.0,
-            "minimum": 1.0,
+            "default": 5000,
+            "maximum": 10000.0,
+            "minimum": 10.0,
             "title": "Page Size",
             "type": "integer"
           },
@@ -3289,16 +3313,21 @@
         "additionalProperties": false,
         "properties": {
           "hit_budget": {
-            "default": 2000,
-            "maximum": 2000.0,
-            "minimum": 1.0,
-            "title": "Hit Budget",
-            "type": "integer"
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit Budget"
           },
           "page_size": {
-            "default": 100,
-            "maximum": 100.0,
-            "minimum": 1.0,
+            "default": 5000,
+            "maximum": 10000.0,
+            "minimum": 10.0,
             "title": "Page Size",
             "type": "integer"
           },
@@ -3514,16 +3543,21 @@
             "title": "Filed Through"
           },
           "hit_budget": {
-            "default": 2000,
-            "maximum": 2000.0,
-            "minimum": 1.0,
-            "title": "Hit Budget",
-            "type": "integer"
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit Budget"
           },
           "page_size": {
-            "default": 100,
-            "maximum": 100.0,
-            "minimum": 1.0,
+            "default": 5000,
+            "maximum": 10000.0,
+            "minimum": 10.0,
             "title": "Page Size",
             "type": "integer"
           },
@@ -5374,6 +5408,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ContinueJobRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "202": {
             "content": {

@@ -38,6 +38,9 @@ from agrojud.services.retry_policy import (
 )
 from agrojud.sources.catalog import validate_catalog_snapshot
 from agrojud.sources.contracts import (
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+    MIN_PAGE_SIZE,
     Cursor,
     JSONScalar,
     SortTerm,
@@ -52,9 +55,8 @@ from agrojud.sources.contracts import (
 from agrojud.sources.factory import SourceKind, build_source_adapter
 from agrojud.sources.synthetic import build_demo_fixture
 
-INITIAL_HIT_BUDGET = 2_000
-DEFAULT_PAGE_SIZE = 100
-MAX_CONTINUATION_BUDGET = 2_000
+LEGACY_HIT_BUDGET = 2_000
+LEGACY_DEFAULT_PAGE_SIZE = 100
 LOGGER = logging.getLogger(__name__)
 
 type SourceAdapterFactory = Callable[[JobLease], SourceAdapter]
@@ -81,9 +83,9 @@ def build_collection_request(
     query: SourceQuery,
     catalog_snapshot: Mapping[str, JSONValue] | None = None,
     page_size: int = DEFAULT_PAGE_SIZE,
-    hit_budget: int = INITIAL_HIT_BUDGET,
+    hit_budget: int | None = None,
 ) -> EnqueueRequest:
-    """Freeze an allowlisted source query and the bounded first-cycle budget."""
+    """Freeze an allowlisted source query and its optional cumulative hit limit."""
 
     if mode not in ("demo", "real") or source not in ("synthetic", "datajud"):
         raise SourceError(SourceErrorCode.VALIDATION, "O modo ou a fonte da coleta é inválido.")
@@ -230,9 +232,9 @@ def plan_limit_continuation(
     cursor: object,
     checkpoint_revision: int,
     coverage: Mapping[str, Any] | None,
-    additional_budget: int,
+    new_budget: int | None,
 ) -> LimitContinuationPlan:
-    """Plan an internal limit continuation without changing checkpoint or counters.
+    """Plan a cumulative limit continuation without changing checkpoint or counters.
 
     SPEC-009 owns the command and job lifecycle transition. This helper defines
     the bounded continuation contract that its command will persist atomically.
@@ -254,14 +256,12 @@ def plan_limit_continuation(
         or checkpoint_revision < 0
     ):
         raise SourceError(SourceErrorCode.CONTRACT, "A revisão do checkpoint da coleta é inválida.")
-    if (
-        isinstance(additional_budget, bool)
-        or not isinstance(additional_budget, int)
-        or not 1 <= additional_budget <= MAX_CONTINUATION_BUDGET
+    if new_budget is not None and (
+        isinstance(new_budget, bool) or not isinstance(new_budget, int) or new_budget < 1
     ):
         raise SourceError(
             SourceErrorCode.VALIDATION,
-            "O orçamento adicional deve estar entre 1 e 2.000 hits.",
+            "O limite cumulativo deve ser um inteiro positivo ou nulo.",
         )
     if coverage is None:
         raise SourceError(SourceErrorCode.CONTRACT, "A cobertura da coleta está ausente.")
@@ -270,10 +270,16 @@ def plan_limit_continuation(
         raise SourceError(SourceErrorCode.CONTRACT, "A cobertura não registra limite atingido.")
     if _int_field(updated.get("checkpoint_revision"), "checkpoint_revision") != checkpoint_revision:
         raise SourceError(SourceErrorCode.CONTRACT, "A cobertura diverge da revisão do checkpoint.")
-    current_budget = _int_field(updated.get("budget_limit"), "budget_limit", minimum=1)
-    if _int_field(updated.get("hits_confirmed"), "hits_confirmed") < current_budget:
+    current_budget = _optional_budget(updated.get("budget_limit"))
+    hits_confirmed = _int_field(updated.get("hits_confirmed"), "hits_confirmed")
+    if current_budget is None or hits_confirmed < current_budget:
         raise SourceError(SourceErrorCode.CONTRACT, "O limite ainda não foi confirmado pelos hits.")
-    updated["budget_limit"] = current_budget + additional_budget
+    if new_budget is not None and new_budget <= hits_confirmed:
+        raise SourceError(
+            SourceErrorCode.VALIDATION,
+            "O novo limite deve ser maior que os hits já confirmados.",
+        )
+    updated["budget_limit"] = new_budget
     updated["query_status"] = "running"
     updated["continuations"] = _int_field(updated.get("continuations", 0), "continuations") + 1
     return LimitContinuationPlan(
@@ -314,13 +320,7 @@ class CollectionJobHandler:
             )
             self._validate_job_query(lease, query)
             page_size, initial_budget = _limits_from_snapshot(lease.parameters_snapshot)
-            budget_limit = _int_field(
-                coverage.get("budget_limit", initial_budget), "budget_limit", minimum=1
-            )
-            if budget_limit > initial_budget + MAX_CONTINUATION_BUDGET * _int_field(
-                coverage.get("continuations", 0), "continuations"
-            ):
-                raise SourceError(SourceErrorCode.CONTRACT, "O orçamento continuado é inválido.")
+            budget_limit = _optional_budget(coverage.get("budget_limit", initial_budget))
             checkpoint = context.jobs.inspect(lease.job_id).checkpoint
 
             if coverage.get("query_status") == "exhausted":
@@ -335,11 +335,12 @@ class CollectionJobHandler:
             while True:
                 context.assert_active()
                 hits_confirmed = _int_field(coverage.get("hits_confirmed", 0), "hits_confirmed")
-                remaining = budget_limit - hits_confirmed
-                if remaining <= 0:
+                remaining = None if budget_limit is None else budget_limit - hits_confirmed
+                if remaining is not None and remaining <= 0:
                     return self._limit_outcome(coverage)
 
-                request_size = min(page_size, remaining)
+                request_size = page_size if remaining is None else min(page_size, remaining)
+                source_page_size = max(MIN_PAGE_SIZE, request_size)
                 attempt_number = context.record_http_attempt(
                     lease,
                     expected_revision=revision,
@@ -352,9 +353,10 @@ class CollectionJobHandler:
                 )
                 coverage["current_page"] = checkpoint.next_page
                 coverage["checkpoint_revision"] = revision
-                page = self._fetch(adapter, lease, query, cursor, request_size)
+                page = self._fetch(adapter, lease, query, cursor, source_page_size)
                 context.assert_active()
-                self._validate_page(query, cursor, request_size, page)
+                self._validate_page(query, cursor, source_page_size, page)
+                page = self._cap_page(page, request_size)
                 committed = self._commit_page_with_recovery(
                     context,
                     lease,
@@ -370,7 +372,11 @@ class CollectionJobHandler:
 
                 if page.is_empty:
                     return self._terminal_from_exhaustion(coverage)
-                if _int_field(coverage.get("hits_confirmed", 0), "hits_confirmed") >= budget_limit:
+                if (
+                    budget_limit is not None
+                    and _int_field(coverage.get("hits_confirmed", 0), "hits_confirmed")
+                    >= budget_limit
+                ):
                     return self._limit_outcome(coverage)
         except JobCancellationRequestedError:
             return JobOutcome(status="cancelled", coverage=self._coverage_json(coverage))
@@ -493,7 +499,7 @@ class CollectionJobHandler:
         lease: JobLease,
         *,
         expected_revision: int,
-        budget_limit: int,
+        budget_limit: int | None,
         source: Literal["datajud", "synthetic"],
         page: SourcePage,
     ) -> PageCommitState:
@@ -619,13 +625,23 @@ class CollectionJobHandler:
         cursor: Cursor | None,
         page_size: int,
     ) -> SourcePage:
+        fetch_page = adapter.fetch_page
         if lease.job_type == "refresh_number":
             if query.process_number is None:  # pragma: no cover - validated above
                 raise SourceError(
                     SourceErrorCode.CONTRACT, "O número CNJ da consulta está ausente."
                 )
-            return adapter.fetch_page(query, cursor, page_size)
-        return adapter.fetch_page(query, cursor, page_size)
+            return fetch_page(query, cursor, page_size)
+        return fetch_page(query, cursor, page_size)
+
+    @staticmethod
+    def _cap_page(page: SourcePage, effective_size: int) -> SourcePage:
+        """Keep only the remaining manual-budget hits from a minimum-size source page."""
+
+        if len(page.hits) <= effective_size:
+            return page
+        hits = page.hits[:effective_size]
+        return replace(page, hits=hits, cursor_final=hits[-1].sort_values)
 
     @staticmethod
     def _validate_page(
@@ -790,36 +806,52 @@ def build_collection_job_handler(settings: Settings) -> CollectionJobHandler:
     return CollectionJobHandler(source_factory)
 
 
-def _validate_limits(page_size: int, hit_budget: int) -> None:
-    if isinstance(page_size, bool) or not isinstance(page_size, int) or not 1 <= page_size <= 100:
-        raise SourceError(
-            SourceErrorCode.VALIDATION, "O tamanho da página deve estar entre 1 e 100."
-        )
+def _validate_limits(page_size: int, hit_budget: int | None) -> None:
     if (
-        isinstance(hit_budget, bool)
-        or not isinstance(hit_budget, int)
-        or not 1 <= hit_budget <= INITIAL_HIT_BUDGET
+        isinstance(page_size, bool)
+        or not isinstance(page_size, int)
+        or not MIN_PAGE_SIZE <= page_size <= MAX_PAGE_SIZE
     ):
         raise SourceError(
-            SourceErrorCode.VALIDATION, "O orçamento inicial deve estar entre 1 e 2.000 hits."
+            SourceErrorCode.VALIDATION,
+            f"O tamanho da página deve estar entre {MIN_PAGE_SIZE} e {MAX_PAGE_SIZE}.",
+        )
+    if hit_budget is not None and (
+        isinstance(hit_budget, bool) or not isinstance(hit_budget, int) or hit_budget < 1
+    ):
+        raise SourceError(
+            SourceErrorCode.VALIDATION,
+            "O limite cumulativo deve ser um inteiro positivo ou nulo.",
         )
 
 
-def _limits_from_snapshot(snapshot: Mapping[str, Any]) -> tuple[int, int]:
+def _limits_from_snapshot(snapshot: Mapping[str, Any]) -> tuple[int, int | None]:
     parameters = snapshot.get("parameters")
     if not isinstance(parameters, Mapping):
         raise SourceError(SourceErrorCode.CONTRACT, "Os parâmetros do job são inválidos.")
-    page_size = parameters.get("page_size", DEFAULT_PAGE_SIZE)
-    hit_budget = parameters.get("hit_budget", parameters.get("budget", INITIAL_HIT_BUDGET))
-    if isinstance(page_size, bool) or not isinstance(page_size, int) or not 1 <= page_size <= 100:
-        raise SourceError(SourceErrorCode.CONTRACT, "O tamanho de página persistido é inválido.")
+    page_size = parameters.get("page_size", LEGACY_DEFAULT_PAGE_SIZE)
+    hit_budget = parameters.get("hit_budget", parameters.get("budget", LEGACY_HIT_BUDGET))
     if (
-        isinstance(hit_budget, bool)
-        or not isinstance(hit_budget, int)
-        or not 1 <= hit_budget <= INITIAL_HIT_BUDGET
+        isinstance(page_size, bool)
+        or not isinstance(page_size, int)
+        # Historical jobs may carry a smaller frozen page size. New requests
+        # are rejected below the documented minimum by _validate_limits.
+        or not 1 <= page_size <= MAX_PAGE_SIZE
     ):
-        raise SourceError(SourceErrorCode.CONTRACT, "O orçamento inicial persistido é inválido.")
+        raise SourceError(SourceErrorCode.CONTRACT, "O tamanho de página persistido é inválido.")
+    if hit_budget is not None and (
+        isinstance(hit_budget, bool) or not isinstance(hit_budget, int) or hit_budget < 1
+    ):
+        raise SourceError(SourceErrorCode.CONTRACT, "O limite cumulativo persistido é inválido.")
     return page_size, hit_budget
+
+
+def _optional_budget(value: object) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise SourceError(SourceErrorCode.CONTRACT, "O limite cumulativo persistido é inválido.")
+    return value
 
 
 def _sort_from_snapshot(value: object) -> tuple[SortTerm, ...]:

@@ -121,8 +121,8 @@ def enqueue(
     job_type: str = "discovery",
     mode: str = "demo",
     source: str = "synthetic",
-    page_size: int = 2,
-    hit_budget: int = 2_000,
+    page_size: int = 10,
+    hit_budget: int | None = None,
 ) -> UUID:
     result = jobs.enqueue(
         build_collection_request(
@@ -264,6 +264,95 @@ def test_enqueued_collection_persists_the_compiled_catalog_snapshot(
     assert catalog_snapshot["rural_link_status"] == "not_confirmed"
 
 
+@pytest.mark.parametrize("page_size", [10, 10_000])
+def test_new_collection_requests_accept_documented_page_size_boundaries(page_size: int) -> None:
+    request = build_collection_request(
+        mode="demo",
+        source="synthetic",
+        job_type="discovery",
+        query=discovery_query(),
+        page_size=page_size,
+    )
+
+    assert request.parameters == {"page_size": page_size, "hit_budget": None}
+
+
+@pytest.mark.parametrize("page_size", [9, 10_001])
+def test_new_collection_requests_reject_page_sizes_outside_source_range(page_size: int) -> None:
+    with pytest.raises(SourceError):
+        build_collection_request(
+            mode="demo",
+            source="synthetic",
+            job_type="discovery",
+            query=discovery_query(),
+            page_size=page_size,
+        )
+
+
+def test_new_collection_request_uses_benchmark_selected_page_default() -> None:
+    request = build_collection_request(
+        mode="demo",
+        source="synthetic",
+        job_type="discovery",
+        query=discovery_query(),
+    )
+
+    assert request.parameters == {"page_size": 5_000, "hit_budget": None}
+
+
+def test_collection_over_25000_hits_ignores_gte_total_and_stops_only_on_empty(
+    migrated_engine: Engine,
+) -> None:
+    query = discovery_query()
+    hits: list[dict[str, Any]] = []
+    for index in range(25_001):
+        source_id = f"benchmark-{index:05d}"
+        timestamp = (datetime(2026, 1, 1, tzinfo=UTC) + timedelta(milliseconds=index)).isoformat()
+        hits.append(
+            {
+                "_id": source_id,
+                "_source": {
+                    "id": source_id,
+                    "numeroProcesso": f"{index + 1:020d}",
+                    "tribunal": "TJGO",
+                    "@timestamp": timestamp,
+                    "movimentos": [],
+                },
+                "sort": [timestamp, source_id],
+            }
+        )
+    adapter = RecordingAdapter(
+        SyntheticSourceAdapter(
+            {
+                query: SyntheticQueryFixture(
+                    (SyntheticPageFixture(tuple(hits), total_value=10_000, total_relation="gte"),)
+                )
+            }
+        )
+    )
+    jobs = make_jobs(migrated_engine)
+    job_id = enqueue(jobs, query, page_size=10_000, hit_budget=None)
+
+    run_worker(jobs, "discovery", make_handler(adapter))
+
+    inspection = jobs.inspect(job_id)
+    assert inspection.status == "completed"
+    assert inspection.coverage is not None
+    assert inspection.coverage["hits_confirmed"] == 25_001
+    assert inspection.coverage["pages_confirmed"] == 4
+    assert inspection.coverage["budget_limit"] is None
+    assert inspection.coverage["source_total"] == {
+        "present": True,
+        "value": 10_000,
+        "relation": "gte",
+    }
+    assert adapter.sizes == [10_000, 10_000, 10_000, 10_000]
+    assert inspection.checkpoint.revision == 4
+    assert inspection.checkpoint.cursor == hits[-1]["sort"]
+    with Session(migrated_engine) as session:
+        assert session.scalar(select(func.count()).select_from(CollectionObservation)) == 25_001
+
+
 def test_budget_bounds_each_request_and_continuation_keeps_progress(
     migrated_engine: Engine,
 ) -> None:
@@ -282,19 +371,19 @@ def test_budget_bounds_each_request_and_continuation_keeps_progress(
         )
     )
     jobs = make_jobs(migrated_engine)
-    job_id = enqueue(jobs, query, page_size=2, hit_budget=3)
+    job_id = enqueue(jobs, query, page_size=10, hit_budget=3)
     run_worker(jobs, "discovery", make_handler(adapter))
 
     inspection = jobs.inspect(job_id)
     assert inspection.status == "partial"
     assert inspection.reason == "limit"
     assert inspection.checkpoint.cursor == ["2026-01-01T00:00:03Z", "three"]
-    assert adapter.sizes == [2, 1]
+    assert adapter.sizes == [10]
     assert inspection.coverage is not None
     assert inspection.coverage["hits_confirmed"] == 3
     assert inspection.coverage["valid_hits"] + inspection.coverage["rejected_hits"] == 3
     assert inspection.coverage["new"] == 3
-    assert inspection.coverage["http_attempts"] == 2
+    assert inspection.coverage["http_attempts"] == 1
     assert inspection.coverage["has_persisted_data"] is True
 
     continued = plan_limit_continuation(
@@ -303,14 +392,14 @@ def test_budget_bounds_each_request_and_continuation_keeps_progress(
         cursor=inspection.checkpoint.cursor,
         checkpoint_revision=inspection.checkpoint.revision,
         coverage=inspection.coverage,
-        additional_budget=2_000,
+        new_budget=5,
     )
     assert continued.cursor == tuple(inspection.checkpoint.cursor)
     assert continued.checkpoint_revision == inspection.checkpoint.revision
-    assert continued.coverage["budget_limit"] == 2_003
+    assert continued.coverage["budget_limit"] == 5
     assert continued.coverage["hits_confirmed"] == 3
     assert continued.coverage["checkpoint_revision"] == inspection.checkpoint.revision
-    assert continued.coverage["http_attempts"] == 2
+    assert continued.coverage["http_attempts"] == 1
     assert continued.coverage["query_status"] == "running"
     with pytest.raises(SourceError):
         plan_limit_continuation(
@@ -319,7 +408,7 @@ def test_budget_bounds_each_request_and_continuation_keeps_progress(
             cursor=inspection.checkpoint.cursor,
             checkpoint_revision=inspection.checkpoint.revision,
             coverage=inspection.coverage,
-            additional_budget=1,
+            new_budget=1,
         )
     with pytest.raises(SourceError):
         plan_limit_continuation(
@@ -328,7 +417,7 @@ def test_budget_bounds_each_request_and_continuation_keeps_progress(
             cursor=None,
             checkpoint_revision=inspection.checkpoint.revision,
             coverage=inspection.coverage,
-            additional_budget=1,
+            new_budget=1,
         )
     with pytest.raises(SourceError):
         plan_limit_continuation(
@@ -337,7 +426,7 @@ def test_budget_bounds_each_request_and_continuation_keeps_progress(
             cursor=inspection.checkpoint.cursor,
             checkpoint_revision=inspection.checkpoint.revision,
             coverage=inspection.coverage,
-            additional_budget=2_001,
+            new_budget=3,
         )
 
 
@@ -606,7 +695,7 @@ def test_refresh_number_paginates_every_representation_for_the_same_cnj(
 
     inspection = jobs.inspect(job_id)
     assert inspection.status == "completed"
-    assert adapter.sizes == [2, 2, 2]
+    assert adapter.sizes == [10, 10, 10]
     assert inspection.coverage is not None
     assert inspection.coverage["hits_confirmed"] == 3
     assert inspection.coverage["new"] == 3

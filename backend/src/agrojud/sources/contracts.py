@@ -17,6 +17,10 @@ type JSONScalar = str | int | float | bool | None
 type JSONValue = JSONScalar | list[JSONValue] | dict[str, JSONValue]
 type Cursor = tuple[JSONScalar, ...]
 
+MIN_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 10_000
+DEFAULT_PAGE_SIZE = 5_000
+
 
 class SourceErrorCode(StrEnum):
     """Stable categories for local and remote source failures."""
@@ -232,7 +236,7 @@ class SourceAdapter(Protocol):
         self,
         process_number: str,
         cursor: Cursor | None = None,
-        page_size: int = 100,
+        page_size: int = DEFAULT_PAGE_SIZE,
     ) -> SourcePage:
         """Fetch one page for an exact, locally validated CNJ number."""
 
@@ -263,10 +267,14 @@ def validate_fetch_arguments(
 
     if not isinstance(query, SourceQuery):
         raise SourceError(SourceErrorCode.VALIDATION, "A consulta de fonte é inválida.")
-    if isinstance(page_size, bool) or not isinstance(page_size, int) or not 1 <= page_size <= 100:
+    if (
+        isinstance(page_size, bool)
+        or not isinstance(page_size, int)
+        or not MIN_PAGE_SIZE <= page_size <= MAX_PAGE_SIZE
+    ):
         raise SourceError(
             SourceErrorCode.VALIDATION,
-            "O tamanho da página deve estar entre 1 e 100.",
+            f"O tamanho da página deve estar entre {MIN_PAGE_SIZE} e {MAX_PAGE_SIZE}.",
         )
     if cursor is None:
         return None
